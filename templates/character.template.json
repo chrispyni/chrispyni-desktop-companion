@@ -22,35 +22,60 @@
       "frames": 6,
       "fps": 8
     },
-    "talk": {
+    "run": {
       "row": 2,
+      "frames": 6,
+      "fps": 12
+    },
+    "talk": {
+      "row": 3,
       "frames": 4,
       "fps": 6
     },
     "sit": {
-      "row": 3,
+      "row": 4,
       "frames": 4,
       "fps": 3
     },
+    "lay": {
+      "row": 5,
+      "frames": 4,
+      "fps": 2
+    },
     "sleep": {
-      "row": 4,
+      "row": 6,
       "frames": 4,
       "fps": 2
     },
     "happy": {
-      "row": 5,
+      "row": 7,
       "frames": 4,
       "fps": 8
     },
     "pout": {
-      "row": 6,
+      "row": 8,
       "frames": 4,
       "fps": 4
     },
     "cast": {
-      "row": 7,
+      "row": 9,
       "frames": 6,
       "fps": 10
+    },
+    "wave": {
+      "row": 10,
+      "frames": 4,
+      "fps": 6
+    },
+    "hug": {
+      "row": 11,
+      "frames": 4,
+      "fps": 4
+    },
+    "kiss": {
+      "row": 12,
+      "frames": 4,
+      "fps": 4
     }
   },
   "palette": {

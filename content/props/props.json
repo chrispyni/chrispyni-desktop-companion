@@ -1,0 +1,240 @@
+{
+  "items": [
+    {
+      "id": "chair",
+      "name": "Void Throne Chair",
+      "image": "chair.png",
+      "frame": {
+        "w": 32,
+        "h": 32
+      },
+      "frames": 1,
+      "fps": 1,
+      "anchor": {
+        "x": 16,
+        "y": 31
+      },
+      "manaCost": 10,
+      "spawnEffect": "spawn_sparkle",
+      "lifetimeSec": 600,
+      "sittable": true,
+      "aliases": [
+        "throne",
+        "seat",
+        "chair"
+      ]
+    },
+    {
+      "id": "teacup",
+      "name": "Teacup",
+      "image": "teacup.png",
+      "frame": {
+        "w": 32,
+        "h": 32
+      },
+      "frames": 3,
+      "fps": 4,
+      "anchor": {
+        "x": 16,
+        "y": 31
+      },
+      "manaCost": 3,
+      "spawnEffect": "spawn_sparkle",
+      "lifetimeSec": 600,
+      "aliases": [
+        "tea",
+        "cup",
+        "cup of tea",
+        "teacup"
+      ]
+    },
+    {
+      "id": "bed",
+      "name": "Royal Bed",
+      "image": "bed.png",
+      "frame": {
+        "w": 64,
+        "h": 32
+      },
+      "frames": 1,
+      "fps": 1,
+      "anchor": {
+        "x": 32,
+        "y": 31
+      },
+      "manaCost": 25,
+      "spawnEffect": "spawn_sparkle",
+      "lifetimeSec": 600,
+      "sittable": true,
+      "aliases": [
+        "bed"
+      ],
+      "layable": true,
+      "seats": 3
+    },
+    {
+      "id": "cushion",
+      "name": "Cushion",
+      "image": "cushion.png",
+      "frame": {
+        "w": 32,
+        "h": 32
+      },
+      "frames": 1,
+      "fps": 1,
+      "anchor": {
+        "x": 16,
+        "y": 31
+      },
+      "manaCost": 5,
+      "spawnEffect": "spawn_sparkle",
+      "lifetimeSec": 600,
+      "sittable": true,
+      "aliases": [
+        "pillow",
+        "cushion"
+      ]
+    },
+    {
+      "id": "books",
+      "name": "Stack of Books",
+      "image": "books.png",
+      "frame": {
+        "w": 32,
+        "h": 32
+      },
+      "frames": 1,
+      "fps": 1,
+      "anchor": {
+        "x": 16,
+        "y": 31
+      },
+      "manaCost": 4,
+      "spawnEffect": "spawn_sparkle",
+      "lifetimeSec": 600,
+      "aliases": [
+        "book",
+        "books",
+        "tome"
+      ]
+    },
+    {
+      "id": "candles",
+      "name": "Candles",
+      "image": "candles.png",
+      "frame": {
+        "w": 32,
+        "h": 32
+      },
+      "frames": 3,
+      "fps": 6,
+      "anchor": {
+        "x": 16,
+        "y": 31
+      },
+      "manaCost": 4,
+      "spawnEffect": "spawn_sparkle",
+      "lifetimeSec": 600,
+      "aliases": [
+        "candle",
+        "candles"
+      ]
+    },
+    {
+      "id": "void_portal",
+      "name": "Void Portal",
+      "image": "void_portal.png",
+      "frame": {
+        "w": 32,
+        "h": 32
+      },
+      "frames": 8,
+      "fps": 8,
+      "anchor": {
+        "x": 16,
+        "y": 31
+      },
+      "manaCost": 20,
+      "spawnEffect": "void_burst",
+      "lifetimeSec": 600,
+      "aliases": [
+        "portal",
+        "void portal",
+        "rift"
+      ]
+    },
+    {
+      "id": "light_orb",
+      "name": "Light Orb",
+      "image": "light_orb.png",
+      "frame": {
+        "w": 32,
+        "h": 32
+      },
+      "frames": 4,
+      "fps": 6,
+      "anchor": {
+        "x": 16,
+        "y": 31
+      },
+      "manaCost": 6,
+      "spawnEffect": "light_burst",
+      "lifetimeSec": 600,
+      "aliases": [
+        "orb",
+        "light",
+        "light orb",
+        "orbs"
+      ],
+      "float": 12
+    },
+    {
+      "id": "sofa",
+      "name": "Velvet Sofa",
+      "image": "sofa.png",
+      "frame": {
+        "w": 64,
+        "h": 32
+      },
+      "frames": 1,
+      "fps": 1,
+      "anchor": {
+        "x": 32,
+        "y": 31
+      },
+      "manaCost": 15,
+      "spawnEffect": "spawn_sparkle",
+      "lifetimeSec": 600,
+      "sittable": true,
+      "seats": 2,
+      "aliases": [
+        "sofa",
+        "couch",
+        "loveseat"
+      ]
+    },
+    {
+      "id": "table",
+      "name": "Little Table",
+      "image": "table.png",
+      "frame": {
+        "w": 32,
+        "h": 32
+      },
+      "frames": 1,
+      "fps": 1,
+      "anchor": {
+        "x": 16,
+        "y": 31
+      },
+      "manaCost": 8,
+      "spawnEffect": "spawn_sparkle",
+      "lifetimeSec": 600,
+      "aliases": [
+        "table",
+        "little table"
+      ],
+      "surface": 14
+    }
+  ]
+}

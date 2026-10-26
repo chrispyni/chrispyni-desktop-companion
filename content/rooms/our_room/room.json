@@ -1,0 +1,50 @@
+{
+  "id": "our_room",
+  "name": "Our Room",
+  "background": "background.png",
+  "overlay": "cuddle.png",
+  "size": {
+    "w": 320,
+    "h": 180
+  },
+  "scale": 3,
+  "floorY": 120,
+  "spots": {
+    "bed": {
+      "x": 168,
+      "y": 100
+    },
+    "window": {
+      "x": 54,
+      "y": 110
+    },
+    "rug": {
+      "x": 180,
+      "y": 162
+    }
+  },
+  "props": [
+    {
+      "id": "candles",
+      "x": 250,
+      "y": 60
+    },
+    {
+      "id": "candles",
+      "x": 290,
+      "y": 120
+    },
+    {
+      "id": "light_orb",
+      "x": 200,
+      "y": 40
+    }
+  ],
+  "manaRestorePerSecond": 4,
+  "fadeAfterSec": 6,
+  "aliases": [
+    "our room",
+    "bedroom",
+    "room"
+  ]
+}

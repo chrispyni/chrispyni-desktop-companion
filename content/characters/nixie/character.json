@@ -1,0 +1,185 @@
+{
+  "id": "nixie",
+  "name": "Nixie",
+  "fullName": "Nixaria",
+  "title": "Last Light",
+  "role": "wife",
+  "sheet": "sheet.png",
+  "frame": {
+    "w": 48,
+    "h": 64
+  },
+  "anchor": {
+    "x": 24,
+    "y": 62
+  },
+  "scale": 2,
+  "animations": {
+    "idle": {
+      "row": 0,
+      "frames": 4,
+      "fps": 4
+    },
+    "walk": {
+      "row": 1,
+      "frames": 6,
+      "fps": 8
+    },
+    "run": {
+      "row": 2,
+      "frames": 6,
+      "fps": 12
+    },
+    "talk": {
+      "row": 3,
+      "frames": 4,
+      "fps": 6
+    },
+    "sit": {
+      "row": 4,
+      "frames": 4,
+      "fps": 3
+    },
+    "lay": {
+      "row": 5,
+      "frames": 4,
+      "fps": 2
+    },
+    "sleep": {
+      "row": 6,
+      "frames": 4,
+      "fps": 2
+    },
+    "happy": {
+      "row": 7,
+      "frames": 4,
+      "fps": 8
+    },
+    "pout": {
+      "row": 8,
+      "frames": 4,
+      "fps": 4
+    },
+    "cast": {
+      "row": 9,
+      "frames": 6,
+      "fps": 10
+    },
+    "wave": {
+      "row": 10,
+      "frames": 4,
+      "fps": 6
+    },
+    "hug": {
+      "row": 11,
+      "frames": 4,
+      "fps": 4
+    },
+    "kiss": {
+      "row": 12,
+      "frames": 4,
+      "fps": 4
+    }
+  },
+  "palette": {
+    "primary": "#f4ecdc",
+    "hair": "#e4e4e8",
+    "accent": "#d4a537",
+    "gem": "#2e9e4a",
+    "eyes": "#3fa34a"
+  },
+  "walkSpeed": 55,
+  "castEffect": "light_burst",
+  "bubble": {
+    "bg": "#fff8e8",
+    "border": "#d4a537",
+    "text": "#3a2a10"
+  },
+  "personality": {
+    "lines": "nixie",
+    "talkativeness": 0.7,
+    "baseMood": "playful",
+    "moods": [
+      "happy",
+      "playful",
+      "pouty",
+      "jealous",
+      "smug",
+      "sleepy",
+      "bored",
+      "loving",
+      "calm"
+    ],
+    "drift": {
+      "playful": 1.4,
+      "happy": 1.1,
+      "smug": 0.8,
+      "pouty": 0.6,
+      "bored": 0.6,
+      "jealous": 0.5,
+      "loving": 0.9,
+      "sleepy": 0.4,
+      "calm": 0.3
+    },
+    "reactions": {
+      "chat": {
+        "happy": 0.8,
+        "bored": -1
+      },
+      "ignored": {
+        "pouty": 0.6,
+        "bored": 0.5
+      },
+      "other_got_attention": {
+        "jealous": 1.2,
+        "pouty": 0.5
+      },
+      "app:game": {
+        "playful": 0.6,
+        "bored": -0.3
+      },
+      "app:video": {
+        "happy": 0.3
+      },
+      "app:art": {
+        "smug": 0.3
+      },
+      "app:code": {
+        "bored": 0.5
+      },
+      "poked": {
+        "playful": 0.7,
+        "pouty": 0.2
+      },
+      "summon_fail": {
+        "pouty": 1
+      },
+      "low_mana": {
+        "pouty": 0.5
+      },
+      "room": {
+        "loving": 2,
+        "pouty": -2,
+        "jealous": -2
+      },
+      "night": {
+        "sleepy": 0.8
+      },
+      "late_night": {
+        "sleepy": 1.4
+      },
+      "morning": {
+        "happy": 0.5
+      },
+      "idle_long": {
+        "bored": 1,
+        "pouty": 0.5
+      },
+      "back": {
+        "happy": 1.2,
+        "bored": -1
+      }
+    },
+    "sizeNote": "shorter of the two wives"
+  }
+}

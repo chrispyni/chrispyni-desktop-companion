@@ -10,8 +10,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 C = lambda *p: os.path.join(ROOT, *p)
 FW, FH = 48, 64           # character frame size
 FEET = (24, 62)           # anchor (feet) inside a frame
-ROWS = [("idle", 4, 4), ("walk", 6, 8), ("talk", 4, 6), ("sit", 4, 3),
-        ("sleep", 4, 2), ("happy", 4, 8), ("pout", 4, 4), ("cast", 6, 10)]  # name, frames, fps
+ROWS = [("idle", 4, 4), ("walk", 6, 8), ("run", 6, 12), ("talk", 4, 6), ("sit", 4, 3), ("lay", 4, 2),
+        ("sleep", 4, 2), ("happy", 4, 8), ("pout", 4, 4), ("cast", 6, 10), ("wave", 4, 6), ("hug", 4, 4), ("kiss", 4, 4)]  # name, frames, fps
 
 def hx(s, a=255):
     s = s.lstrip('#'); return (int(s[0:2], 16), int(s[2:4], 16), int(s[4:6], 16), a)
@@ -62,11 +62,16 @@ def draw_char(img, ox, oy, P, pose, f, nf):
     if pose == "sleep": eyes = "closed"; mouth = "flat"; bob = 1 if f >= 2 else 0
     if pose == "happy": bob = [0, 3, 4, 2][f % 4]; eyes = "happy"; mouth = "open"; arms = "up"
     if pose == "pout": mouth = "pout"; arms = "crossed"; eyes = "half"; bob = f % 2
+    if pose == "run": bob = int(abs(math.sin(ph)) * 3); legsw = int(round(math.sin(ph) * 5)); mouth = "open" if f % 3 == 0 else "smile"
+    if pose == "wave": arms = "wave"; mouth = "open" if f % 2 else "smile"; bob = f % 2
+    if pose == "hug": arms = "forward"; eyes = "happy"; mouth = "smile"; bob = 1 if f in (1, 2) else 0
+    if pose == "kiss": arms = "forward"; eyes = "closed"; mouth = "pout"; lean = 2 if f in (1, 2) else 1
+    if pose == "lay": eyes = "closed" if f >= 2 else "open"; mouth = "smile"
     if pose == "cast": arms = "cast"; eyes = "open" if f < 4 else "glow"; mouth = "flat"; bob = 1 if f in (2, 3) else 0
     sitdrop = 10 if sit else 0
     top = fy - H + sitdrop - bob          # head top
     r = 9                                   # head radius (chibi)
-    hcx, hcy = fx, top + r + 1
+    hcx, hcy = fx + lean, top + r + 1
     if pose == "sleep": hcx += 2; hcy += 2
     neck = hcy + r
     legs_len = 12 if not sit else 4
@@ -120,6 +125,15 @@ def draw_char(img, ox, oy, P, pose, f, nf):
         elif mode == "crossed":
             rect(d, fx - tw, sh_y + 3, fx + tw - 1, sh_y + 4, out_sh)
             rect(d, fx - 2, sh_y + 3, fx + 1, sh_y + 4, skin)
+        elif mode == "wave":
+            if side > 0:
+                up = f % 2
+                rect(d, x, sh_y - 6, x + 1, sh_y, out); rect(d, x + up, sh_y - 9, x + 1 + up, sh_y - 7, skin)
+            else:
+                arm(side, "down")
+        elif mode == "forward":
+            yy = sh_y + 3 + (1 if side < 0 else 0)
+            rect(d, fx, yy, fx + tw + 5, yy + 1, out_sh if side < 0 else out); rect(d, fx + tw + 6, yy, fx + tw + 7, yy + 1, skin)
         elif mode == "cast":
             if side > 0:
                 rect(d, x, sh_y - 1, x + 6, sh_y, out)
@@ -201,10 +215,26 @@ def draw_char(img, ox, oy, P, pose, f, nf):
         zx, zy = hcx + 9, hcy - r - 2 - (f % 4)
         for (a, b) in ((0, 0), (1, 0), (2, 0), (1, 1), (0, 2), (1, 2), (2, 2)):
             px(d, zx + a, zy + b, (220, 220, 255, 220))
+    if pose in ("kiss", "hug") and f in (1, 2):
+        for (dx, dy) in ((0, 0), (2, 0), (-1, 1), (0, 1), (1, 1), (2, 1), (3, 1), (0, 2), (1, 2), (2, 2), (1, 3)):
+            px(d, hcx + 9 + dx, hcy - r - 4 + dy - f, (255, 90, 150, 255))
     if pose == "happy" and f % 2:
         for (a, b) in ((-12, -2), (12, 0)):
             px(d, hcx + a, hcy + b, (255, 120, 170, 255)); px(d, hcx + a + 1, hcy + b, (255, 120, 170, 255))
             px(d, hcx + a, hcy + b + 1, (255, 120, 170, 255))
+
+def draw_lay(sheet, ox, oy, P, f, nf):
+    """Lying down (on a bed/floor): upright head on a pillow at the left, body under a blanket."""
+    tmp = Image.new("RGBA", (FW, FH), (0, 0, 0, 0))
+    draw_char(tmp, 0, 0, P, "lay", f, nf)
+    top = FEET[1] - P["height"]
+    head = tmp.crop((6, max(0, top - 10), 42, top + 20))
+    d = ImageDraw.Draw(sheet)
+    breath = 1 if f % 2 else 0
+    rect(d, ox + 1, oy + FH - 8, ox + 20, oy + FH - 3, hx("e8e0f0"))            # pillow
+    sheet.alpha_composite(head, (ox - 6, oy + FH - 6 - head.height + 2))
+    rect(d, ox + 22, oy + FH - 15 - breath, ox + FW - 1, oy + FH - 2, hx("6a2fa8"))  # blanket lump
+    rect(d, ox + 22, oy + FH - 15 - breath, ox + FW - 1, oy + FH - 14 - breath, hx("d4a537"))
 
 def outline_sheet(im, col=(18, 10, 22, 255)):
     src = im.load(); out = im.copy(); o = out.load()
@@ -222,7 +252,8 @@ def build_character(cid, P):
     sheet = Image.new("RGBA", (FW * maxf, FH * len(ROWS)), (0, 0, 0, 0))
     for ri, (name, n, fps) in enumerate(ROWS):
         for f in range(n):
-            draw_char(sheet, f * FW, ri * FH, P, name, f, n)
+            if name == "lay": draw_lay(sheet, f * FW, ri * FH, P, f, n)
+            else: draw_char(sheet, f * FW, ri * FH, P, name, f, n)
     out = C("content", "characters", cid); os.makedirs(out, exist_ok=True)
     sheet = outline_sheet(sheet)
     sheet.save(os.path.join(out, "sheet.png"))
@@ -274,10 +305,20 @@ def p_light_orb(d, o, f):
     rr = [5, 6, 7, 6][f % 4]
     ell(d, o+16-rr-4, 16-rr-4, o+16+rr+4, 16+rr+4, (255, 240, 170, 50))
     ell(d, o+16-rr, 16-rr, o+16+rr, 16+rr, (255, 242, 176, 200)); ell(d, o+14, 14, o+18, 18, (255, 255, 255, 255))
+def p_sofa(d, o, f):
+    rect(d, o+4, 8, o+59, 18, hx("4a1f5a")); rect(d, o+4, 8, o+59, 8, GOLD)
+    rect(d, o+2, 16, o+61, 25, hx("5e2a72")); rect(d, o+2, 12, o+7, 25, hx("4a1f5a")); rect(d, o+56, 12, o+61, 25, hx("4a1f5a"))
+    rect(d, o+10, 17, o+31, 20, hx("7a3a92")); rect(d, o+33, 17, o+53, 20, hx("7a3a92"))
+    for x in (o+4, o+58): rect(d, x, 26, x+1, 31, GOLD)
+def p_table(d, o, f):
+    rect(d, o+2, 14, o+29, 16, WOOD); rect(d, o+2, 14, o+29, 14, GOLD)
+    for x in (o+4, o+26): rect(d, x, 17, x+1, 31, WOODD)
+    rect(d, o+6, 17, o+25, 18, hx("4a1f5a"))
 PROPS = {  # id: (w,h,frames,fps,fn,cost,label)
  "chair": (32, 32, 1, 1, p_chair, 10, "Void Throne Chair"), "teacup": (32, 32, 3, 4, p_teacup, 3, "Teacup"),
  "bed": (64, 32, 1, 1, p_bed, 25, "Royal Bed"), "cushion": (32, 32, 1, 1, p_cushion, 5, "Cushion"),
  "books": (32, 32, 1, 1, p_books, 4, "Stack of Books"), "candles": (32, 32, 3, 6, p_candles, 4, "Candles"),
+ "sofa": (64, 32, 1, 1, p_sofa, 15, "Velvet Sofa"), "table": (32, 32, 1, 1, p_table, 8, "Little Table"),
  "void_portal": (32, 32, 8, 8, p_void_portal, 20, "Void Portal"), "light_orb": (32, 32, 4, 6, p_light_orb, 6, "Light Orb"),
 }
 
