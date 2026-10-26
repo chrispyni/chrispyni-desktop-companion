@@ -35,7 +35,7 @@
     "eventMinIntervalSec": 60,
     "token": ""
   },
-  "update": { "url": "", "checkOnStart": true, "_help": "URL or local path of a version.json, e.g. a direct-download link to version.json in the Drive Releases folder" },
+  "update": { "checkOnStart": true, "_help": "Checks GitHub Releases for new full releases on launch" },
   "adminGateEnabled": false,
   "admin": { "usernames": ["your-windows-username"], "hostnames": ["your-pc-name"], "passphrase": null },
   "disabledMods": [],

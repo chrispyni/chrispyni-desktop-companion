@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4-alpha
+* Updates: Nixie or Noct tells you when a new version is out, right in her speech bubble, with **Update** and **Later** buttons. No Windows popups; the app updates itself, restarts, and tells you it worked (or that it didn't, and keeps running).
+* Your saves, mods and edited content are kept during updates; replaced files are backed up in `backup\`.
+* Gentler walk: legs no longer swing too wide apart or cross mid-step.
+* Clicking, dragging or right-clicking the wives and props no longer steals focus, so a fullscreen video stays fullscreen. Only the chat box takes keyboard focus while it's open.
+
 ## 0.1.3-alpha
 * Watching together: when a video plays, they sit at the bottom of the screen and watch with you.
 * Hold the cursor near a wife and she stops to look at it (only a couple of times).

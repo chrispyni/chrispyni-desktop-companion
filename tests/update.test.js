@@ -8,18 +8,18 @@ function makeZip(file, files) {   // python's zipfile (deflate) to build a reali
   execFileSync('python3', ['-c', `import zipfile,json,sys\nz=zipfile.ZipFile(sys.argv[1],'w',zipfile.ZIP_DEFLATED)\nfor k,v in json.loads(sys.argv[2]).items(): z.writestr(k,v)\nz.close()`, file, spec]);
   return fs.readFileSync(file);
 }
-test('pickRelease: newest prerelease with a -win.zip asset, newer than current', () => {
+test('pickRelease: newest FULL release with a -win.zip asset; pre-releases and drafts never offered', () => {
   const list = [
     { tag_name: 'v0.1.1-alpha', assets: [{ name: 'ProjectWives-0.1.1-alpha-win.zip', browser_download_url: 'u1', size: 1 }] },
-    { tag_name: 'v0.1.3-alpha', prerelease: true, assets: [{ name: 'ProjectWives-0.1.3-alpha-win.zip', browser_download_url: 'u3', size: 3, digest: 'sha256:ab' }] },
+    { tag_name: 'v0.1.3-alpha', assets: [{ name: 'ProjectWives-0.1.3-alpha-win.zip', browser_download_url: 'u3', size: 3, digest: 'sha256:ab' }] },
+    { tag_name: 'v0.1.5-alpha', prerelease: true, assets: [{ name: 'ProjectWives-0.1.5-alpha-win.zip', browser_download_url: 'u5' }] },
     { tag_name: 'v0.2.0', draft: true, assets: [{ name: 'x-win.zip' }] },
     { tag_name: 'v0.1.4-alpha', assets: [{ name: 'notes.txt' }] },
   ];
-  assert.strictEqual(U.pickRelease(list, '0.1.2-alpha'), null, 'normal users are never offered pre-releases');
-  const r = U.pickRelease(list, '0.1.2-alpha', { prerelease: true });
+  const r = U.pickRelease(list, '0.1.2-alpha');
   assert.strictEqual(r.version, '0.1.3-alpha'); assert.strictEqual(r.asset.url, 'u3'); assert.strictEqual(r.asset.digest, 'sha256:ab');
-  assert.strictEqual(U.pickRelease(list, '0.1.3-alpha', { prerelease: true }), null);
-  assert.strictEqual(U.pickRelease([{ ...list[1], prerelease: false }], '0.1.2-alpha').version, '0.1.3-alpha');
+  assert.strictEqual(U.pickRelease(list, '0.1.3-alpha'), null);
+  assert.strictEqual(U.pickRelease(list, '0.1.3-alpha', { prerelease: true }), null, 'no opt-in for pre-releases');
 });
 test('verify + plan + stage + apply keeps data, mods and your edited content; backs up', () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'pwupd-')); const app = path.join(tmp, 'app');
@@ -44,7 +44,7 @@ test('verify + plan + stage + apply keeps data, mods and your edited content; ba
   assert.strictEqual(rd('content/lines/noct.json'), 'my edited noct'); assert.strictEqual(rd('content/new.json'), 'brand new');
   assert.strictEqual(rd('data/save.json'), 'MY SAVE'); assert.strictEqual(rd('mods/m/mod.json'), 'my mod');
   assert.ok(!fs.existsSync(staging));
-  assert.match(U.swapScript(staging, app, 123), /Wait-Process -Id 123/);
+  const ps = U.swapScript(staging, app, 123, '0.1.2-alpha', backup); assert.match(ps, /Wait-Process -Id 123/); assert.match(ps, /--updated-from=\$old/); assert.match(ps, /--update-failed/); assert.match(ps, /'0\.1\.2-alpha'/);
 });
 test('unzip rejects path traversal', () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'pwz-'));

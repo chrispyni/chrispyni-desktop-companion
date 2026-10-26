@@ -22,7 +22,7 @@ Two pixel-art elf queens, **Nixie** and **Noct**, living on top of your Windows 
 * They **watch videos with you**: when YouTube, Twitch, Netflix, VLC, mpv… plays, they sit at the bottom of the screen with their backs to you.
 * Hold the cursor near one and she stops to look at it. Leave props lying around and they use them (and tidy up the ones nobody touches).
 * Cookies are endless, but even a wife gets full after a few.
-* Updates install themselves when you say yes (tray → About → Check for updates).
+* When a new version is out, Nixie or Noct tells you in a bubble — press **Update** and the app updates and restarts itself (or check via tray → About).
 
 ![Preview](docs/preview.gif)
 

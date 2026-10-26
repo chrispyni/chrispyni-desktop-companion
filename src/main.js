@@ -86,7 +86,8 @@ function createOverlay() {
   const b = process.env.PW_SIZE ? { x: 0, y: 0, width: +process.env.PW_SIZE.split('x')[0], height: +process.env.PW_SIZE.split('x')[1] } : d.bounds;
   overlay = new BrowserWindow({
     x: b.x, y: b.y, width: b.width, height: b.height, transparent: true, frame: false, resizable: false, hasShadow: false,
-    alwaysOnTop: true, skipTaskbar: true, focusable: true, show: false, backgroundColor: '#00000000',
+    alwaysOnTop: true, skipTaskbar: true, focusable: false,   // never steals focus (fullscreen video stays fullscreen)
+    show: false, backgroundColor: '#00000000',
     webPreferences: { nodeIntegration: true, contextIsolation: false, backgroundThrottling: false },
   });
   overlay.setAlwaysOnTop(true, 'screen-saver');
@@ -126,8 +127,10 @@ ipcMain.on('set-capture', (_e, on) => {
   overlay.setIgnoreMouseEvents(!on, { forward: true });
 });
 // Focus for typing only. Mouse capture stays per-region (set-capture), so the desktop behind is never blocked.
-ipcMain.on('focus-overlay', () => { if (overlay) overlay.focus(); });
-ipcMain.on('blur-overlay', () => { if (overlay) overlay.blur(); });
+// The overlay is focusable ONLY while the chat input / debug panel is open; clicks on sprites, props, menus and
+// bubble buttons never activate it, so a fullscreen video in another app keeps fullscreen + focus.
+ipcMain.on('focus-overlay', () => { if (!overlay) return; overlay.setFocusable(true); overlay.focus(); });
+ipcMain.on('blur-overlay', () => { if (!overlay) return; overlay.blur(); overlay.setFocusable(false); overlay.setAlwaysOnTop(true, 'screen-saver'); });
 ipcMain.on('open-room', (_e, id, who) => openRoom(id, who));
 ipcMain.on('close-room', () => { if (roomWin) roomWin.close(); });
 ipcMain.on('mana', (_e, m) => { if (roomWin && !roomWin.isDestroyed()) roomWin.webContents.send('mana', m); });
@@ -197,7 +200,7 @@ function openAbout() {
 }
 ipcMain.on('about-check', async (e) => {
   const reply = (m) => { try { e.sender.send('about-status', m); } catch {} };
-  try { const info = await findUpdate(); if (!info) return reply(`You're up to date (${PKG.version}).`); updateInfo = info; buildTray(); reply(`Update ${info.version} available!`); askUpdate(info); }
+  try { const info = await findUpdate(); if (!info) return reply(`You're up to date (${PKG.version}).`); updateInfo = info; buildTray(); reply(`Update ${info.version} available!`); send('update-available', { version: info.version }); askUpdate(info); }
   catch (err) { reply('Update check failed: ' + err.message); }
 });
 
@@ -268,7 +271,7 @@ async function pollRelay() {
 const UPD = require('./core/updater');
 let updateInfo = null, updateBusy = false, updateAnnounced = false;
 const updateDismissed = new Set();          // Cancel = not again for this version during this session
-const GH_API = 'https://api.github.com/repos/chrispyni/project-wives/releases?per_page=10';
+const GH_API = 'https://api.github.com/repos/chrispyni/project-wives/releases/latest';
 async function getJSON(u) {
   if (!/^https?:/.test(u)) return JSON.parse(fs.readFileSync(u, 'utf8'));
   const r = await fetch(u, { headers: { 'User-Agent': 'ProjectWives-Updater', Accept: 'application/vnd.github+json' } });
@@ -276,12 +279,9 @@ async function getJSON(u) {
 }
 async function findUpdate() {
   const api = process.env.PW_UPDATE_API || (cfg.update && cfg.update.githubApi) || GH_API;
-  try { const info = UPD.pickRelease(await getJSON(api), PKG.version, { prerelease: !!(cfg.update && cfg.update.channel === 'prerelease') }); if (info) return info; return null; }
+  try { const info = UPD.pickRelease(await getJSON(api), PKG.version); if (info) return info; return null; }
   catch (e) {
-    log('github update check failed: ' + e.message);
-    const u = cfg.update && cfg.update.url; if (!u) throw e;             // fall back to version.json
-    const j = await getJSON(u);
-    return UPD.cmpVer(j.version, PKG.version) > 0 ? { version: j.version, notes: j.notes || '', page: j.download, asset: j.zip ? { name: path.basename(j.zip), url: j.zip, size: j.size, digest: j.sha256 ? 'sha256:' + j.sha256 : null } : null } : null;
+    log('github update check failed: ' + e.message); throw e;   // GitHub Releases is the only update source
   }
 }
 async function checkUpdate(manual) {
@@ -292,23 +292,28 @@ async function checkUpdate(manual) {
     if (updateDismissed.has(info.version) || (updateAnnounced && !manual)) return;
     updateAnnounced = true;
     send('update-available', { version: info.version });            // Nixie or Noct announces it
-    setTimeout(() => askUpdate(info), manual ? 300 : 3500);
+    askUpdate(info);
   } catch (e) { log('update check failed: ' + e.message); if (manual) send('toast', 'Update check failed: ' + e.message); }
 }
-async function askUpdate(info) {
+let pendingUpdate = null;
+async function askUpdate(info) {   // a wife asks in her bubble (Update / Later); no native dialogs
   if (updateBusy) return;
+  pendingUpdate = info;
   const auto = process.env.PW_UPDATE_AUTO;   // tests only: 'update' | 'cancel'
-  const r = auto ? { response: auto === 'update' ? 0 : 1 } : await dialog.showMessageBox({
-    type: 'info', title: 'Project Wives update', message: `Project Wives ${info.version} is available`, noLink: true,
-    detail: `You have ${PKG.version}.\n\nUpdate downloads it into this folder, keeps your saves (data), mods, plugins and any content you edited, backs up replaced files to backup\\, then restarts.`,
-    buttons: ['Update', 'Cancel'], defaultId: 0, cancelId: 1,
-  });
-  if (r.response !== 0) { updateDismissed.add(info.version); send('update-cancelled'); return; }
-  doUpdate(info).catch((e) => { updateBusy = false; log('update failed: ' + e.stack); dialog.showErrorBox('Update failed', e.message + '\n\nNothing was changed. You can download it manually from the Releases page.'); });
+  if (auto) return auto === 'update' ? acceptUpdate() : (updateDismissed.add(info.version), send('update-cancelled'));
 }
+function acceptUpdate() {
+  const info = pendingUpdate || updateInfo; if (!info || updateBusy) return;
+  doUpdate(info).catch((e) => {
+    updateBusy = false; process.noAsar = false; log('update failed: ' + (e.stack || e));
+    send('update-failed', e.message || String(e));
+  });
+}
+ipcMain.on('update-accept', acceptUpdate);
+ipcMain.on('update-later', () => { if (pendingUpdate) updateDismissed.add(pendingUpdate.version); });
 async function doUpdate(info) {
   if (!info.asset || !info.asset.url) { shell.openExternal(info.page || 'https://github.com/chrispyni/project-wives/releases'); return; }
-  updateBusy = true; send('toast', `Downloading ${info.version}…`);
+  updateBusy = true; send('update-progress', `Downloading v${info.version}…`);
   const dir = path.join(CACHE_DIR, 'update'); fs.mkdirSync(dir, { recursive: true });
   let buf;
   if (/^https?:/.test(info.asset.url)) { const r = await fetch(info.asset.url, { headers: { 'User-Agent': 'ProjectWives-Updater' } }); if (!r.ok) throw new Error('download HTTP ' + r.status); buf = Buffer.from(await r.arrayBuffer()); }
@@ -322,12 +327,13 @@ async function doUpdate(info) {
   log(`update ${PKG.version} -> ${info.version}: ${plan.write.length} files staged, kept yours: ${plan.kept.join(', ') || 'none'}; backup ${backup}`);
   fs.unlinkSync(path.join(dir, info.asset.name));
   if (process.platform === 'win32' && app.isPackaged) {
-    const ps1 = path.join(dir, 'apply-update.ps1'); fs.writeFileSync(ps1, UPD.swapScript(staging, APP_ROOT, process.pid));
+    const ps1 = path.join(dir, 'apply-update.ps1'); fs.writeFileSync(ps1, '\uFEFF' + UPD.swapScript(staging, APP_ROOT, process.pid, PKG.version, backup));
+    send('update-progress', 'Restarting… see you in a sec!');
     const { spawn } = require('child_process');
     spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', ps1], { detached: true, stdio: 'ignore', windowsHide: true, cwd: APP_ROOT }).unref();
-    process.noAsar = false; app.quit();
+    process.noAsar = false; setTimeout(() => app.exit(0), 600);
   } else {   // dev / test: apply in place (no locked files), then report
-    UPD.applyStaged(staging, APP_ROOT); process.noAsar = false; send('toast', `Updated to ${info.version} (restart to use it).`); log('update applied in place (non-Windows/dev)');
+    UPD.applyStaged(staging, APP_ROOT); process.noAsar = false; send('update-done', { version: info.version }); log('update applied in place (non-Windows/dev)');
     if (process.env.PW_UPDATE_TEST) setTimeout(() => app.quit(), 500);
   }
 }
@@ -368,7 +374,11 @@ app.whenReady().then(() => {
   awTimer = setInterval(pollAwareness, Math.max(2, cfg.awareness.pollSeconds || 5) * 1000);
   setTimeout(pollRelay, 3000);
   watchContent();
-  if (cfg.update.checkOnStart !== false) setTimeout(() => checkUpdate(false), process.env.PW_UPDATE_TEST ? 2500 : 8000);
+  const upArg = process.argv.find((a) => a.startsWith('--updated-from='));
+  const failArg = process.argv.find((a) => a.startsWith('--update-failed='));
+  if (upArg) { log('restarted after update from ' + upArg.split('=')[1]); setTimeout(() => send('update-done', { version: PKG.version, from: upArg.split('=')[1] }), 3000); }
+  if (failArg) setTimeout(() => send('update-failed', 'I could not replace the files (your old version is untouched).'), 3000);
+  if (cfg.update.checkOnStart !== false && !upArg) setTimeout(() => checkUpdate(false), process.env.PW_UPDATE_TEST ? 2500 : 8000);
   screen.on('display-metrics-changed', () => { const d = screen.getPrimaryDisplay(); if (overlay) overlay.setBounds(d.bounds); send('workarea', { workArea: d.workArea, bounds: d.bounds, scale: d.scaleFactor }); });
   log(`started ${PKG.version} root=${APP_ROOT} data=${DATA_DIR} userData=${app.getPath('userData')}`);
 });

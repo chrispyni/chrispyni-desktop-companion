@@ -57,7 +57,7 @@ def draw_char(img, ox, oy, P, pose, f, nf):
     bob = 0; lean = 0; sit = pose in ("sit", "sleep"); eyes = "open"; mouth = "smile"
     arms = "down"; legsw = 0
     if pose == "idle": bob = 1 if f in (1, 2) else 0; eyes = "closed" if f == 3 else "open"
-    if pose == "walk": bob = int(abs(math.sin(ph)) * 2); legsw = int(round(math.sin(ph) * 3))
+    if pose == "walk": bob = int(abs(math.sin(ph)) * 2); legsw = int(round(math.sin(ph) * 2))  # moderate stride
     if pose == "talk": mouth = "open" if f % 2 == 0 else "smile"; bob = f % 2
     if pose == "sit": bob = 0; eyes = "closed" if f == 3 else "open"
     if pose == "sleep": eyes = "closed"; mouth = "flat"; bob = 1 if f >= 2 else 0

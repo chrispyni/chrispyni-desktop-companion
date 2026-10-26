@@ -15,9 +15,9 @@ function cmpVer(a, b) {
 const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
 
 /** GitHub /releases JSON (array) -> newest release with a -win.zip asset, newer than `current`, else null. */
-function pickRelease(list, current, opts = {}) {
-  // pre-releases are only offered on the opt-in "prerelease" channel (config update.channel)
-  const rels = (Array.isArray(list) ? list : [list]).filter((r) => r && !r.draft && r.tag_name && (!r.prerelease || opts.prerelease));
+function pickRelease(list, current) {
+  // only full releases: pre-releases and drafts are NEVER offered by the updater
+  const rels = (Array.isArray(list) ? list : [list]).filter((r) => r && !r.draft && !r.prerelease && r.tag_name);
   let best = null;
   for (const r of rels) {
     const asset = (r.assets || []).find((a) => /-win\.zip$/i.test(a.name));
@@ -109,23 +109,28 @@ function applyStaged(staging, appRoot) {
   for (const f of walk(staging)) { const rel = path.relative(staging, f); const dst = path.join(appRoot, rel); fs.mkdirSync(path.dirname(dst), { recursive: true }); fs.copyFileSync(f, dst); }
   fs.rmSync(staging, { recursive: true, force: true });
 }
-/** Windows swap script: wait for the app to exit, copy staged files over, relaunch. */
-function swapScript(staging, appRoot, pid) {
+/** Windows swap script (hidden PowerShell): wait for the app to exit, copy staged files over (with retries for
+ *  files Windows still holds), roll back from the backup on failure, relaunch with --updated-from / --update-failed. */
+function swapScript(staging, appRoot, pid, oldVersion = '', backup = '') {
   const q = (s) => "'" + String(s).replace(/'/g, "''") + "'";
   return [
     '$ErrorActionPreference = "Stop"',
+    `$src = ${q(staging)}; $dst = ${q(appRoot)}; $bak = ${q(backup)}; $old = ${q(oldVersion)}`,
+    `$exe = Join-Path $dst ${q(EXE)}; $log = Join-Path $dst 'logs\\update.log'`,
     `try { Wait-Process -Id ${Number(pid)} -Timeout 60 -ErrorAction SilentlyContinue } catch {}`,
-    'Start-Sleep -Milliseconds 700',
-    `$src = ${q(staging)}; $dst = ${q(appRoot)}`,
-    'try {',
-    '  Get-ChildItem -LiteralPath $src -Recurse -File | ForEach-Object {',
-    '    $rel = $_.FullName.Substring($src.Length).TrimStart("\\")',
-    '    $t = Join-Path $dst $rel; New-Item -ItemType Directory -Force -Path (Split-Path $t) | Out-Null',
-    '    Copy-Item -LiteralPath $_.FullName -Destination $t -Force }',
-    '  Remove-Item -LiteralPath $src -Recurse -Force',
-    `  Add-Content -LiteralPath (Join-Path $dst 'logs\\update.log') -Value "$(Get-Date -Format o) update applied"`,
-    '} catch { Add-Content -LiteralPath (Join-Path $dst "logs\\update.log") -Value "$(Get-Date -Format o) update FAILED: $_ (backup folder has the old files)" }',
-    `Start-Process -FilePath (Join-Path $dst ${q(EXE)}) -WorkingDirectory $dst`,
+    'Start-Sleep -Milliseconds 800',
+    'function CopyTree($from, $to) {',
+    '  Get-ChildItem -LiteralPath $from -Recurse -File | ForEach-Object {',
+    '    $rel = $_.FullName.Substring($from.Length).TrimStart("\\")',
+    '    $t = Join-Path $to $rel; New-Item -ItemType Directory -Force -Path (Split-Path $t) | Out-Null',
+    '    $n = 0; while ($true) { try { Copy-Item -LiteralPath $_.FullName -Destination $t -Force; break } catch { $n++; if ($n -ge 20) { throw }; Start-Sleep -Milliseconds 500 } } } }',
+    '$ok = $true',
+    'try { CopyTree $src $dst; Remove-Item -LiteralPath $src -Recurse -Force -ErrorAction SilentlyContinue',
+    '  Add-Content -LiteralPath $log -Value "$(Get-Date -Format o) update applied (from $old)" }',
+    'catch { $ok = $false; Add-Content -LiteralPath $log -Value "$(Get-Date -Format o) update FAILED: $_ - restoring backup"',
+    '  if ($bak -and (Test-Path -LiteralPath $bak)) { try { CopyTree $bak $dst } catch { Add-Content -LiteralPath $log -Value "restore failed: $_" } } }',
+    'if ($ok) { $arg = "--updated-from=$old" } else { $arg = "--update-failed=1" }',
+    'Start-Process -FilePath $exe -ArgumentList $arg -WorkingDirectory $dst',
   ].join('\r\n');
 }
 module.exports = { cmpVer, pickRelease, unzip, verify, planUpdate, stage, applyStaged, swapScript, sha256, EXE };

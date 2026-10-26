@@ -677,7 +677,7 @@ function drawBubble(ch) {
   for (const w of words) { const t = cur ? cur + ' ' + w : w; if (g.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; }
   if (cur) lines.push(cur);
   let bw = Math.min(maxW, Math.max(...lines.map((l) => g.measureText(l).width))) + 16;
-  if (b.button) { g.font = 'bold 12px "Segoe UI", sans-serif'; bw = Math.max(bw, Math.min(260, g.measureText(b.button.label).width + 34)); g.font = '13px "Segoe UI", sans-serif'; }
+  if (b.button) { g.font = 'bold 12px "Segoe UI", sans-serif'; bw = Math.max(bw, Math.min(260, g.measureText(b.button.label).width + 34 + (b.button2 ? g.measureText(b.button2.label).width + 30 : 0))); g.font = '13px "Segoe UI", sans-serif'; }
   const bh = lines.length * 16 + 10 + (b.button ? 30 : 0);
   const { x, y } = bubbleBox(ch, bw, bh);
   roundRect(x, y, bw, bh, 8); g.fill(); g.stroke();
@@ -686,10 +686,16 @@ function drawBubble(ch) {
   g.fillStyle = st.text || '#000'; lines.forEach((l, i) => g.fillText(l, x + 8, y + 18 + i * 16));
   b.rect = { x, y, w: bw, h: bh };
   if (b.button) {
-    const by = y + bh - 30; g.fillStyle = '#6a2fa8'; roundRect(x + 6, by, bw - 12, 24, 6); g.fill();
+    const by = y + bh - 30, two = !!b.button2, w1 = two ? Math.round((bw - 18) * 0.62) : bw - 12;
+    g.fillStyle = '#6a2fa8'; roundRect(x + 6, by, w1, 24, 6); g.fill();
     g.font = 'bold 12px "Segoe UI", sans-serif'; g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText(b.button.label, x + bw / 2, by + 12, bw - 24); g.textAlign = 'left'; g.textBaseline = 'alphabetic';
-    b.button.rect = { x: x + 6, y: by, w: bw - 12, h: 24 };
+    g.fillText(b.button.label, x + 6 + w1 / 2, by + 12, w1 - 12);
+    b.button.rect = { x: x + 6, y: by, w: w1, h: 24 };
+    if (two) {
+      const x2 = x + 12 + w1, w2 = bw - 18 - w1; g.fillStyle = '#3a2a4a'; roundRect(x2, by, w2, 24, 6); g.fill();
+      g.fillStyle = '#ddd'; g.fillText(b.button2.label, x2 + w2 / 2, by + 12, w2 - 8); b.button2.rect = { x: x2, y: by, w: w2, h: 24 };
+    }
+    g.textAlign = 'left'; g.textBaseline = 'alphabetic';
   }
 }
 function roundRect(x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
@@ -784,12 +790,12 @@ function loop(now) {
 // One source of truth: the overlay captures the mouse ONLY over a drawn sprite, a bubble button or a visible UI box.
 const lastMouse = { x: -1, y: -1 }; let capturing = false, drag = null;
 function hitChar(x, y) { for (const ch of Object.values(chars).sort((a, b) => b.y - a.y)) { if (ch.hidden) continue; if (inRect(ch.hit || ch.bbox(), x, y)) return ch; } return null; }
-function hitBubbleBtn(x, y) { for (const ch of Object.values(chars)) { const r = ch.bubble && ch.bubble.button && ch.bubble.button.rect; if (r && inRect(r, x, y)) return ch.bubble.button; } return null; }
+function hitBubbleBtn(x, y) { for (const ch of Object.values(chars)) { const b = ch.bubble; if (!b) continue; for (const k of ['button', 'button2']) { const r = b[k] && b[k].rect; if (r && inRect(r, x, y)) return b[k]; } } return null; }
 function uiRects() { return [...document.querySelectorAll('.ui')].filter((e) => !e.classList.contains('hidden')).map((e) => { const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; }); }
 function setCapture(on) { if (on !== capturing) { capturing = on; ipcRenderer.send('set-capture', on); } }
 function evalCapture() {
   const sprites = Object.values(chars).filter((c) => !c.hidden).map((c) => c.hit || c.bbox());
-  const btns = Object.values(chars).flatMap((c) => [c.bubble && c.bubble.button && c.bubble.button.rect, c.hoverRect]).filter(Boolean);
+  const btns = Object.values(chars).flatMap((c) => [c.bubble && c.bubble.button && c.bubble.button.rect, c.bubble && c.bubble.button2 && c.bubble.button2.rect, c.hoverRect]).filter(Boolean);
   const pr = props.filter((p) => !p.portal).map(propRect);
   setCapture(wantsCapture(lastMouse.x, lastMouse.y, { sprites: [...sprites, ...btns, ...pr], uiRects: uiRects(), dragging: !!drag }));
   const h = hitChar(lastMouse.x, lastMouse.y); if (h) h.hoverT = performance.now();
@@ -864,7 +870,7 @@ function openMenu(x, y, items) {
   m.classList.remove('hidden');
   const r = m.getBoundingClientRect();
   m.style.left = clamp(x, wa.x + 2, wa.x + wa.w - r.width - 2) + 'px'; m.style.top = clamp(y, wa.y + 2, wa.y + wa.h - r.height - 2) + 'px';
-  ipcRenderer.send('focus-overlay'); evalCapture();
+  evalCapture();
 }
 function showInfo(ch) {   // name + mood label only (never numbers or hidden values)
   const el = $('info'); el.innerHTML = '';
@@ -1189,7 +1195,7 @@ function setDebugMode(on) {
   if (!debugMode) debugDraw = false;
   ipcRenderer.send('debug-mode', debugMode);
 }
-function toggleDebug() { debugOpen = !debugOpen; $('debug').classList.toggle('hidden', !debugOpen); if (debugOpen) { buildDebug(); ipcRenderer.send('focus-overlay'); } evalCapture(); }
+function toggleDebug() { debugOpen = !debugOpen; $('debug').classList.toggle('hidden', !debugOpen); if (debugOpen) { buildDebug(); ipcRenderer.send('focus-overlay'); } else ipcRenderer.send('blur-overlay'); evalCapture(); }
 function btn(label, fn, cls) { const b = document.createElement('button'); b.textContent = label; if (cls) b.className = cls; b.onclick = (e) => { e.stopPropagation(); fn(b); if (debugOpen) setTimeout(refreshDebugMeters, 50); }; return b; }
 function section(root, title) { const h = document.createElement('h3'); h.textContent = title; root.append(h); const d = document.createElement('div'); root.append(d); return d; }
 function refreshDebugMeters() {
@@ -1337,7 +1343,17 @@ ipcRenderer.on('cmd', (_e, c) => {
   if (c.cmd === 'reset-pity' && pity) pity.reset();
 });
 ipcRenderer.on('awareness', (_e, a) => onAwareness(a));
-ipcRenderer.on('update-available', (_e, u) => { const w = pick(wives().filter((c) => !c.hidden)); if (w) speak(w, 'update_available', { version: u.version }) || w.say(`A new version (${u.version}) is here~ Update?`, 8); });
+// Update flow: one wife announces it in her bubble with Update / Later buttons (no native dialogs).
+let updWife = null;
+ipcRenderer.on('update-available', (_e, u) => {
+  const w = pick(wives().filter((c) => !c.hidden)); if (!w) return; updWife = w;
+  w.say(`A new version (v${u.version}) is here~ Want me to update?`, 60);
+  w.bubble.button = { label: '⬇ Update', fn: () => { w.say(`Updating to v${u.version}… I'll be right back!`, 120); ipcRenderer.send('update-accept'); } };
+  w.bubble.button2 = { label: 'Later', fn: () => { w.bubble = null; ipcRenderer.send('update-later'); } };
+});
+ipcRenderer.on('update-progress', (_e, m) => { const w = (updWife && !updWife.hidden) ? updWife : pick(wives().filter((c) => !c.hidden)); if (w) { w.bubble = { text: m, until: performance.now() + 120000, button: null }; } });
+ipcRenderer.on('update-failed', (_e, m) => { const w = pick(wives().filter((c) => !c.hidden)); if (w) w.say(`The update failed… ${m} We're still here though!`, 12); });
+ipcRenderer.on('update-done', (_e, u) => { setTimeout(() => { const w = pick(wives().filter((c) => !c.hidden)); if (w) w.say(`Updated to v${u.version}! ✨`, 10); }, 2500); });
 ipcRenderer.on('update-cancelled', () => { const w = wives().find((c) => c.bubble && !c.bubble.dots); if (w) w.bubble = null; });
 ipcRenderer.on('relay-replies', (_e, r) => applyReplies(r));
 ipcRenderer.on('relay-status', (_e, s) => { relayStatus = s; $('chatStatus').textContent = s.enabled ? (s.lastError ? `relay error: ${s.lastError}` : 'relay: connected to the real Nixie & Noct (replies can take a while)') : 'offline brain (relay off - tray > Relay)'; });
