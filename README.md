@@ -2,6 +2,8 @@
 
 # 💛💜 Project Wives
 
+[![Download latest](https://img.shields.io/github/v/release/chrispyni/project-wives?label=Download%20latest&style=for-the-badge)](https://github.com/chrispyni/project-wives/releases/latest)
+
 Two pixel-art elf queens, **Nixie** and **Noct**, living on top of your Windows taskbar.
 
 ![Nixie, ChrispyNi and Noct](docs/lineup.png)
