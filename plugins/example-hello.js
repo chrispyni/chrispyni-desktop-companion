@@ -1,5 +1,5 @@
 // Example plugin. Plugins are plain JS files: module.exports = { name, setup(api) }.
-// Drop new ones in /plugins, %APPDATA%/Project Wives/plugins, or /mods/<mod>/plugins. Hot-reloads with content.
+// Drop new ones in the app's plugins/ folder or in mods/<mod>/plugins/. Hot-reloads with content.
 module.exports = {
   name: 'example-hello',
   setup(api) {

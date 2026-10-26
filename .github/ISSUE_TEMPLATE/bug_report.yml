@@ -22,7 +22,7 @@ body:
     attributes: { label: Steps to reproduce, placeholder: "1. Summon a sofa\n2. Drag Noct onto it\n3. ..." }
   - type: textarea
     id: log
-    attributes: { label: Log, description: "Paste the end of %APPDATA%\\Project Wives\\project-wives.log", render: text }
+    attributes: { label: Log, description: "Paste the end of logs\\project-wives.log (inside the ProjectWives folder)", render: text }
   - type: textarea
     id: shots
     attributes: { label: Screenshots, description: Drag images here }

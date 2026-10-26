@@ -1,7 +1,7 @@
 {
   "name": "project-wives",
   "productName": "Project Wives",
-  "version": "0.1.0-alpha",
+  "version": "0.1.1-alpha",
   "description": "Desktop companions: Nixie & Noct, elf queens of ChrispyNi",
   "main": "src/main.js",
   "author": "ChrispyNi",
@@ -11,7 +11,8 @@
     "test": "node --test tests/",
     "sprites": "python3 tools/gen_sprites.py",
     "set-passphrase": "node tools/set-passphrase.js",
-    "dist:win": "electron-builder --win portable zip --x64"
+    "dist:win": "electron-builder --win 7z zip --x64",
+    "dist:win-installer": "electron-builder --win nsis --x64"
   },
   "devDependencies": {
     "electron": "^31.7.7",
@@ -24,7 +25,20 @@
       "src/**",
       "package.json"
     ],
-    "extraResources": [
+    "win": {
+      "target": [
+        "7z",
+        "zip"
+      ],
+      "signAndEditExecutable": false
+    },
+    "directories": {
+      "output": "dist"
+    },
+    "asarUnpack": [
+      "src/win-awareness.ps1"
+    ],
+    "extraFiles": [
       {
         "from": "content",
         "to": "content"
@@ -56,23 +70,31 @@
       {
         "from": "CHANGELOG.md",
         "to": "CHANGELOG.md"
+      },
+      {
+        "from": "SPRITES.md",
+        "to": "SPRITES.md"
+      },
+      {
+        "from": "LICENSE",
+        "to": "LICENSE.txt"
+      },
+      {
+        "from": "build/folder-readme.txt",
+        "to": "READ ME FIRST.txt"
       }
     ],
-    "win": {
-      "target": [
-        "portable",
-        "zip"
-      ],
-      "signAndEditExecutable": false
-    },
-    "portable": {
-      "artifactName": "ProjectWives-${version}-portable.exe"
-    },
-    "directories": {
-      "output": "dist"
-    },
-    "asarUnpack": [
-      "src/win-awareness.ps1"
-    ]
+    "artifactName": "ProjectWives-${version}-win.${ext}",
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": false,
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "ProjectWives-${version}-setup.${ext}",
+      "shortcutName": "Project Wives",
+      "createDesktopShortcut": true,
+      "include": "build/installer.nsh"
+    }
   }
 }

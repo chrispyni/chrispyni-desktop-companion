@@ -1,1 +1,1 @@
-{ "version": "0.1.0-alpha", "date": "2026-10-26", "notes": "First alpha.", "download": "https://drive.google.com/drive/folders/134T9Tb1D0p1QkrseUDQ69pWKDkxK_l33" }
+{ "version": "0.1.1-alpha", "date": "2026-10-26", "notes": "Self-contained folder build: everything (mods, data, logs, cache) lives in the app folder.", "download": "https://github.com/chrispyni/project-wives/releases" }

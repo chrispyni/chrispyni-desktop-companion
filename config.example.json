@@ -1,5 +1,5 @@
 {
-  "_info": "Copied to %APPDATA%/Project Wives/config.json on first start. Edit that copy (tray > Settings > Open config). Restart or tray > Reload after editing.",
+  "_info": "Copied to data/config.json (inside the app folder) on first start. Edit that copy (tray > Settings > Open config). Restart or tray > Reload after editing.",
   "user": "ChrispyNi",
   "edition": "wives",
   "characters": ["nixie", "noct"],

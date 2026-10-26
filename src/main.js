@@ -8,15 +8,40 @@ const { NtfyRelay } = require('./core/relay');
 const { classifyApp } = require('./core/awareness');
 const { deepMerge } = require('./core/content');
 
+// ---------- self-contained layout: EVERYTHING lives next to the exe (like a game) ----------
+//  ProjectWives/  Project Wives.exe  content/  mods/  plugins/  templates/  data/  logs/  cache/
 const DEV_ROOT = path.join(__dirname, '..');
-const APP_ROOT = app.isPackaged ? process.resourcesPath : DEV_ROOT;
-const USER_DIR = process.env.PW_USER_DIR || path.join(app.getPath('appData'), 'Project Wives');
-const PORTABLE_DIR = process.env.PORTABLE_EXECUTABLE_DIR || '';
+const APP_ROOT = process.env.PW_ROOT || (app.isPackaged ? path.dirname(process.execPath) : DEV_ROOT);
+const DATA_DIR = path.join(APP_ROOT, 'data');     // config.json, save.json
+const LOG_DIR = path.join(APP_ROOT, 'logs');
+const CACHE_DIR = path.join(APP_ROOT, 'cache');   // Chromium profile, GPU/code cache, temp
+const USER_DIR = DATA_DIR;
 const PKG = require('../package.json');
-fs.mkdirSync(path.join(USER_DIR, 'mods'), { recursive: true });
 
-const LOG = path.join(USER_DIR, 'project-wives.log');
-function log(...a) { const s = `[${new Date().toISOString()}] ${a.join(' ')}`; console.log(s); try { fs.appendFileSync(LOG, s + '\n'); } catch {} }
+function ensureWritable() {
+  try {
+    for (const d of [DATA_DIR, LOG_DIR, CACHE_DIR, path.join(CACHE_DIR, 'temp'), path.join(APP_ROOT, 'mods')]) fs.mkdirSync(d, { recursive: true });
+    const t = path.join(DATA_DIR, '.write-test'); fs.writeFileSync(t, 'ok'); fs.unlinkSync(t);
+    return true;
+  } catch (e) { return e; }
+}
+const writable = ensureWritable();
+if (writable === true) {
+  // Point every Electron/Chromium path into the app folder BEFORE app is ready.
+  const TEMP = path.join(CACHE_DIR, 'temp');
+  app.setPath('appData', CACHE_DIR);
+  app.setPath('userData', path.join(CACHE_DIR, 'chromium'));
+  app.setPath('sessionData', path.join(CACHE_DIR, 'chromium'));
+  app.setPath('logs', LOG_DIR);
+  app.setPath('crashDumps', path.join(LOG_DIR, 'crashes'));
+  app.setPath('temp', TEMP);
+  app.commandLine.appendSwitch('disk-cache-dir', path.join(CACHE_DIR, 'disk'));
+  app.commandLine.appendSwitch('user-data-dir', path.join(CACHE_DIR, 'chromium'));
+  process.env.TEMP = process.env.TMP = process.env.TMPDIR = TEMP;   // child processes (PowerShell watcher) use it too
+}
+
+const LOG = path.join(LOG_DIR, 'project-wives.log');
+function log(...a) { const s = `[${new Date().toISOString()}] ${a.join(' ')}`; console.log(s); if (writable === true) try { fs.appendFileSync(LOG, s + '\n'); } catch {} }
 
 // ---------- config ----------
 let cfg;
@@ -35,13 +60,13 @@ function saveConfig() {
   user.awareness = cfg.awareness; user.relay = cfg.relay; user.debug = cfg.debug;
   fs.writeFileSync(p, JSON.stringify(user, null, 2));
 }
-loadConfig();
+try { loadConfig(); } catch (e) { cfg = JSON.parse(fs.readFileSync(path.join(APP_ROOT, "config.example.json"), "utf8")); }
 
 function contentDirs() {
   return {
     base: path.join(APP_ROOT, 'content'),
-    mods: [path.join(APP_ROOT, 'mods'), path.join(USER_DIR, 'mods'), PORTABLE_DIR && path.join(PORTABLE_DIR, 'mods')].filter(Boolean),
-    plugins: [path.join(APP_ROOT, 'plugins'), path.join(USER_DIR, 'plugins')],
+    mods: [path.join(APP_ROOT, 'mods')],
+    plugins: [path.join(APP_ROOT, 'plugins')],
     user: USER_DIR, appRoot: APP_ROOT,
   };
 }
@@ -132,8 +157,9 @@ function buildTray() {
     { label: 'Relay to the real Nixie & Noct', type: 'checkbox', checked: !!cfg.relay.enabled, click: () => { cfg.relay.enabled = !cfg.relay.enabled; saveConfig(); relay.cfg = cfg.relay; send('config', cfg); buildTray(); } },
     { label: 'Settings / folders', submenu: [
       { label: 'Open config.json', click: () => shell.openPath(path.join(USER_DIR, 'config.json')) },
-      { label: 'Open my mods folder', click: () => shell.openPath(path.join(USER_DIR, 'mods')) },
-      { label: 'Open built-in content', click: () => shell.openPath(path.join(APP_ROOT, 'content')) },
+      { label: 'Open app folder', click: () => shell.openPath(APP_ROOT) },
+      { label: 'Open mods folder', click: () => shell.openPath(path.join(APP_ROOT, 'mods')) },
+      { label: 'Open content folder', click: () => shell.openPath(path.join(APP_ROOT, 'content')) },
       { label: 'Open sprite templates', click: () => shell.openPath(path.join(APP_ROOT, 'templates')) },
       { label: 'Open log', click: () => shell.openPath(LOG) },
       { label: 'Reload config + content', click: () => { loadConfig(); relay.cfg = cfg.relay; send('config', cfg); send('content-changed'); buildTray(); } },
@@ -237,6 +263,11 @@ function watchContent() {
 // ---------- app ----------
 if (!app.requestSingleInstanceLock() && !process.env.PW_SCREENSHOT) app.quit();
 app.whenReady().then(() => {
+  if (writable !== true) {
+    require('electron').dialog.showErrorBox('Project Wives - folder is read-only',
+      `Project Wives keeps everything (saves, config, mods, logs) inside its own folder:\n${APP_ROOT}\n\nWindows does not allow writing there (${writable.code || writable.message}).\nPlease move or install the Project Wives folder somewhere you can write, e.g. D:\\Games\\ProjectWives or your Desktop/Documents - not C:\\Program Files.`);
+    app.quit(); return;
+  }
   createOverlay();
   try {
     const icon = nativeImage.createFromPath(path.join(__dirname, 'renderer', 'tray.png'));
@@ -256,7 +287,7 @@ app.whenReady().then(() => {
   watchContent();
   if (cfg.update.checkOnStart) setTimeout(() => checkUpdate(false), 8000);
   screen.on('display-metrics-changed', () => send('workarea', screen.getPrimaryDisplay().workArea));
-  log(`started ${PKG.version} root=${APP_ROOT} user=${USER_DIR}`);
+  log(`started ${PKG.version} root=${APP_ROOT} data=${DATA_DIR} userData=${app.getPath('userData')}`);
 });
 app.on('will-quit', () => { globalShortcut.unregisterAll(); if (winWatcher) winWatcher.kill(); });
 app.on('window-all-closed', () => app.quit());

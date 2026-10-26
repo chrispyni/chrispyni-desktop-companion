@@ -73,7 +73,7 @@ Plays once at the spot (set `"loop": true` for looping). `manaCost` is charged w
 ## Drop in a new sprite
 
 1. Copy a template PNG + JSON. Draw. Export PNG (no colour profile needed, transparency on).
-2. Put it in a mod folder, e.g. `%APPDATA%\Project Wives\mods\my-stuff\props\`:
+2. Put it in a mod folder, e.g. `ProjectWives\mods\my-stuff\props\` (the `mods` folder next to the exe):
    `fox_plush.png` + `fox_plush.json` (`"id":"fox_plush","image":"fox_plush.png",...`).
    For a character: `mods/my-stuff/characters/<id>/character.json` + `sheet.png`.
    To **replace** Nixie's look only: `mods/my-stuff/characters/nixie/character.json` with `{"sheet":"sheet.png"}` + your sheet.
