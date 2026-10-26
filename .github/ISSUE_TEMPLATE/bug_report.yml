@@ -1,0 +1,28 @@
+name: Bug report
+description: Something is broken or behaves strangely
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes: { label: Version, description: "Tray menu shows it (e.g. 0.1.0-alpha)", placeholder: 0.1.0-alpha }
+    validations: { required: true }
+  - type: dropdown
+    id: build
+    attributes: { label: Which build?, options: [Portable exe, 7z / unpacked, From source (npm start)] }
+    validations: { required: true }
+  - type: input
+    id: os
+    attributes: { label: Windows version, placeholder: "Windows 11 23H2, 2 monitors, taskbar at bottom" }
+  - type: textarea
+    id: what
+    attributes: { label: What happened?, description: "And what you expected instead" }
+    validations: { required: true }
+  - type: textarea
+    id: steps
+    attributes: { label: Steps to reproduce, placeholder: "1. Summon a sofa\n2. Drag Noct onto it\n3. ..." }
+  - type: textarea
+    id: log
+    attributes: { label: Log, description: "Paste the end of %APPDATA%\\Project Wives\\project-wives.log", render: text }
+  - type: textarea
+    id: shots
+    attributes: { label: Screenshots, description: Drag images here }

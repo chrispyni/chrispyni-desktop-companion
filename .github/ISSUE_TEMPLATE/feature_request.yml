@@ -1,0 +1,14 @@
+name: Feature request
+description: Suggest a new feature, behaviour, interaction or event
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes: { label: Your idea, description: What should Nixie / Noct / ChrispyNi be able to do? }
+    validations: { required: true }
+  - type: dropdown
+    id: area
+    attributes: { label: Area, multiple: true, options: [Characters & animations, Interactions, Props & furniture, Mana, Our room, Moods & dialogue, Awareness, Rare events, Relay / real replies, Modding & plugins, Debug menu & cheats, Other] }
+  - type: textarea
+    id: why
+    attributes: { label: Why / when would it happen? }

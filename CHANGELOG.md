@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0-alpha — 2026-10-26
+## 0.1.0 (alpha) — 2026-10-26
 First alpha.
 * Nixie & Noct live on top of the taskbar in a transparent, always-on-top, click-through overlay (only sprites/UI catch the mouse). Drag them, poke them, double-click to chat.
 * ChrispyNi as a guest character (visits; tray → Invite; events).

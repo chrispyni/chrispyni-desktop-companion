@@ -1,0 +1,22 @@
+name: Asset suggestion
+description: Suggest a sprite, prop, effect, room, sound or dialogue lines
+labels: [asset]
+body:
+  - type: dropdown
+    id: type
+    attributes: { label: Asset type, options: [Character sprite / animation, Prop / furniture, Effect, Room background, Dialogue lines, Sound / music, Other] }
+    validations: { required: true }
+  - type: textarea
+    id: desc
+    attributes: { label: Description, description: "What is it, where should it appear, who uses it?" }
+    validations: { required: true }
+  - type: textarea
+    id: files
+    attributes: { label: Files, description: "Attach PNGs made from the templates in /templates (see SPRITES.md). Assets are reviewed for theme fit before being added." }
+  - type: checkboxes
+    id: rights
+    attributes:
+      label: Rights
+      options:
+        - label: I made this asset (or have the right to share it) and agree it may be included in Project Wives.
+          required: true
