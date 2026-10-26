@@ -15,8 +15,9 @@ function cmpVer(a, b) {
 const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
 
 /** GitHub /releases JSON (array) -> newest release with a -win.zip asset, newer than `current`, else null. */
-function pickRelease(list, current) {
-  const rels = (Array.isArray(list) ? list : [list]).filter((r) => r && !r.draft && r.tag_name);
+function pickRelease(list, current, opts = {}) {
+  // pre-releases are only offered on the opt-in "prerelease" channel (config update.channel)
+  const rels = (Array.isArray(list) ? list : [list]).filter((r) => r && !r.draft && r.tag_name && (!r.prerelease || opts.prerelease));
   let best = null;
   for (const r of rels) {
     const asset = (r.assets || []).find((a) => /-win\.zip$/i.test(a.name));

@@ -272,5 +272,47 @@
  "fed": [
   "...Sweet. Thank you, love.",
   "*small bite* ...Good."
- ]
+ ],
+ "food_full": [
+  "...Enough. I'm full.",
+  "No more, love. I'm full.",
+  "...That's plenty."
+ ],
+ "mana_fine": {
+  "any": [
+   "...My mana is fine.",
+   "I'm well. No need, love."
+  ],
+  "calm": [
+   "...Plenty left. Rest is not needed."
+  ]
+ },
+ "watch_comment": [
+  "...Hm.",
+  "...Interesting.",
+  "*watches quietly*",
+  "...I would not have done that."
+ ],
+ "curious": [
+  "...? What are you planning?",
+  "*watches the cursor* ..."
+ ],
+ "prop_clean": [
+  "...Unused. Unmade.",
+  "*waves it into the void*"
+ ],
+ "prop_use": {
+  "sip": [
+   "*quiet sip* ..."
+  ],
+  "read": [
+   "*reads* ...Hm."
+  ],
+  "light": [
+   "*lights a candle* ..."
+  ],
+  "play": [
+   "*spins the orb idly*"
+  ]
+ }
 }

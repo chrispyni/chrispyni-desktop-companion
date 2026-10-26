@@ -8,7 +8,7 @@ const { Mana } = require('../core/mana');
 const { MoodState, animForMood } = require('../core/mood');
 const { OfflineBrain } = require('../core/brain');
 const { parseReply, parseText, buildIndex } = require('../core/actions');
-const { parseCheat, COMMANDS, WORD_CODES } = require('../core/cheats');
+const { parseCheat, COMMANDS, WORD_CODES, toggleCheat } = require('../core/cheats');
 const { checkPassphrase, isAdminByIdentity } = require('../core/admin');
 const { buildMessage } = require('../core/relay');
 const { timeOfDay, isSleepHour } = require('../core/awareness');
@@ -19,6 +19,11 @@ const { landingFor, PHYS_DEFAULTS } = require('../core/physics');
 const { inRect, spriteRect, wantsCapture, chatShouldClose } = require('../core/hit');
 const { sleepPlan } = require('../core/sleepplan');
 const { classifyChat, repliers } = require('../core/chatfilter');
+const { tryEat } = require('../core/food');
+const { Pity } = require('../core/pity');
+const { useOf, idleExpired } = require('../core/propuse');
+const { isNear } = require('../core/hit');
+const { isWatching } = require('../core/awareness');
 
 const $ = (id) => document.getElementById(id);
 const cv = $('world'); const g = cv.getContext('2d');
@@ -29,7 +34,9 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 let INIT, cfg, content, brain, events, hooks = new Hooks((m) => ipcRenderer.send('log', m));
 let ground = 0, W = 0, H = 0, DPR = 1, speed = 1, debugDraw = false, infinite = false, showAllMana = false;
 const wa = { x: 0, y: 0, w: 0, h: 0 };     // work area in window (CSS px == DIP) coords; characters never leave it
-let roomWho = [], lastUserAt = Date.now(), lastChatter = 0;
+let roomWho = [], lastUserAt = Date.now(), lastChatter = 0, debugMode = false, watching = false, pity = null;
+const cheatState = {};
+const lastMove = { x: -1, y: -1, at: Date.now() };
 const images = {};
 const chars = {};          // id -> Char
 const props = [];          // {uid,id,def,x,y,t}
@@ -53,6 +60,7 @@ function loadAll() {
   for (const k of Object.keys(obCache)) delete obCache[k];
   content = loadContent(INIT.dirs.base, INIT.dirs.mods, { disabledMods: cfg.disabledMods });
   content._index = buildIndex(content);
+  { const old = pity; pity = new Pity(rules().guests || {}); if (old) pity.load(old.toJSON()); }
   if (content.errors.length) toast('Content errors: ' + content.errors.slice(0, 2).join(' | '));
   brain ? brain.setLines(content.lines) : (brain = new OfflineBrain(content.lines));
   events ? events.setDefs(content.events) : (events = new EventSystem(content.events));
@@ -233,7 +241,7 @@ function startAction(ch, a) {
       const flag = a.type === 'sit' ? 'sittable' : 'layable';
       const p = a.on && a.on !== 'floor' ? (nearestProp(ch.x, a.on, ch) || (a.summon !== false && content.props[a.on] && summon(ch, a.on))) : nearestProp(ch.x, flag, ch);
       if (p && Math.abs(p.x - ch.x) > 8) { ch.queue.unshift(a); ch.target = p.x; ch.state = 'walk'; return false; }
-      ch.seat = p || null; ch.state = a.type; ch.play(a.type, 0, true);
+      ch.seat = p || null; if (p) p.lastUsed = Date.now(); ch.state = a.type; ch.play(a.type, 0, true);
       if (p) { ch.x = p.x + (countOn(p) - 1) * 20; ch.y = ground - (p.def.seatY ?? (a.type === 'lay' ? 12 : 8)) * (cfg.scale || 2); }
       ch.holdUntil = now + (a.sec || rnd(8, 20)) * 1000; return true;
     }
@@ -268,6 +276,9 @@ function startAction(ch, a) {
       ch.holdUntil = now + 6 * 3600 * 1000; spawnFx('levitate_aura', ch.x, ch.y - ch.fh * ch.scale * 0.5);
       hooks.emit('meditate', { char: ch.id, on: p ? p.id : 'floor' }); return true;
     }
+    case 'watch': ch.state = 'watch'; ch.facing = 1; ch.play('watch', 0, true); ch.holdUntil = now + 6 * 3600e3; return true;
+    case 'use_prop': return useProp(ch, a);
+    case 'clean_prop': { const p = props.find((q) => q.uid === a.uid); if (p) { ch.play('cast', 0.8); setTimeout(() => { if (props.includes(p)) { if (Math.random() < 0.3) speak(ch, 'prop_clean', { ambient: true }); deleteProp(p); } }, 600); } ch.waitUntil = now + 900; return false; }
     case 'play': ch.play(a.anim, a.sec || 1.5); ch.waitUntil = now + (a.sec || 1.5) * 1000; return false;
     case 'dots': ch.dots(a.sec || 3); return true;
     case 'ask_mana': askMana(ch); return true;
@@ -396,7 +407,8 @@ function chrispyTakes() {
 }
 function confirmReplenish(ch) {
   const plan = currentPlan(); const who = plan.length > 1 || (plan.length && plan[0] === ch.id) ? plan : [ch.id];
-  ch.bubble = { text: 'Replenish mana?', until: performance.now() + 12000, button: { label: who.length > 1 ? '💜 Yes, both of us (door)' : '💜 Yes, open the door', fn: () => { ch.bubble = null; goToRoom('our_room', who, { source: 'user' }); } } };
+  if (ch.mana && ch.mana.ratio >= 0.5 && !infinite) { speak(ch, 'mana_fine') || ch.say("I'm fine~", 3); return; }   // only offered below 50%
+  ch.bubble = { text: 'Replenish mana?', until: performance.now() + 12000, button: { label: who.length > 1 ? '💜 Rest together' : '💜 Open the door', fn: () => { ch.bubble = null; goToRoom('our_room', who, { source: 'user' }); } } };
 }
 function currentPlan() { return sleepPlan(wives().map((c) => ({ id: c.id, ratio: c.mana.ratio, low: c.mana.low && !infinite })), roomOpen ? roomWho : []); }
 let lastAsk = 0;
@@ -439,6 +451,47 @@ function land(ch) {
 }
 
 // ---------------- simulation ----------------
+function usablePropFor(ch) {
+  const ok = props.filter((p) => useOf(p.def) && !p.portal && !p.def.door && canUse(p, ch) && !countOn(p));
+  return ok.length ? pick(ok) : null;
+}
+function canUse(p, ch) { const u = p.def.usableBy; return !u || u === 'all' || (Array.isArray(u) && u.includes(ch.id)); }
+/** sit/lay reuse the seat actions; sip/read/light/play: walk over, do the thing for a bit. */
+function useProp(ch, a) {
+  const p = props.find((q) => q.uid === a.uid); if (!p) return true;
+  const use = useOf(p.def); p.lastUsed = Date.now();
+  if (use === 'sit' || use === 'lay') { ch.queue.unshift({ type: use }); return true; }
+  if (Math.abs(ch.x - p.x) > 24) { ch.queue.unshift({ type: 'walk_to', target: p.x + (ch.x < p.x ? -22 : 22) }, a); return true; }
+  ch.facing = p.x >= ch.x ? 1 : -1;
+  const [lo, hi] = (rules().props || {}).useSec || [6, 14];
+  const anim = { sip: 'happy', read: 'talk', light: 'cast', play: 'happy' }[use] || 'idle';
+  ch.play(anim, rnd(lo, hi), true); ch.waitUntil = performance.now() + rnd(lo, hi) * 1000;
+  if (use === 'light') spawnFx('sparkle', p.x, p.y - 20);
+  if (Math.random() < 0.1) speak(ch, 'prop_use', { ambient: true }); else if (Math.random() < 0.3) ch.dots(2);
+  return true;
+}
+/** Unused for a while: whoever made it comes and dismisses it (50% back); ownerless props just fade. */
+function cleanupProps() {
+  const now = Date.now();
+  for (const p of props.slice()) {
+    if (countOn(p) || p.cleaning || !idleExpired(p, now, rules().props || {})) continue;
+    const o = p.owner && chars[p.owner];
+    if (o && o.mana && !o.hidden && o.state !== 'watch' && !o.seat) { p.cleaning = true; o.enqueue([{ type: 'walk_to', target: p.x + (o.x < p.x ? -26 : 26) }, { type: 'clean_prop', uid: p.uid }]); }
+    else if (!o) props.splice(props.indexOf(p), 1);
+  }
+}
+/** Soft-pity guest check (rules/guests.json). */
+function pityFor(gid) { const d = content.characters[gid]; return d && d.pity ? (d._pity || (d._pity = new Pity(d.pity))) : pity; }
+let lastGuestCheck = Date.now();
+function guestCheck() {
+  const G = rules().guests || {}; if (Date.now() - lastGuestCheck < (G.checkMin ?? 20) * 60000) return; lastGuestCheck = Date.now();
+  if (roomOpen || sleepMode || trip || Object.values(chars).some((c) => c.role === 'guest')) return;
+  if (Date.now() - lastUserAt > ((cfg.talk || {}).userIgnoredMin ?? 3) * 60000) pity.act('ignored');
+  const gid = pick(Object.keys(content.characters).filter((id) => content.characters[id].role === 'guest' && !content.characters[id].noVisit));
+  if (!gid) return; const pp = pityFor(gid);
+  if (pp.roll()) { if (pp !== pity) pity.reset(); visit(gid); }
+  saveSoon();
+}
 function think(ch, now) {
   // autonomous behavior when queue is empty
   const m = ch.mood.current;
@@ -459,6 +512,9 @@ function think(ch, now) {
     const g = chars.chrispyni; const kinds = g ? ['lovely_gift', 'lovely_twirl'] : ['levitate', 'craft_together'];
     const kind = pick(kinds), with_ = g ? g.id : other && other.id;
     if (with_) ch.enqueue([{ type: 'interact', kind, with: with_, ambient: true }]);
+  }
+  else if (ch.role !== 'guest' && r < 0.12 + ((rules().props || {}).useChance ?? 0.12) && usablePropFor(ch)) {
+    const p = usablePropFor(ch); ch.enqueue([{ type: 'use_prop', uid: p.uid }]);   // use what's lying around
   }
   else if (r < 0.5) { ch.enqueue([{ type: ch.mana && ch.mana.ratio > 0.6 && Math.random() < 0.15 ? 'run_to' : 'walk_to', target: wanderTarget(ch) }]); }
   else if (r < 0.62 && nearestProp(ch.x, 'sittable', ch)) { ch.enqueue([{ type: 'sit' }]); }
@@ -487,6 +543,21 @@ function chatter(a, b) {
   b.nextThink = performance.now() + (t + 3) * 1000; a.nextThink = performance.now() + (t + 3) * 1000;
 }
 
+/** Cursor within ~10 px and staying: she stops and looks at it (a couple of times at most while it stays). */
+function curiosity(ch, now) {
+  if (ch.role === 'guest' || drag || ch.state === 'watch' || ch.state === 'meditate' || ch.levitate || ch.falling || ch.inDoor) { ch.nearSince = 0; return; }
+  const near = isNear(ch.hit, lastMouse.x, lastMouse.y, (rules().cursor || {}).nearPx ?? 10);
+  if (!near) { ch.nearSince = 0; if (!isNear(ch.hit, lastMouse.x, lastMouse.y, 120)) { ch.lookCount = 0; ch.nextLook = 0; } if (ch.looking && now > ch.looking) ch.looking = 0; return; }
+  if (!ch.nearSince) ch.nearSince = now;
+  if (ch.looking) { if (now > ch.looking) { ch.looking = 0; ch.lookCount = (ch.lookCount || 0) + 1; ch.nextLook = now + rnd(25, 50) * 1000; } else { ch.facing = lastMouse.x >= ch.x ? 1 : -1; } return; }
+  const maxLooks = (rules().cursor || {}).maxLooks ?? 2;
+  if (now - ch.nearSince > 600 && (ch.lookCount || 0) < maxLooks && now > (ch.nextLook || 0)) {
+    ch.looking = now + rnd(3, 5) * 1000; ch.target = null; ch.state = ch.seat ? ch.state : 'idle';
+    ch.facing = lastMouse.x >= ch.x ? 1 : -1; if (!ch.seat) ch.play('idle', 4);
+    if (!ch.lookCount && Math.random() < 0.25) speak(ch, 'curious'); else if (!ch.bubble) ch.question(2.5);
+  }
+}
+
 function update(dt) {
   const now = performance.now();
   for (const ch of Object.values(chars)) {
@@ -495,6 +566,7 @@ function update(dt) {
     if (ch.bubble && now > ch.bubble.until) ch.bubble = null;
     if (ch.fadeIn) { ch.alpha = Math.min(1, ch.alpha + dt * 2); if (ch.alpha >= 1) ch.fadeIn = false; }
     if (ch.dragging || ch.hidden) continue;
+    curiosity(ch, now);
     // levitation (eased up, hover, gentle float down; never above the work area)
     if (ch.levitate) {
       const L = ch.levitate, k = (now - L.start) / (L.until - L.start);
@@ -535,6 +607,12 @@ function update(dt) {
     ch.waitUntil = 0;
     if (ch.queue.length) { const a = ch.queue.shift(); ch.current = a; startAction(ch, a); continue; }
     if (ch.state === 'meditate' && ch.meditating) continue;
+    if (ch.state === 'watch') {
+      if (!watching) { standUp(ch); continue; }
+      if (Date.now() - lastWatchTalk > rnd(3, 6) * 60000) { lastWatchTalk = Date.now(); Math.random() < 0.15 ? speak(ch, 'watch_comment') : ch.dots(2.5); }
+      continue;
+    }
+    if (ch.looking && now < ch.looking) continue;
     if ((ch.state === 'sit' || ch.state === 'lay' || ch.state === 'sleep') && now < ch.holdUntil) continue;
     if ((ch.state === 'sit' || ch.state === 'lay' || ch.state === 'sleep') && !sleepMode) standUp(ch);
     if (now > ch.holdUntil && ch.anim !== 'idle' && !ch.loopAnim && ch.state === 'idle') ch.play(animForMood(ch.mood.current, ch.def.moodAnims) === 'sleep' ? 'idle' : 'idle');
@@ -546,6 +624,7 @@ function update(dt) {
   // props expire
   for (let i = props.length - 1; i >= 0; i--) { const p = props[i]; if (p.def.lifetimeSec && Date.now() - p.born > p.def.lifetimeSec * 1000 && !countOn(p) && !p.pinned) props.splice(i, 1); }
   tripTick();
+  if (lastMouse.x !== lastMove.x || lastMouse.y !== lastMove.y) { lastMove.x = lastMouse.x; lastMove.y = lastMouse.y; lastMove.at = Date.now(); }
   // mana: each wife her own pool. Only magic drains it; rest restores it.
   for (const w of wives()) {
     w.mana.tick(dt * speed, w.hidden && roomOpen ? 'room' : sleepMode ? 'sleep' : 'awake');
@@ -576,7 +655,7 @@ function drawSprite(im, sx, sy, sw, sh, dx, dy, scale, flip) {
 function frameOf(anim, t) { return Math.floor(t * (anim.fps || 6) * speed) % Math.max(1, anim.frames); }
 
 function bubbleBox(ch, bw, bh) {
-  const r = ch.hit || ch.bbox();
+  const r0 = ch.hit || ch.bbox(); const r = ch.hoverRect ? { ...r0, y: Math.min(r0.y, ch.hoverRect.y - 4) } : r0;   // always above the mana bar
   const x = clamp(ch.x - bw / 2, wa.x + 4, wa.x + wa.w - bw - 4);
   const y = clamp(r.y - 10 - bh, wa.y + 4, ground - bh - 4);
   return { x, y };
@@ -597,8 +676,9 @@ function drawBubble(ch) {
   const maxW = 220, words = b.text.split(' '); const lines = []; let cur = '';
   for (const w of words) { const t = cur ? cur + ' ' + w : w; if (g.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; }
   if (cur) lines.push(cur);
-  const bw = Math.min(maxW, Math.max(...lines.map((l) => g.measureText(l).width))) + 16;
-  const bh = lines.length * 16 + 10 + (b.button ? 24 : 0);
+  let bw = Math.min(maxW, Math.max(...lines.map((l) => g.measureText(l).width))) + 16;
+  if (b.button) { g.font = 'bold 12px "Segoe UI", sans-serif'; bw = Math.max(bw, Math.min(260, g.measureText(b.button.label).width + 34)); g.font = '13px "Segoe UI", sans-serif'; }
+  const bh = lines.length * 16 + 10 + (b.button ? 30 : 0);
   const { x, y } = bubbleBox(ch, bw, bh);
   roundRect(x, y, bw, bh, 8); g.fill(); g.stroke();
   const tx = clamp(ch.x, x + 8, x + bw - 8);
@@ -606,8 +686,10 @@ function drawBubble(ch) {
   g.fillStyle = st.text || '#000'; lines.forEach((l, i) => g.fillText(l, x + 8, y + 18 + i * 16));
   b.rect = { x, y, w: bw, h: bh };
   if (b.button) {
-    const by = y + bh - 26; g.fillStyle = '#6a2fa8'; roundRect(x + 6, by, bw - 12, 20, 6); g.fill();
-    g.fillStyle = '#fff'; g.fillText(b.button.label, x + 12, by + 15); b.button.rect = { x: x + 6, y: by, w: bw - 12, h: 20 };
+    const by = y + bh - 30; g.fillStyle = '#6a2fa8'; roundRect(x + 6, by, bw - 12, 24, 6); g.fill();
+    g.font = 'bold 12px "Segoe UI", sans-serif'; g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(b.button.label, x + bw / 2, by + 12, bw - 24); g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+    b.button.rect = { x: x + 6, y: by, w: bw - 12, h: 24 };
   }
 }
 function roundRect(x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
@@ -631,6 +713,18 @@ function drawHover(ch, now) {
   g.restore();
 }
 
+/** Pupils follow the cursor while she's curious (data: character.json "eyes"). */
+function drawEyes(ch, X, s) {
+  const e = ch.def.eyes, ax = ch.def.anchor.x, top = ch.y - ch.lift - ch.def.anchor.y * s;
+  const ddx = clamp(Math.round((lastMouse.x - ch.x) / 60), -1, 1) * ch.facing, ddy = clamp(Math.round((lastMouse.y - (top + e.y * s)) / 80), -1, 0);
+  for (const ex of e.x) {
+    const fx = ch.facing < 0 ? (2 * ax - ex - e.w) : ex;                // mirror the eye column when facing left
+    const px = X - ax * s + fx * s, py = top + (e.y - 1) * s;
+    g.fillStyle = e.iris; g.fillRect(px, py, e.w * s, e.h * s);
+    g.fillStyle = e.white; g.fillRect(px + (ddx > 0 ? 0 : 1) * s, py, s, s);
+    g.fillStyle = e.pupil; g.fillRect(px + (ddx * ch.facing > 0 ? 1 : 0) * s, py + (1 + ddy) * s, s, s);
+  }
+}
 function render() {
   g.setTransform(DPR, 0, 0, DPR, 0, 0);
   g.clearRect(0, 0, W, H);
@@ -652,6 +746,7 @@ function render() {
     const dx = ch.facing < 0 ? X + ch.def.anchor.x * s : X - ch.def.anchor.x * s;
     drawSprite(img(ch.def.sheet), f * ch.fw, a.row * ch.fh, ch.fw, ch.fh, dx, ch.y - ch.lift - ch.def.anchor.y * s, s, ch.facing < 0);
     g.restore();
+    if (ch.looking && ch.def.eyes && ch.anim === 'idle') drawEyes(ch, X, s);
     ch.hit = ch.bbox();   // hitbox == what was just drawn (frame opaque bounds, scale, flip, lift, wriggle)
     if (debugDraw) {
       const bb = ch.hit; g.strokeStyle = '#f0f'; g.lineWidth = 1; g.strokeRect(bb.x, bb.y, bb.w, bb.h);
@@ -666,8 +761,8 @@ function render() {
     drawSprite(img(d.image), f * d.frame.w, 0, d.frame.w, d.frame.h, e.x - d.anchor.x * e.scale, e.y - d.anchor.y * e.scale, e.scale, false);
   }
   drawFoods(now);
-  for (const ch of list) if (ch.bubble && !ch.hidden) drawBubble(ch);
   for (const ch of list) drawHover(ch, now);
+  for (const ch of list) if (ch.bubble && !ch.hidden) drawBubble(ch);   // bubbles & confirm popups on top of the mana bar
   if (debugDraw) {
     g.strokeStyle = 'rgba(255,0,0,.6)'; g.beginPath(); g.moveTo(0, ground); g.lineTo(W, ground); g.stroke();
     g.strokeStyle = 'rgba(0,255,255,.6)'; g.strokeRect(wa.x + 0.5, wa.y + 0.5, wa.w - 1, wa.h - 1);
@@ -709,7 +804,7 @@ function onPointer(x, y) {
   evalCapture();
 }
 window.addEventListener('mousemove', (e) => onPointer(e.clientX, e.clientY));
-ipcRenderer.on('cursor', (_e, p) => { if (!drag) onPointer(p.x, p.y); });   // polled from main: works even when events are forwarded/missed
+ipcRenderer.on('cursor', (_e, p) => { if (!drag && !process.env.PW_SCREENSHOT) onPointer(p.x, p.y); });   // polled from main: works even when events are forwarded/missed
 setInterval(evalCapture, 250);
 function touchedBy(ch) { lastUserAt = Date.now(); for (const w of wives()) w.aff.markActive(); }
 window.addEventListener('mousedown', (e) => {
@@ -809,7 +904,7 @@ function patDone(ch) {
   if (careOk(ch, 'patline', 8)) speak(ch, 'patted');
 }
 function pat(ch) {
-  if (!ch || ch.hidden) return; lastUserAt = Date.now(); ch.aff.markActive();
+  if (!ch || ch.hidden) return; lastUserAt = Date.now(); ch.aff.markActive(); if (pity) pity.act('pat');
   const g = chars.chrispyni;
   if (g && !g.hidden) {    // Chrispy walks over and pats her head
     g.queue = []; g.enqueue([{ type: 'walk_to', target: ch.x + (g.x > ch.x ? 26 : -26) }, { type: 'play', anim: 'hug', sec: 1.2 }]);
@@ -823,13 +918,17 @@ function pat(ch) {
 }
 function feed(ch, foodId = 'cookie') {
   const f = (content.food || {})[foodId]; if (!f || !ch || ch.hidden) return; lastUserAt = Date.now(); ch.aff.markActive();
+  ch.foodState = ch.foodState || {};
+  const res = tryEat(ch.foodState, f);
+  if (!res.ok) { ch.play('pout', 1.2); speak(ch, 'food_full') || ch.say("I'm full!"); saveSoon(); return; }   // 4-5 in a row, then a 15-20 min break
+  if (pity) pity.act('feed');
   const eat = () => {
     ch.queue = []; ch.target = null; ch.play('happy', f.eatSec || 2); ch.waitUntil = performance.now() + (f.eatSec || 2) * 1000;
     const item = { def: f, x: ch.x + ch.facing * 10, y: (ch.hit || ch.bbox()).y + ch.fh * ch.scale * 0.45, held: ch, until: performance.now() + (f.eatSec || 2) * 1000 };
     foods.push(item);
     ch.aff.o.events['food:' + f.id] = { delta: f.mood || 0, cooldownSec: f.cooldownSec || 0 };
     ch.aff.event('food:' + f.id);
-    if (ch.mana && f.mana && careOk(ch, 'food:' + f.id, f.cooldownSec || 0)) ch.mana.add(f.mana);
+    if (ch.mana && f.mana) ch.mana.add(f.mana);
     setTimeout(() => speak(ch, 'fed'), 600); hooks.emit('fed', { char: ch.id, food: f.id });
   };
   const g = chars.chrispyni;
@@ -976,8 +1075,23 @@ function runEvent(ev) {
   }
 }
 function canReact(key) { const t = aw.lastReact[key] || 0; if (Date.now() - t < Math.max((cfg.awareness.reactCooldownSec || 120), (cfg.talk?.reactCooldownMin ?? 20) * 60) * 1000) return false; aw.lastReact[key] = Date.now(); return true; }
+function setWatching(on) {
+  if (on === watching) return; watching = on; hooks.emit('watching', { on });
+  const ws = wives().filter((w) => !w.hidden);
+  if (on) {
+    // nearest bottom side/corner, side by side, backs to us
+    ws.forEach((w, i) => {
+      const left = (w.x - wa.x) < wa.w / 2; const base = left ? wa.x + wa.w * 0.05 : wa.x + wa.w * 0.95;
+      if (w.seat || w.meditating) standUp(w);
+      w.queue = [{ type: 'walk_to', target: base + (left ? 1 : -1) * i * 44 }, { type: 'watch' }]; w.target = null; w.waitUntil = 0;
+    });
+    lastWatchTalk = Date.now();
+  } else for (const w of ws) if (w.state === 'watch') { standUp(w); w.play('happy', 1); }
+}
+let lastWatchTalk = 0;
 function onAwareness(a) {
   hooks.emit('awareness', a);
+  if (a.kind === 'app') setWatching(isWatching(a));
   if (a.kind === 'app') {
     const changed = a.category !== aw.category; aw.app = a; aw.category = a.category; aw.stream = a.category === 'stream';
     for (const c of wives()) c.mood.react('app:' + a.category);
@@ -1011,7 +1125,8 @@ setInterval(() => {   // time of day + tick events
   if (cfg.awareness.timeOfDay && tod !== aw.tod) { const first = aw.tod == null; aw.tod = tod; if (!first) { for (const c of wives()) c.mood.react(tod); speak(pick(wives()), tod, { ambient: true }); } }
   if (!sleepMode && !roomOpen) trigger('tick');
   hooks.emit('tick', { tod });
-  if ((aw.category === 'video' || aw.category === 'stream') && aw.idleSec < 900) for (const c of wives()) c.aff.event('media_together');   // watching together
+  cleanupProps(); guestCheck();
+  if (watching) for (const c of wives()) c.aff.event('media_together');   // watching together
   if (chars.chrispyni) for (const c of wives()) c.aff.event('with_chrispy');
   saveSoon();
 }, ((content && content.events && content.events.checkSec) || 60) * 1000);
@@ -1026,6 +1141,7 @@ function runCheat(c) {
     case 'help': chatLog('sys', Object.entries(COMMANDS).map(([k, v]) => `/${k} - ${v}`).join(' | ') + ' | word codes: ' + Object.keys(WORD_CODES).join(' ')); break;
     case 'fullmana': manaTargets(ch0).forEach((w) => w.mana.fill()); ok('mana full'); break;
     case 'infmana': infinite = !infinite; wives().forEach((w) => { w.mana.infinite = infinite; }); ok('infinite mana ' + (infinite ? 'ON' : 'OFF')); break;
+    case 'debugmode': setDebugMode(!debugMode); ok('debug mode ' + (debugMode ? 'ON' : 'OFF')); break;
     case 'mana': { const n = ch0 ? +a1 : +a0; manaTargets(ch0).forEach((w) => { w.mana.value = clamp(n || 0, 0, w.mana.max); }); ok(`mana ${ch0 ? ch0.id : 'all'} = ${n || 0}`); break; }
     case 'moodlvl': if (ch0) { ch0.aff.set(+a1); ok(`${ch0.id} hidden mood = ${ch0.aff.level}`); saveSoon(); } break;
     case 'drop': if (ch0) { dropFrom(ch0, clamp(a1 != null ? +a1 : 0.9, 0, 1)); ok(`${ch0.id} dropped from ${Math.round((a1 != null ? +a1 : 0.9) * 100)}%`); } break;
@@ -1051,7 +1167,7 @@ function runCheat(c) {
     case 'sleep': setSleep(!sleepMode, true); ok('sleep ' + sleepMode); break;
     case 'speed': speed = clamp(+a0 || 1, 0.1, 10); ok('speed x' + speed); break;
     case 'hitboxes': debugDraw = !debugDraw; ok('hitbox view ' + debugDraw); break;
-    case 'debug': case 'devpanel': case 'debugmenu': toggleDebug(); break;
+    case 'debug': case 'devpanel': case 'debugmenu': setDebugMode(!debugMode); ok('debug mode ' + (debugMode ? 'ON (tray > Debug)' : 'OFF')); break;
     case 'leave': { const g2 = chars[a0 || 'chrispyni']; if (g2) leave(g2); break; }
     case 'interact': if (ch0) ch0.enqueue([{ type: 'interact', kind: a1, with: c.args[2] }]); break;
     case 'play': if (ch0) { ch0.queue = []; ch0.play(a1, 3); } break;
@@ -1066,11 +1182,19 @@ function runCheat(c) {
 
 // ---------------- debug menu (auto-built from content) ----------------
 let debugOpen = false;
+/** Debug mode = the DEBUGMENU code. Same code again turns it off. Tray shows the Debug submenu only while it's on. */
+function setDebugMode(on) {
+  debugMode = !!on; cheatState.debug = debugMode;
+  if (debugMode !== debugOpen) toggleDebug();
+  if (!debugMode) debugDraw = false;
+  ipcRenderer.send('debug-mode', debugMode);
+}
 function toggleDebug() { debugOpen = !debugOpen; $('debug').classList.toggle('hidden', !debugOpen); if (debugOpen) { buildDebug(); ipcRenderer.send('focus-overlay'); } evalCapture(); }
 function btn(label, fn, cls) { const b = document.createElement('button'); b.textContent = label; if (cls) b.className = cls; b.onclick = (e) => { e.stopPropagation(); fn(b); if (debugOpen) setTimeout(refreshDebugMeters, 50); }; return b; }
 function section(root, title) { const h = document.createElement('h3'); h.textContent = title; root.append(h); const d = document.createElement('div'); root.append(d); return d; }
 function refreshDebugMeters() {
   for (const el of document.querySelectorAll('[data-meter]')) {
+    if (el.dataset.meter === '_pity') { el.textContent = `guest visit chance ${(pity.chance * 100).toFixed(1)}% (base ${(pity.o.base * 100).toFixed(0)}%)`; continue; }
     const ch = chars[el.dataset.meter]; if (!ch) continue;
     el.textContent = `hidden mood ${ch.aff.level > 0 ? '+' : ''}${ch.aff.level} (${ch.aff.value.toFixed(2)})` + (ch.mana ? ` · mana ${ch.mana.value.toFixed(1)}/${ch.mana.max}${ch.meditating ? ' · meditating' : ''}` : '');
   }
@@ -1100,6 +1224,10 @@ function buildDebug() {
   for (const ev of Object.values(content.events)) if (ev && ev.steps) s.append(btn(`${ev.name || ev.id} [${ev.on || 'tick'} ${Math.round((ev.chance ?? 1) * 100)}%]`, () => runEvent(ev)));
   for (const cat of ['game', 'video', 'art', 'stream', 'chat', 'code']) s.append(btn(`aware: ${cat}`, () => { aw.lastReact = {}; onAwareness({ kind: 'app', category: cat, title: `test ${cat}`, owner: cat }); }));
   s.append(btn('aware: AFK', () => onAwareness({ kind: 'idle', seconds: 9999 })), btn('aware: back', () => { aw.idleLongFired = true; onAwareness({ kind: 'idle', seconds: 1 }); }));
+  s = section(root, 'Guest visits (soft pity)');
+  { const m = document.createElement('div'); m.dataset.meter = '_pity'; m.style.color = '#ffe08a'; s.append(m); }
+  s.append(btn('roll now', () => { lastGuestCheck = 0; guestCheck(); refreshDebugMeters(); }), btn('reset pity', () => { pity.reset(); refreshDebugMeters(); }));
+  s.append(btn('watch: start', () => setWatching(true)), btn('watch: stop', () => setWatching(false)));
   s = section(root, 'Summon prop (debug = free)');
   for (const p of Object.values(content.props)) s.append(btn(`${p.name || p.id} (${p.manaCost || 0})${p.usableBy && p.usableBy !== 'all' ? ' [' + [].concat(p.usableBy).join(',') + ']' : ''}${p.owner ? ' ♛' + p.owner : ''}`, () => summon(null, p.id)));
   s = section(root, 'Props on screen (owner · usable by)');
@@ -1161,7 +1289,8 @@ function saveSoon() { clearTimeout(saveT); saveT = setTimeout(save, 2000); }
 function save() {
   try {
     fs.writeFileSync(SAVE_PATH, JSON.stringify({ v: 2,
-      chars: Object.fromEntries(Object.values(chars).filter((c) => c.role !== 'guest').map((c) => [c.id, { mana: c.mana.toJSON(), mood: c.mood.toJSON(), aff: c.aff.toJSON(), lastMeditate: c.lastMeditate || 0 }])),
+      chars: Object.fromEntries(Object.values(chars).filter((c) => c.role !== 'guest').map((c) => [c.id, { mana: c.mana.toJSON(), mood: c.mood.toJSON(), aff: c.aff.toJSON(), lastMeditate: c.lastMeditate || 0, food: c.foodState || {} }])),
+      pity: pity ? pity.toJSON() : null,
       props: props.map((p) => ({ id: p.id, x: (p.x - wa.x) / wa.w, born: p.born })), lastUserAt, savedAt: Date.now() }, null, 1));
   } catch (e) { console.error('save failed ' + e.message); }
 }
@@ -1171,11 +1300,12 @@ function loadSave() {
     const away = s.savedAt ? Math.min(8 * 3600, (Date.now() - s.savedAt) / 1000) : 0;
     for (const w of wives()) {
       const c = (s.chars || {})[w.id];
-      if (c) { w.mana.value = clamp(c.mana.value, 0, w.mana.max); w.mood.load(c.mood); w.aff.load(c.aff); w.lastMeditate = c.lastMeditate || 0; }
+      if (c) { w.mana.value = clamp(c.mana.value, 0, w.mana.max); w.mood.load(c.mood); w.aff.load(c.aff); w.lastMeditate = c.lastMeditate || 0; w.foodState = c.food || {}; }
       else if (s.mana) { w.mana.value = clamp(s.mana.value, 0, w.mana.max); if (s.moods && s.moods[w.id]) w.mood.load(s.moods[w.id]); }   // v1 save
       w.mana.tick(away, 'awake');
     }
     if (s.lastUserAt) lastUserAt = s.lastUserAt;
+    if (s.pity && pity) pity.load(s.pity);
     for (const p of s.props || []) if (content.props[p.id]) { const q = summon(null, p.id, wa.x + p.x * wa.w, true); if (q) q.born = p.born; }
     fx.length = 0;
   } catch {}
@@ -1202,7 +1332,9 @@ ipcRenderer.on('cmd', (_e, c) => {
   if (c.cmd === 'sleep') setSleep(c.on, true);
   if (c.cmd === 'room') goToRoom('our_room', currentPlan(), { source: 'user' });
   if (c.cmd === 'visit') { lastUserAt = Date.now(); visit(c.guest); }
-  if (c.cmd === 'debugmenu') toggleDebug();
+  if (c.cmd === 'debugmenu' && debugMode) toggleDebug();
+  if (c.cmd === 'debugoff') setDebugMode(false);
+  if (c.cmd === 'reset-pity' && pity) pity.reset();
 });
 ipcRenderer.on('awareness', (_e, a) => onAwareness(a));
 ipcRenderer.on('update-available', (_e, u) => { const w = pick(wives().filter((c) => !c.hidden)); if (w) speak(w, 'update_available', { version: u.version }) || w.say(`A new version (${u.version}) is here~ Update?`, 8); });
@@ -1253,7 +1385,7 @@ function resize() {
   setTimeout(() => { speak(chars.nixie, 'greet'); setTimeout(() => chars.noct && chars.noct.dots(2.5), 2500); }, 1500);
   hooks.emit('ready', {});
   requestAnimationFrame(loop);
-  if (INIT.screenshot) (process.env.PW_SCENE === 'v012' ? demo012 : demo)();
+  if (INIT.screenshot) ({ v012: demo012, v013: demo013 }[process.env.PW_SCENE] || demo)();
   else if (INIT.demo) demo();
 })();
 
@@ -1277,6 +1409,33 @@ async function demo() {
   infinite = false; wives().forEach((w) => { w.mana.infinite = false; }); n.mana.value = 12; askMana(n, currentPlan()); await sleepMs(800); await shot('05_low_mana_ask.png');
   goToRoom('our_room', currentPlan(), { source: 'user' }); await sleepMs(7000); await shot('06_room.png', 'room'); await sleepMs(6000); await shot('07_room_fade.png', 'room');
   if (INIT.screenshot) { save(); ipcRenderer.send('quit'); }
+}
+async function demo013() {
+  noAutoTake = true;
+  const n = chars.nixie, o = chars.noct; const X = (f) => wa.x + wa.w * f;
+  for (const w of wives()) { w.nextThink = 1e12; w.queue = []; w.bubble = null; }
+  n.x = X(0.4); o.x = X(0.6); n.mana.value = 30; o.mana.value = 90;
+  await sleepMs(2200); for (const w of wives()) w.bubble = null;
+  // 1. bubble/confirm stacked above the mana bar
+  onPointer(n.x, ground - 40); await sleepMs(300); confirmReplenish(n); await sleepMs(300); await shot('v013_01_confirm_above_bar.png');
+  n.bubble = null; onPointer(o.x, ground - 40); await sleepMs(300); confirmReplenish(o); await sleepMs(300); await shot('v013_02_mana_fine.png');
+  onPointer(5, 5); await sleepMs(1200); for (const w of wives()) w.bubble = null;
+  // 2. cookie limit
+  for (let i = 0; i < 6; i++) { feed(o, 'cookie'); await sleepMs(250); }
+  await sleepMs(300); await shot('v013_03_cookie_full.png'); for (const w of wives()) w.bubble = null;
+  // 3. cursor curiosity
+  await sleepMs(800); onPointer(n.x + 24, ground - 70); await sleepMs(1200); await shot('v013_04_cursor_curious.png');
+  onPointer(5, 5); await sleepMs(800); for (const w of wives()) { w.bubble = null; w.looking = 0; }
+  // 4. watching together
+  onAwareness({ kind: 'app', title: 'Cats compilation - YouTube - Google Chrome', owner: 'chrome', process: 'chrome.exe', category: 'video', playing: true, fullscreen: true });
+  await sleepMs(9000); await shot('v013_05_watching.png');
+  onAwareness({ kind: 'app', title: 'main.js - Visual Studio Code', owner: 'Code', process: 'Code.exe', category: 'code', playing: false }); await sleepMs(1200);
+  // 5. prop use
+  n.x = X(0.4); o.x = X(0.6); summon(null, 'teacup', X(0.47), true); const cup = props[props.length - 1];
+  n.queue = []; n.enqueue([{ type: 'use_prop', uid: cup.uid }]); await sleepMs(3500); await shot('v013_06_prop_use.png');
+  // 6. debug panel with pity
+  setDebugMode(true); await sleepMs(600); await shot('v013_07_debug_pity.png'); setDebugMode(false);
+  save(); ipcRenderer.send('quit');
 }
 async function demo012() {
   noAutoTake = true;

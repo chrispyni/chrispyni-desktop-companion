@@ -275,5 +275,50 @@
  "fed": [
   "Cookie! Mine. Mmm~",
   "*nom nom* You spoil me~"
- ]
+ ],
+ "food_full": [
+  "That's enough! I'm full~",
+  "Nnn... no more. I'm stuffed.",
+  "One more and I'll roll away. I'm full!"
+ ],
+ "mana_fine": {
+  "any": [
+   "I'm fine! Plenty of mana~",
+   "Mana's good, my queen. Save the door for later~"
+  ],
+  "pouty": [
+   "I'm FINE. Hmph."
+  ],
+  "loving": [
+   "I'm full of mana and love~ no need!"
+  ]
+ },
+ "watch_comment": [
+  "Ooh, what's happening now?",
+  "*munches imaginary popcorn*",
+  "Is this the good part?",
+  "Hehe, I like this one."
+ ],
+ "curious": [
+  "...? What are you doing with that cursor~?",
+  "Hm? Are you gonna poke me?"
+ ],
+ "prop_clean": [
+  "Nobody's using this. Poof~",
+  "*tidies up* Gone!"
+ ],
+ "prop_use": {
+  "sip": [
+   "*sips tea* Mmm."
+  ],
+  "read": [
+   "*flips pages* ...ooh, drama."
+  ],
+  "light": [
+   "*lights the candles* Cozy~"
+  ],
+  "play": [
+   "*bats the light orb* Hehe!"
+  ]
+ }
 }

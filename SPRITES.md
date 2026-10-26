@@ -73,7 +73,11 @@ Animated props: frames left→right in one row (`frames`, `fps`). Anchor = botto
 
 ## Food — `content/food/` (16×16)
 
-One sprite per food, listed in `food.json`: `mood` (small mood boost), `mana` (mana restored), `cooldownSec`, `eatSec`.
+One sprite per food, listed in `food.json`: `mood` (small mood boost), `mana` (mana per bite), `eatSec`, and `limits` `{ maxInRow: [4,5], cooldownMin: [15,20], streakResetMin: 30 }` (how many in a row before she's full, and for how long).
+
+Props can set `use` (`sit`, `lay`, `sip`, `read`, `light`, `play`) so the wives use them on their own, and `idleDespawnMin` (minutes unused before the owner tidies it away; `0` = never).
+
+Characters: the `watch` row is a sitting pose seen from behind (watching the screen). Guests may define `pity` `{ base, perFail, max, actions }` to use their own visit curve.
 Every food shows up under right-click → Feed and in the debug menu.
 
 ## Effects — 32×32 × N frames

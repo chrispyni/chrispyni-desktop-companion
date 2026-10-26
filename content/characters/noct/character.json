@@ -104,6 +104,11 @@
       "row": 17,
       "frames": 4,
       "fps": 5
+    },
+    "watch": {
+      "row": 18,
+      "frames": 4,
+      "fps": 2
     }
   },
   "palette": {
@@ -193,5 +198,17 @@
       }
     },
     "sizeNote": "taller of the two wives"
+  },
+  "eyes": {
+    "y": 20,
+    "x": [
+      19,
+      28
+    ],
+    "w": 2,
+    "h": 3,
+    "iris": "#8e5ad8",
+    "pupil": "#3a1a66",
+    "white": "#ffffff"
   }
 }

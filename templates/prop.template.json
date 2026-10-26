@@ -17,8 +17,5 @@
   "sittable": false,
   "tags": [
     "cozy"
-  ],
-  "usableBy": "all",
-  "owner": null,
-  "_usableBy": "\"all\" or a list of character ids, e.g. [\"nixie\"] or [\"guests\"] or [\"owner\"]"
+  ]
 }

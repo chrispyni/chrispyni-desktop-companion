@@ -19,7 +19,10 @@ Two pixel-art elf queens, **Nixie** and **Noct**, living on top of your Windows 
 * They have moods. Treat them well and they're sweet; annoy them and they get grumpy for a while (it passes).
 * Right-click a wife for Info, Pat or Feed. Right-click a prop to delete it.
 * ChrispyNi visits through a void portal, and some rare surprises happen now and then.
-* Updates install themselves when you say yes.
+* They **watch videos with you**: when YouTube, Twitch, Netflix, VLC, mpv… plays, they sit at the bottom of the screen with their backs to you.
+* Hold the cursor near one and she stops to look at it. Leave props lying around and they use them (and tidy up the ones nobody touches).
+* Cookies are endless, but even a wife gets full after a few.
+* Updates install themselves when you say yes (tray → About → Check for updates).
 
 ![Preview](docs/preview.gif)
 
@@ -28,6 +31,7 @@ Two pixel-art elf queens, **Nixie** and **Noct**, living on top of your Windows 
 | ![Hug](docs/screenshots/03_hug_kiss_guest.png) | ![Our room](docs/screenshots/07_room_fade.png) |
 | ![Levitation](docs/screenshots/v012_03_levitate.png) | ![Faceplant](docs/screenshots/v012_06_faceplant.png) |
 | ![Hover mana](docs/screenshots/v012_01_hover_mana.png) | ![Right-click menu](docs/screenshots/v012_17_char_menu.png) |
+| ![Watching together](docs/screenshots/v013_05_watching.png) | ![Replenish mana](docs/screenshots/v013_01_confirm_above_bar.png) |
 
 ## Download & run
 
@@ -38,11 +42,11 @@ Two pixel-art elf queens, **Nixie** and **Noct**, living on top of your Windows 
 Everything — saves, settings, mods, logs — stays inside that folder, like a game. Nothing goes to AppData. To move or back up, copy the folder.
 Windows SmartScreen may warn because the app isn't signed: **More info → Run anyway**.
 
-**Controls:** `Ctrl+Alt+W` chat (click outside or `Esc` to close) · drag to move · click to pet · right-click for the menu · hover for mana · `Ctrl+Alt+S` sleep · `Ctrl+Alt+D` debug menu · tray icon for everything else.
+**Controls:** `Ctrl+Alt+W` chat (click outside or `Esc` to close) · drag to move · click to pet · right-click for the menu · hover for mana · tray icon: Talk, Go to room, About, Quit.
 
 ## Cheat codes
 
-Type them in the chat box:
+Type them in the chat box. Switches (infinite mana, hitboxes, sleep, debug…) turn off when you enter them again.
 
 | Code | Effect |
 |---|---|
@@ -53,7 +57,7 @@ Type them in the chat box:
 | `BEDTIME` / `/sleep` | Sleep mode on/off |
 | `COMEHOME` / `/visit chrispyni` | ChrispyNi visits |
 | `SHOWMEBONES` / `/hitboxes` | Show hitboxes & states |
-| `DEBUGMENU` / `/debug` | Open the debug menu |
+| `DEBUGMENU` / `/debug` | Debug mode on/off (debug menu, `Ctrl+Alt+D`, tray Debug submenu) |
 | `/summon <prop>` · `/dismiss <prop\|all>` | Summon / remove a prop |
 | `/mood <who> <mood>` · `/say <who> <text>` | Set a mood / make her talk |
 | `/play <who> <animation>` · `/interact <who> <wave\|hug\|kiss>` | Animations & interactions |

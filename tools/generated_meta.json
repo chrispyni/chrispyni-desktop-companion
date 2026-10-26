@@ -1,4 +1,42 @@
 {
+ "chars": {
+  "nixie": {
+   "y": 32,
+   "x": [
+    19,
+    28
+   ],
+   "w": 2,
+   "h": 3,
+   "iris": "#3fa34a",
+   "pupil": "#1d5a25",
+   "white": "#ffffff"
+  },
+  "noct": {
+   "y": 20,
+   "x": [
+    19,
+    28
+   ],
+   "w": 2,
+   "h": 3,
+   "iris": "#8e5ad8",
+   "pupil": "#3a1a66",
+   "white": "#ffffff"
+  },
+  "chrispyni": {
+   "y": 26,
+   "x": [
+    19,
+    28
+   ],
+   "w": 2,
+   "h": 3,
+   "iris": "#8e5ad8",
+   "pupil": "#d0202a",
+   "white": "#ffffff"
+  }
+ },
  "rows": [
   [
    "idle",
@@ -89,6 +127,11 @@
    "getup",
    4,
    5
+  ],
+  [
+   "watch",
+   4,
+   2
   ]
  ],
  "props": {

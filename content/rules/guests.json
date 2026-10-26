@@ -1,0 +1,12 @@
+{
+ "_info": "Guest visits with soft pity. Every check (checkMin) rolls `chance`; each miss adds perFail, pats/feeds/being ignored add a bit more; a visit resets to base. Shared by all guests unless a guest's character.json has its own \"pity\" {base, perFail, max, actions}.",
+ "checkMin": 20,
+ "base": 0.12,
+ "perFail": 0.03,
+ "max": 0.85,
+ "actions": {
+  "pat": 0.01,
+  "feed": 0.01,
+  "ignored": 0.02
+ }
+}

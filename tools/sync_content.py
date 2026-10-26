@@ -7,7 +7,10 @@ meta = json.load(open(os.path.join(R, 'tools', 'generated_meta.json')))
 anims = {r[0]: {"row": i, "frames": r[1], "fps": r[2]} for i, r in enumerate(meta['rows'])}
 for c in ('nixie', 'noct', 'chrispyni'):
     p = os.path.join(R, 'content', 'characters', c, 'character.json'); j = json.load(open(p))
-    j['animations'] = anims; json.dump(j, open(p, 'w'), indent=2, ensure_ascii=False)
+    j['animations'] = anims
+    G = meta.get('chars', {}).get(c)
+    if G: j['eyes'] = G
+    json.dump(j, open(p, 'w'), indent=2, ensure_ascii=False)
 pp = os.path.join(R, 'content', 'props', 'props.json'); pj = json.load(open(pp)); have = {i['id'] for i in pj['items']}
 EXTRA = {"door": {"door": True, "pinned": True, "aliases": ["door", "room door"]}, "void_portal": {"guestOnly": True}, "sofa": {"sittable": True, "seats": 2, "aliases": ["sofa", "couch", "loveseat"]},
          "table": {"aliases": ["table", "little table"], "surface": 14},

@@ -104,6 +104,11 @@
       "row": 17,
       "frames": 4,
       "fps": 5
+    },
+    "watch": {
+      "row": 18,
+      "frames": 4,
+      "fps": 2
     }
   },
   "palette": {
@@ -206,5 +211,17 @@
       }
     },
     "sizeNote": "shorter of the two wives"
+  },
+  "eyes": {
+    "y": 32,
+    "x": [
+      19,
+      28
+    ],
+    "w": 2,
+    "h": 3,
+    "iris": "#3fa34a",
+    "pupil": "#1d5a25",
+    "white": "#ffffff"
   }
 }

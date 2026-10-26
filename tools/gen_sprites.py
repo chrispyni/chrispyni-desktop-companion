@@ -12,7 +12,7 @@ FW, FH = 48, 64           # character frame size
 FEET = (24, 62)           # anchor (feet) inside a frame
 ROWS = [("idle", 4, 4), ("walk", 6, 8), ("run", 6, 12), ("talk", 4, 6), ("sit", 4, 3), ("lay", 4, 2),
         ("sleep", 4, 2), ("happy", 4, 8), ("pout", 4, 4), ("cast", 6, 10), ("wave", 4, 6), ("hug", 4, 4), ("kiss", 4, 4),
-        ("fall", 4, 10), ("float", 4, 4), ("superhero_land", 4, 6), ("faceplant", 4, 4), ("getup", 4, 5)]  # name, frames, fps
+        ("fall", 4, 10), ("float", 4, 4), ("superhero_land", 4, 6), ("faceplant", 4, 4), ("getup", 4, 5), ("watch", 4, 2)]  # name, frames, fps
 
 def hx(s, a=255):
     s = s.lstrip('#'); return (int(s[0:2], 16), int(s[2:4], 16), int(s[4:6], 16), a)
@@ -281,6 +281,16 @@ def draw_special(sheet, ox, oy, P, name, f, nf):
         if f == 0: _place_rot(sheet, ox, oy, t, -60)
         else: _place_rot(sheet, ox, oy, t, -90, dy=-1 if f == 2 else 0); _stars(sheet, ox, oy, f, FEET[1] - 26)
         return True
+    if name == "watch":   # sitting with her BACK to us, watching the screen
+        t = _pose(P, "sit", 0, 4); d2 = ImageDraw.Draw(t)
+        H = P["height"]; hcx = FEET[0]; hcy = FEET[1] - H + 10 + 10 + (1 if f in (1, 2) else 0) - 0
+        hair, hair_sh = hx(P["hair"]), hx(P["hair_sh"])
+        ell(d2, hcx - 9, hcy - 10, hcx + 9, hcy + 8, hair); rect(d2, hcx - 9, hcy, hcx + 9, hcy + P["hair_len"] // 2, hair)
+        rect(d2, hcx - 1, hcy - 9, hcx, hcy + 6, hair_sh)
+        if P["streak"]: rect(d2, hcx + 4, hcy - 6, hcx + 4, hcy + 8, hx(P["streak"]))
+        for side in (-1, 1):
+            for i in range(6): px(d2, hcx + side * (9 + i), hcy - i // 2, hx(P["skin"]))
+        sheet.alpha_composite(t, (ox, oy)); return True
     if name == "getup":
         if f == 0: _place_rot(sheet, ox, oy, _pose(P, "splat", 1, 4), -90); _stars(sheet, ox, oy, f, FEET[1] - 26)
         elif f == 1: _place_rot(sheet, ox, oy, _pose(P, "kneel", 1, 4), -40)
@@ -627,6 +637,6 @@ if __name__ == "__main__":
     write_icon(sheets)
     build_food(); build_hand()
     # metadata of generated rows (for the JSON writer in tools/write_content.js / manual check)
-    json.dump({"rows": ROWS, "props": {k: [v[0], v[1], v[2], v[3], v[5], v[6]] for k, v in PROPS.items()},
+    json.dump({"chars": {cid: {"y": 76 - P["height"], "x": [19, 28], "w": 2, "h": 3, "iris": "#" + P["eye"], "pupil": "#" + P["pupil"], "white": "#ffffff"} for cid, P in CHARS.items()}, "rows": ROWS, "props": {k: [v[0], v[1], v[2], v[3], v[5], v[6]] for k, v in PROPS.items()},
                "effects": {k: [v[2], v[3], v[4]] for k, v in EFFECTS.items()}}, open(C("tools", "generated_meta.json"), "w"), indent=1)
     print("sprites ok")

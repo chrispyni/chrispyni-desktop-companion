@@ -1,5 +1,5 @@
 {
- "_info": "Food (data-driven). Add more items here or in a mod's food/ folder. mood = small hidden-mood change, mana = mana restored, cooldownSec = how often it counts. frame/anchor like props.",
+ "_info": "Food (data-driven). Add more items here or in a mod's food/ folder. mood = small hidden-mood change, mana = mana restored, cooldownSec = how often it counts. frame/anchor like props. limits = {maxInRow:[min,max], cooldownMin:[min,max], streakResetMin}: a few in a row, then she's full for a random cooldown (per character, saved).",
  "items": [
   {
    "id": "cookie",
@@ -14,13 +14,25 @@
     "y": 15
    },
    "mood": 0.15,
-   "mana": 3,
-   "cooldownSec": 300,
+   "mana": 1,
+   "cooldownSec": 0,
    "eatSec": 2,
    "aliases": [
     "cookie",
     "biscuit"
-   ]
+   ],
+   "standard": true,
+   "limits": {
+    "maxInRow": [
+     4,
+     5
+    ],
+    "cooldownMin": [
+     15,
+     20
+    ],
+    "streakResetMin": 30
+   }
   }
  ]
 }

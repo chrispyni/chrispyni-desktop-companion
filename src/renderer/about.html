@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><title>About Project Wives</title>
+<style>
+ body{margin:0;background:#1b1230;color:#f3e9ff;font:13px "Segoe UI",sans-serif;user-select:none;display:flex;flex-direction:column;align-items:center;padding:18px 20px;box-sizing:border-box;height:100vh}
+ img{width:64px;height:64px;image-rendering:pixelated} h1{font-size:18px;margin:8px 0 2px} .v{color:#c9a8ff} p{margin:4px 0;text-align:center}
+ .grok{color:#ffe08a;margin-top:6px} button{margin-top:12px;background:#6a2fa8;color:#fff;border:2px solid #b98cff;padding:6px 14px;font:bold 12px "Segoe UI";cursor:pointer;white-space:nowrap}
+ button:disabled{opacity:.6} #st{min-height:18px;margin-top:8px;color:#c9a8ff} .small{font-size:11px;color:#9a86c0;margin-top:auto}
+</style></head><body>
+<img id="ic" alt=""><h1>Project Wives</h1><div class="v" id="ver"></div>
+<p>A tiny desktop home for Nixie &amp; Noct (and ChrispyNi, when she visits).</p>
+<p class="grok">Made with Grok AI</p>
+<button id="chk">Check for updates</button><div id="st"></div>
+<div class="small">© 2026 ChrispyNi. All rights reserved.</div>
+<script>
+const { ipcRenderer } = require('electron');
+const q = new URLSearchParams(location.search);
+document.getElementById('ver').textContent = 'Version ' + (q.get('v') || '?');
+if (q.get('icon')) document.getElementById('ic').src = q.get('icon');
+const b = document.getElementById('chk'), st = document.getElementById('st');
+b.onclick = () => { b.disabled = true; st.textContent = 'Checking…'; ipcRenderer.send('about-check'); };
+ipcRenderer.on('about-status', (_e, m) => { b.disabled = false; st.textContent = m; });
+addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+</script></body></html>

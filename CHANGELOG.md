@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.3-alpha
+* Watching together: when a video plays, they sit at the bottom of the screen and watch with you.
+* Hold the cursor near a wife and she stops to look at it (only a couple of times).
+* They use props lying around: sit, lie down, sip tea, read, light candles. Props nobody uses get tidied away (half the mana back).
+* Cookies are endless but limited: after 4-5 in a row she's full for 15-20 minutes.
+* ChrispyNi visits more often the longer it's been (soft pity).
+* Clicking a mana bar offers to rest only below 50%. Bubbles and popups never hide behind the mana bar; buttons fit their text.
+* Simpler tray: Talk, Go to room, About, Quit. About shows the version and checks for updates.
+* Cheat switches toggle off when entered again. Debug tools appear only in debug mode.
+* Pre-releases are no longer offered by the auto-updater.
+
 ## 0.1.2-alpha
 * Each wife has her own mana, shown when you hover over her. Only magic uses it, with new magic between them and for ChrispyNi.
 * They rest through a door to our room, one at a time or both together. Hugs, snacks and meditation restore a little.

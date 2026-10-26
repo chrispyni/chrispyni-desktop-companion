@@ -1,0 +1,9 @@
+{
+ "_info": "Wives use props now and then (prop.use: sit/lay/sip/read/light/play). A prop nobody used for idleDespawnMin is cleaned up by whoever made it (50% mana back).",
+ "useChance": 0.12,
+ "idleDespawnMin": 20,
+ "useSec": [
+  6,
+  14
+ ]
+}

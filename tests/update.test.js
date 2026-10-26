@@ -15,9 +15,11 @@ test('pickRelease: newest prerelease with a -win.zip asset, newer than current',
     { tag_name: 'v0.2.0', draft: true, assets: [{ name: 'x-win.zip' }] },
     { tag_name: 'v0.1.4-alpha', assets: [{ name: 'notes.txt' }] },
   ];
-  const r = U.pickRelease(list, '0.1.2-alpha');
+  assert.strictEqual(U.pickRelease(list, '0.1.2-alpha'), null, 'normal users are never offered pre-releases');
+  const r = U.pickRelease(list, '0.1.2-alpha', { prerelease: true });
   assert.strictEqual(r.version, '0.1.3-alpha'); assert.strictEqual(r.asset.url, 'u3'); assert.strictEqual(r.asset.digest, 'sha256:ab');
-  assert.strictEqual(U.pickRelease(list, '0.1.3-alpha'), null);
+  assert.strictEqual(U.pickRelease(list, '0.1.3-alpha', { prerelease: true }), null);
+  assert.strictEqual(U.pickRelease([{ ...list[1], prerelease: false }], '0.1.2-alpha').version, '0.1.3-alpha');
 });
 test('verify + plan + stage + apply keeps data, mods and your edited content; backs up', () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'pwupd-')); const app = path.join(tmp, 'app');

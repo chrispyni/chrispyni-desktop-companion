@@ -101,6 +101,11 @@
       "row": 17,
       "frames": 4,
       "fps": 5
+    },
+    "watch": {
+      "row": 18,
+      "frames": 4,
+      "fps": 2
     }
   },
   "palette": {

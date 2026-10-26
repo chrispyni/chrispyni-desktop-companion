@@ -33,4 +33,8 @@ function parseCheat(text) {
     : cmd === 'relay' ? [rest] : rest ? rest.split(/\s+/) : [];
   return { cmd, args, raw: t };
 }
-module.exports = { parseCheat, COMMANDS, WORD_CODES };
+// Cheats that are switches: entering the same code again turns it off.
+const TOGGLES = new Set(['infmana', 'hitboxes', 'sleep', 'showmana', 'debug', 'devpanel', 'debugmenu', 'debugmode']);
+/** Flip a switch cheat in `state` (an object). Returns the new value, or null if cmd isn't a switch. */
+function toggleCheat(state, cmd) { const k = cmd === 'devpanel' || cmd === 'debugmenu' ? 'debug' : cmd; if (!TOGGLES.has(cmd)) return null; state[k] = !state[k]; return state[k]; }
+module.exports = { TOGGLES, toggleCheat, parseCheat, COMMANDS, WORD_CODES };

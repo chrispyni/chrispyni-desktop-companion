@@ -14,4 +14,8 @@ function wantsCapture(x, y, { sprites = [], uiRects = [], dragging = false } = {
 }
 /** A click at (x,y) closes the chat when it is open and the click is outside the chat box. */
 function chatShouldClose(chatOpen, chatRect, x, y) { return !!chatOpen && !inRect(chatRect, x, y); }
-module.exports = { inRect, spriteRect, wantsCapture, chatShouldClose };
+/** Distance from a point to a rect (0 inside). */
+function rectDist(r, x, y) { const dx = Math.max(r.x - x, 0, x - (r.x + r.w)), dy = Math.max(r.y - y, 0, y - (r.y + r.h)); return Math.hypot(dx, dy); }
+/** Cursor is "near" her: within d px of the drawn sprite (default 10). */
+function isNear(r, x, y, d = 10) { return !!r && rectDist(r, x, y) <= d; }
+module.exports = { rectDist, isNear, inRect, spriteRect, wantsCapture, chatShouldClose };

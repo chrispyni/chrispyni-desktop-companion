@@ -153,14 +153,10 @@ function toggle(key) { cfg.awareness[key] = !cfg.awareness[key]; saveConfig(); s
 function buildTray() {
   if (!tray) return;
   const a = cfg.awareness;
-  const menu = Menu.buildFromTemplate([
-    { label: `Project Wives ${PKG.version}`, enabled: false },
-    { label: 'Talk to them…', accelerator: cfg.hotkeys.chat, click: () => send('cmd', { cmd: 'chat' }) },
-    { label: 'Sleep together (sleep mode)', type: 'checkbox', checked: sleepManual, click: () => { sleepManual = !sleepManual; send('cmd', { cmd: 'sleep', on: sleepManual }); buildTray(); } },
-    { label: 'Go to our room (mana)', click: () => send('cmd', { cmd: 'room' }) },
-    { label: 'Invite ChrispyNi (guest)', click: () => send('cmd', { cmd: 'visit', guest: 'chrispyni' }) },
+  const debugItems = [
     { label: 'Debug menu', accelerator: cfg.hotkeys.debug, click: () => send('cmd', { cmd: 'debugmenu' }) },
-    { type: 'separator' },
+    { label: 'Sleep together (sleep mode)', type: 'checkbox', checked: sleepManual, click: () => { sleepManual = !sleepManual; send('cmd', { cmd: 'sleep', on: sleepManual }); buildTray(); } },
+    { label: 'Invite ChrispyNi (guest)', click: () => send('cmd', { cmd: 'visit', guest: 'chrispyni' }) },
     { label: 'Awareness', submenu: [
       { label: 'Active window / app', type: 'checkbox', checked: a.activeWindow, click: () => toggle('activeWindow') },
       { label: 'Idle time (AFK)', type: 'checkbox', checked: a.idle, click: () => toggle('idle') },
@@ -170,21 +166,40 @@ function buildTray() {
       { label: 'Microphone (stub, off)', type: 'checkbox', checked: a.microphone, click: () => toggle('microphone') },
     ] },
     { label: 'Relay to the real Nixie & Noct', type: 'checkbox', checked: !!cfg.relay.enabled, click: () => { cfg.relay.enabled = !cfg.relay.enabled; saveConfig(); relay.cfg = cfg.relay; send('config', cfg); buildTray(); } },
-    { label: 'Settings / folders', submenu: [
-      { label: 'Open config.json', click: () => shell.openPath(path.join(USER_DIR, 'config.json')) },
-      { label: 'Open app folder', click: () => shell.openPath(APP_ROOT) },
-      { label: 'Open mods folder', click: () => shell.openPath(path.join(APP_ROOT, 'mods')) },
-      { label: 'Open content folder', click: () => shell.openPath(path.join(APP_ROOT, 'content')) },
-      { label: 'Open sprite templates', click: () => shell.openPath(path.join(APP_ROOT, 'templates')) },
-      { label: 'Open log', click: () => shell.openPath(LOG) },
-      { label: 'Reload config + content', click: () => { loadConfig(); relay.cfg = cfg.relay; send('config', cfg); send('content-changed'); buildTray(); } },
-    ] },
-    { label: updateInfo ? `Update available: ${updateInfo.version}` : 'Check for updates', click: () => updateInfo ? askUpdate(updateInfo) : checkUpdate(true) },
+    { label: 'Open config.json', click: () => shell.openPath(path.join(USER_DIR, 'config.json')) },
+    { label: 'Open app folder', click: () => shell.openPath(APP_ROOT) },
+    { label: 'Open mods folder', click: () => shell.openPath(path.join(APP_ROOT, 'mods')) },
+    { label: 'Open content folder', click: () => shell.openPath(path.join(APP_ROOT, 'content')) },
+    { label: 'Open log', click: () => shell.openPath(LOG) },
+    { label: 'Reload config + content', click: () => { loadConfig(); relay.cfg = cfg.relay; send('config', cfg); send('content-changed'); buildTray(); } },
+  ];
+  const menu = Menu.buildFromTemplate([
+    { label: 'Talk', accelerator: cfg.hotkeys.chat, click: () => send('cmd', { cmd: 'chat' }) },
+    { label: 'Go to room', click: () => send('cmd', { cmd: 'room' }) },
+    ...(debugMode ? [{ label: 'Debug', submenu: debugItems }] : []),
+    { label: updateInfo ? `About (update ${updateInfo.version}!)` : 'About', click: openAbout },
     { type: 'separator' },
     { label: 'Quit', click: () => app.quit() },
   ]);
   tray.setContextMenu(menu); tray.setToolTip('Project Wives - Nixie & Noct');
 }
+
+let debugMode = false, aboutWin = null;
+ipcMain.on('debug-mode', (_e, on) => { debugMode = !!on; buildTray(); });
+function openAbout() {
+  if (aboutWin && !aboutWin.isDestroyed()) { aboutWin.focus(); return; }
+  const icon = path.join(__dirname, 'renderer', 'icon.png');
+  aboutWin = new BrowserWindow({ width: 340, height: 330, resizable: false, minimizable: false, maximizable: false, title: 'About Project Wives', autoHideMenuBar: true, backgroundColor: '#1b1230',
+    icon: fs.existsSync(icon) ? icon : undefined, webPreferences: { nodeIntegration: true, contextIsolation: false } });
+  aboutWin.setMenu(null);
+  aboutWin.loadFile(path.join(__dirname, 'renderer', 'about.html'), { query: { v: PKG.version, icon: fs.existsSync(icon) ? 'file:///' + icon.replace(/\\/g, '/') : '' } });
+  aboutWin.on('closed', () => { aboutWin = null; });
+}
+ipcMain.on('about-check', async (e) => {
+  const reply = (m) => { try { e.sender.send('about-status', m); } catch {} };
+  try { const info = await findUpdate(); if (!info) return reply(`You're up to date (${PKG.version}).`); updateInfo = info; buildTray(); reply(`Update ${info.version} available!`); askUpdate(info); }
+  catch (err) { reply('Update check failed: ' + err.message); }
+});
 
 // ---------- awareness ----------
 let lastApp = '', awTimer, winWatcher = null, latestWin = null;
@@ -223,8 +238,8 @@ async function pollAwareness() {
     if (a.activeWindow) {
       const w = await getActiveWindow();
       if (w) {
-        const info = { title: w.title || '', owner: w.owner || '', process: w.process || '' };
-        const key = info.owner + '|' + info.title;
+        const info = { title: w.title || '', owner: w.owner || '', process: w.process || '', fullscreen: !!w.fullscreen, playing: w.playing };
+        const key = info.owner + '|' + info.title + '|' + info.fullscreen + '|' + info.playing;
         if (key !== lastApp && !/project wives|electron/i.test(info.owner || '')) {
           lastApp = key;
           const category = classifyApp(info, Object.keys(a.categories || {}).length ? { ...require('./core/awareness').DEFAULT_CATEGORIES, ...a.categories } : undefined);
@@ -261,7 +276,7 @@ async function getJSON(u) {
 }
 async function findUpdate() {
   const api = process.env.PW_UPDATE_API || (cfg.update && cfg.update.githubApi) || GH_API;
-  try { const info = UPD.pickRelease(await getJSON(api), PKG.version); if (info) return info; return null; }
+  try { const info = UPD.pickRelease(await getJSON(api), PKG.version, { prerelease: !!(cfg.update && cfg.update.channel === 'prerelease') }); if (info) return info; return null; }
   catch (e) {
     log('github update check failed: ' + e.message);
     const u = cfg.update && cfg.update.url; if (!u) throw e;             // fall back to version.json
@@ -344,7 +359,7 @@ app.whenReady().then(() => {
   } catch (e) { log('tray failed: ' + e.message); }
   const reg = (acc, fn) => { try { if (acc) globalShortcut.register(acc, fn); } catch (e) { log('hotkey ' + acc + ' failed'); } };
   reg(cfg.hotkeys.chat, () => send('cmd', { cmd: 'chat' }));
-  reg(cfg.hotkeys.debug, () => send('cmd', { cmd: 'debugmenu' }));
+  reg(cfg.hotkeys.debug, () => { if (debugMode) send('cmd', { cmd: 'debugmenu' }); });
   reg(cfg.hotkeys.sleep, () => { sleepManual = !sleepManual; send('cmd', { cmd: 'sleep', on: sleepManual }); buildTray(); });
   powerMonitor.on('lock-screen', () => send('awareness', { kind: 'lock' }));
   powerMonitor.on('unlock-screen', () => send('awareness', { kind: 'unlock' }));

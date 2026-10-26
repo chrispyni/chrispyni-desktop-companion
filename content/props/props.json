@@ -16,7 +16,6 @@
       },
       "manaCost": 10,
       "spawnEffect": "spawn_sparkle",
-      "lifetimeSec": 600,
       "sittable": true,
       "aliases": [
         "throne",
@@ -24,7 +23,8 @@
         "chair"
       ],
       "seatY": 10,
-      "meditate": true
+      "meditate": true,
+      "use": "sit"
     },
     {
       "id": "teacup",
@@ -42,13 +42,13 @@
       },
       "manaCost": 3,
       "spawnEffect": "spawn_sparkle",
-      "lifetimeSec": 600,
       "aliases": [
         "tea",
         "cup",
         "cup of tea",
         "teacup"
-      ]
+      ],
+      "use": "sip"
     },
     {
       "id": "bed",
@@ -66,7 +66,6 @@
       },
       "manaCost": 25,
       "spawnEffect": "spawn_sparkle",
-      "lifetimeSec": 600,
       "sittable": true,
       "aliases": [
         "bed"
@@ -74,7 +73,8 @@
       "layable": true,
       "seats": 3,
       "seatY": 12,
-      "meditate": true
+      "meditate": true,
+      "use": "lay"
     },
     {
       "id": "cushion",
@@ -92,14 +92,14 @@
       },
       "manaCost": 5,
       "spawnEffect": "spawn_sparkle",
-      "lifetimeSec": 600,
       "sittable": true,
       "aliases": [
         "pillow",
         "cushion"
       ],
       "seatY": 4,
-      "meditate": true
+      "meditate": true,
+      "use": "sit"
     },
     {
       "id": "books",
@@ -117,12 +117,12 @@
       },
       "manaCost": 4,
       "spawnEffect": "spawn_sparkle",
-      "lifetimeSec": 600,
       "aliases": [
         "book",
         "books",
         "tome"
-      ]
+      ],
+      "use": "read"
     },
     {
       "id": "candles",
@@ -140,11 +140,11 @@
       },
       "manaCost": 4,
       "spawnEffect": "spawn_sparkle",
-      "lifetimeSec": 600,
       "aliases": [
         "candle",
         "candles"
-      ]
+      ],
+      "use": "light"
     },
     {
       "id": "void_portal",
@@ -186,14 +186,14 @@
       },
       "manaCost": 6,
       "spawnEffect": "light_burst",
-      "lifetimeSec": 600,
       "aliases": [
         "orb",
         "light",
         "light orb",
         "orbs"
       ],
-      "float": 12
+      "float": 12,
+      "use": "play"
     },
     {
       "id": "sofa",
@@ -211,7 +211,6 @@
       },
       "manaCost": 15,
       "spawnEffect": "spawn_sparkle",
-      "lifetimeSec": 600,
       "sittable": true,
       "seats": 2,
       "aliases": [
@@ -219,7 +218,8 @@
         "couch",
         "loveseat"
       ],
-      "seatY": 10
+      "seatY": 10,
+      "use": "sit"
     },
     {
       "id": "table",
@@ -261,7 +261,8 @@
       "manaCost": 0,
       "spawnEffect": "spawn_sparkle",
       "lifetimeSec": 300,
-      "crafted": true
+      "crafted": true,
+      "use": "play"
     },
     {
       "id": "flower",
@@ -280,7 +281,8 @@
       "manaCost": 0,
       "spawnEffect": "spawn_sparkle",
       "lifetimeSec": 300,
-      "crafted": true
+      "crafted": true,
+      "use": "play"
     },
     {
       "id": "door",
