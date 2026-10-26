@@ -63,7 +63,7 @@
         "portable",
         "zip"
       ],
-      "icon": "build/icon.png"
+      "signAndEditExecutable": false
     },
     "portable": {
       "artifactName": "ProjectWives-${version}-portable.exe"
