@@ -9,7 +9,7 @@ for c in ('nixie', 'noct', 'chrispyni'):
     p = os.path.join(R, 'content', 'characters', c, 'character.json'); j = json.load(open(p))
     j['animations'] = anims; json.dump(j, open(p, 'w'), indent=2, ensure_ascii=False)
 pp = os.path.join(R, 'content', 'props', 'props.json'); pj = json.load(open(pp)); have = {i['id'] for i in pj['items']}
-EXTRA = {"sofa": {"sittable": True, "seats": 2, "aliases": ["sofa", "couch", "loveseat"]},
+EXTRA = {"door": {"door": True, "pinned": True, "aliases": ["door", "room door"]}, "void_portal": {"guestOnly": True}, "sofa": {"sittable": True, "seats": 2, "aliases": ["sofa", "couch", "loveseat"]},
          "table": {"aliases": ["table", "little table"], "surface": 14},
          "bed": {"layable": True, "seats": 3}}
 for pid, (w, h, n, fps, cost, label) in meta['props'].items():

@@ -1,9 +1,14 @@
 // GTA-style cheat codes, typed in the chat box. Only work in admin mode; otherwise ignored silently.
 'use strict';
-const WORD_CODES = { MANAMANA: '/fullmana', ETERNALNIGHT: '/infmana', GIMMEALL: '/spawnall', OURROOM: '/room', SHOWMEBONES: '/hitboxes', BEDTIME: '/sleep', DEBUGMENU: '/debug', COMEHOME: '/visit chrispyni' };
+const WORD_CODES = { MANAMANA: '/fullmana', ETERNALNIGHT: '/infmana', GIMMEALL: '/spawnall', OURROOM: '/room', SHOWMEBONES: '/hitboxes', BEDTIME: '/sleep', DEBUGMENU: '/debug', COMEHOME: '/visit chrispyni', FLOATY: '/magic nixie levitate noct', CRAFTYQUEENS: '/magic noct craft_together nixie', LOVEYOU: '/magic nixie lovely_gift chrispyni', ZENMODE: '/meditate', SPLAT: '/drop noct 0.95', SHOWMANA: '/showmana', KNOCKKNOCK: '/door', TAKEMYWIVES: '/take', HEADPATS: '/pat', COOKIETIME: '/feed' };
 
 const COMMANDS = {
-  fullmana: 'Fill mana to max', infmana: 'Toggle infinite mana', mana: '/mana <n> set mana',
+  fullmana: '/fullmana [char] fill mana', infmana: 'Toggle infinite mana', mana: '/mana [char] <n> set mana',
+  moodlvl: '/moodlvl <char> <-3..3> set the hidden mood level', drop: '/drop <char> <0..1> drop from a height (fraction of screen)',
+  magic: '/magic <char> <levitate|craft_together|lovely_gift|lovely_twirl> [partner]', meditate: '/meditate [char] meditate now',
+  rest: '/rest [char|both] rest in our room', door: '/door [char] she summons a door and rests (costs her mana)', take: 'ChrispyNi comes to take her wives to our room',
+  pat: '/pat [char] Chrispy pats her', feed: '/feed [char] [food] give her a snack', info: '/info <char> show the info window', delprop: '/delprop [uid|id] delete a prop (refunds part of its mana)',
+  chatter: 'Wives chat with each other (… bubbles)', showmana: 'Toggle always-visible mana bars',
   summon: '/summon <prop_id> [x]', dismiss: '/dismiss <prop_id|all>', cast: '/cast <char> <effect_id>',
   mood: '/mood <char> <mood>', say: '/say <char> <text>', act: '/act <char> <json action or *tag*>',
   spawnall: 'Summon every prop', room: 'Go to our room now', sleep: 'Toggle sleep mode', speed: '/speed <x> game speed',

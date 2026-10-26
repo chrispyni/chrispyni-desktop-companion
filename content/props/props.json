@@ -23,7 +23,8 @@
         "seat",
         "chair"
       ],
-      "seatY": 10
+      "seatY": 10,
+      "meditate": true
     },
     {
       "id": "teacup",
@@ -72,7 +73,8 @@
       ],
       "layable": true,
       "seats": 3,
-      "seatY": 12
+      "seatY": 12,
+      "meditate": true
     },
     {
       "id": "cushion",
@@ -96,7 +98,8 @@
         "pillow",
         "cushion"
       ],
-      "seatY": 4
+      "seatY": 4,
+      "meditate": true
     },
     {
       "id": "books",
@@ -164,7 +167,8 @@
         "portal",
         "void portal",
         "rift"
-      ]
+      ],
+      "guestOnly": true
     },
     {
       "id": "light_orb",
@@ -239,6 +243,68 @@
         "little table"
       ],
       "surface": 14
+    },
+    {
+      "id": "crafted_charm",
+      "name": "Light & Void Charm (crafted)",
+      "image": "crafted_charm.png",
+      "frame": {
+        "w": 32,
+        "h": 32
+      },
+      "frames": 3,
+      "fps": 4,
+      "anchor": {
+        "x": 16,
+        "y": 31
+      },
+      "manaCost": 0,
+      "spawnEffect": "spawn_sparkle",
+      "lifetimeSec": 300,
+      "crafted": true
+    },
+    {
+      "id": "flower",
+      "name": "Magic Flower (gift)",
+      "image": "flower.png",
+      "frame": {
+        "w": 32,
+        "h": 32
+      },
+      "frames": 2,
+      "fps": 2,
+      "anchor": {
+        "x": 16,
+        "y": 31
+      },
+      "manaCost": 0,
+      "spawnEffect": "spawn_sparkle",
+      "lifetimeSec": 300,
+      "crafted": true
+    },
+    {
+      "id": "door",
+      "name": "Door to Chrispy's Room",
+      "image": "door.png",
+      "frame": {
+        "w": 48,
+        "h": 64
+      },
+      "frames": 4,
+      "fps": 4,
+      "anchor": {
+        "x": 24,
+        "y": 63
+      },
+      "manaCost": 5,
+      "spawnEffect": "spawn_sparkle",
+      "lifetimeSec": 600,
+      "door": true,
+      "pinned": true,
+      "aliases": [
+        "door",
+        "room door"
+      ]
     }
   ]
 }

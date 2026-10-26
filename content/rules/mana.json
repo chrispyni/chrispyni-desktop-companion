@@ -1,0 +1,14 @@
+{
+ "_info": "Mana balance. Each wife has her own 100-point pool. Only magic spends it. A full pool + slow regen lasts a whole day of normal magic (about 1 spell/summon per hour, 4-25 each). See README > Mana.",
+ "ambientMagicCooldownMin": 40,
+ "meditation": {
+  "_info": "When Chrispy hasn't been around for afterMin, a wife meditates on a cushion/chair/bed (summons a cushion if none, costs mana; floor = floorRate speed). Stops at capRatio of max, never higher.",
+  "afterMin": 120,
+  "cooldownMin": 90,
+  "capRatio": 0.5,
+  "regenPerMin": 1.5,
+  "floorRate": 0.5,
+  "summonProp": "cushion"
+ },
+ "deleteRefund": 0.5
+}

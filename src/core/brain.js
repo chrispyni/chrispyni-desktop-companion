@@ -14,8 +14,19 @@ class OfflineBrain {
     return [...(b[mood] || []), ...(b.any || [])];
   }
   /** Pick a line (avoids the last few repeats). Returns null when nothing fits. */
-  pick(charId, trigger, mood, vars = {}) {
-    let pool = this.bank(charId, trigger, mood);
+  /** by_level banks: lines.<char>.by_level.<group>["-3".."3"]. Chat triggers use group "chat". */
+  levelBank(charId, trigger, level) {
+    if (!level) return [];
+    const bl = (this.lines[charId] || {}).by_level || {};
+    const grp = bl[trigger] ? trigger : /^chat_/.test(trigger) ? 'chat' : trigger;
+    const b = bl[grp]; if (!b) return [];
+    return b[String(level)] || (level <= -2 ? b.angry : level >= 2 ? b.happy : null) || [];
+  }
+  pick(charId, trigger, mood, vars = {}, level = 0) {
+    let pool = this.levelBank(charId, trigger, level);
+    // angry (<0) always speaks from the level bank; happy uses it most of the time
+    if (pool.length && level > 0 && this.rng() > 0.7) pool = [];
+    if (!pool.length) pool = this.bank(charId, trigger, mood);
     if (!pool.length) return null;
     const fresh = pool.filter((l) => !this.recent.includes(l));
     if (fresh.length) pool = fresh;
@@ -35,8 +46,8 @@ class OfflineBrain {
     for (const [re, tr] of rules) if (re.test(t)) return tr;
     return 'chat_any';
   }
-  replyToChat(charId, text, mood, vars = {}) {
-    return this.pick(charId, this.chatTrigger(text), mood, vars) || this.pick(charId, 'chat_any', mood, vars);
+  replyToChat(charId, text, mood, vars = {}, level = 0) {
+    return this.pick(charId, this.chatTrigger(text), mood, vars, level) || this.pick(charId, 'chat_any', mood, vars, level);
   }
 }
 module.exports = { OfflineBrain, fill };

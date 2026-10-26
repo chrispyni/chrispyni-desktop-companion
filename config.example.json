@@ -1,4 +1,5 @@
 {
+  "_v": 2,
   "_info": "Copied to data/config.json (inside the app folder) on first start. Edit that copy (tray > Settings > Open config). Restart or tray > Reload after editing.",
   "user": "ChrispyNi",
   "edition": "wives",
@@ -8,7 +9,8 @@
   "scale": 2,
   "groundOffset": 0,
   "hotkeys": { "chat": "CommandOrControl+Alt+W", "debug": "CommandOrControl+Alt+D", "sleep": "CommandOrControl+Alt+S" },
-  "mana": { "max": 100, "regenPerMin": 1, "sleepRegenPerMin": 12, "roomRegenPerSec": 4, "lowThreshold": 0.2, "askEveryMin": 6 },
+  "mana": { "max": 100, "regenPerMin": 0.05, "sleepRegenPerMin": 12, "roomRegenPerSec": 4, "lowThreshold": 0.2, "askEveryMin": 20, "autoRestAfterMin": 10 },
+  "talk": { "idleChatterEveryMin": 4, "ambientTextChance": 0, "reactCooldownMin": 20, "userIgnoredMin": 3 },
   "sleep": { "autoAtNight": true, "hours": [1, 8], "idleMinutes": 30, "nightIdleMinutes": 10 },
   "awareness": {
     "activeWindow": true,

@@ -1,0 +1,17 @@
+{
+  "id": "my_food",
+  "name": "My Food",
+  "image": "my_food.png",
+  "frame": {
+    "w": 16,
+    "h": 16
+  },
+  "anchor": {
+    "x": 8,
+    "y": 15
+  },
+  "mood": 0.1,
+  "mana": 2,
+  "cooldownSec": 300,
+  "eatSec": 2
+}

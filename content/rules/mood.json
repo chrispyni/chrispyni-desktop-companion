@@ -1,0 +1,65 @@
+{
+ "_info": "Hidden mood meter (-3 very angry .. 0 neutral .. +3 very happy). Small steps with cooldowns; time heals negatives (~2/day), neglect slowly fades positives (~0.43/day, paused while you interact).",
+ "negRecoverPerDay": 2,
+ "posDecayPerDay": 0.43,
+ "activePauseMin": 30,
+ "maxCatchUpDays": 14,
+ "negBudgetPerHour": 1.2,
+ "posBudgetPerHour": 1.5,
+ "refusePickupAtOrBelow": -2,
+ "events": {
+  "chat": {
+   "delta": 0.15,
+   "cooldownSec": 120
+  },
+  "pet": {
+   "delta": 0.1,
+   "cooldownSec": 60
+  },
+  "media_together": {
+   "delta": 0.1,
+   "cooldownSec": 600
+  },
+  "mana_replenished": {
+   "delta": 0.5,
+   "cooldownSec": 600
+  },
+  "with_chrispy": {
+   "delta": 0.2,
+   "cooldownSec": 300
+  },
+  "lovely_magic": {
+   "delta": 0.2,
+   "cooldownSec": 300
+  },
+  "superhero_land": {
+   "delta": -0.2,
+   "cooldownSec": 30
+  },
+  "faceplant": {
+   "delta": -0.6,
+   "cooldownSec": 60
+  },
+  "touch_while_angry": {
+   "delta": -0.1,
+   "cooldownSec": 45
+  },
+  "dragged_from_chrispy": {
+   "delta": -0.3,
+   "cooldownSec": 300
+  },
+  "pat": {
+   "delta": 0.15,
+   "cooldownSec": 300
+  }
+ },
+ "labels": {
+  "-3": "Angry",
+  "-2": "Annoyed",
+  "-1": "Grumpy",
+  "0": "Neutral",
+  "1": "Content",
+  "2": "Happy",
+  "3": "Very Happy"
+ }
+}

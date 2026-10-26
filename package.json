@@ -1,7 +1,7 @@
 {
   "name": "project-wives",
   "productName": "Project Wives",
-  "version": "0.1.1-alpha",
+  "version": "0.1.2-alpha",
   "description": "Desktop companions: Nixie & Noct, elf queens of ChrispyNi",
   "main": "src/main.js",
   "author": "ChrispyNi",
@@ -11,12 +11,15 @@
     "test": "node --test tests/",
     "sprites": "python3 tools/gen_sprites.py",
     "set-passphrase": "node tools/set-passphrase.js",
-    "dist:win": "electron-builder --win 7z zip --x64",
-    "dist:win-installer": "electron-builder --win nsis --x64"
+    "dist:win": "node tools/make-manifest.js && electron-builder --win 7z zip --x64",
+    "dist:win-installer": "electron-builder --win nsis --x64",
+    "predist:win": "node tools/make-manifest.js"
   },
   "devDependencies": {
     "electron": "^31.7.7",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "pe-library": "^2.0.1",
+    "resedit": "^2.0.3"
   },
   "build": {
     "appId": "com.chrispyni.projectwives",
@@ -30,7 +33,8 @@
         "7z",
         "zip"
       ],
-      "signAndEditExecutable": false
+      "signAndEditExecutable": false,
+      "icon": "build/icon.ico"
     },
     "directories": {
       "output": "dist"
@@ -82,6 +86,10 @@
       {
         "from": "build/folder-readme.txt",
         "to": "READ ME FIRST.txt"
+      },
+      {
+        "from": "content-manifest.json",
+        "to": "content-manifest.json"
       }
     ],
     "artifactName": "ProjectWives-${version}-win.${ext}",
@@ -95,6 +103,8 @@
       "shortcutName": "Project Wives",
       "createDesktopShortcut": true,
       "include": "build/installer.nsh"
-    }
+    },
+    "afterPack": "build/afterPack.js",
+    "extraMetadata": {}
   }
 }

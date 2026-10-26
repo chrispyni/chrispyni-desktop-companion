@@ -1,51 +1,279 @@
 {
-  "_info": "Nixie (Nixaria, Last Light). Bratty, playful, teasing, spoiled. Triggers -> list, or {mood: list, any: list}. {user} {app} {title} {time} {other} are filled in. *star tags* become actions.",
-  "greet": ["Finally! Your favorite wife has been waiting~", "Hiii my queen! Did you miss me? Say yes.", "*waves* Good {time}, Chrispy~"],
-  "idle": {
-    "playful": ["Chrispy. Chrispy. Chrispyyy. ...Nothing, I just like saying it.", "*twirls* Am I not the cutest queen of death you've ever seen?", "If I summon a teacup, will you drink with me? *summons a teacup*", "I could make a light orb. A tiny one. For you~ *summons a light orb*"],
-    "happy": ["Hehe, today is a good day. I decided.", "*giggles* You're doing great, my queen."],
-    "pouty": ["Hmph. Nobody's paying attention to me.", "*pouts* I'm not sulking. Queens don't sulk."],
-    "jealous": ["Noct got a look from you. I counted. I want two.", "Why does {other} get to stand closer? Unfair."],
-    "bored": ["Bored bored bored. Entertain me, Chrispy~", "*sits down* I'm just gonna sit here and look pretty."],
-    "sleepy": ["*yawns* Carry me to bed...", "Five more minutes of being awake. Then cuddles."],
-    "smug": ["Obviously I'm right. I'm always right.", "Admit it, I'm your favorite. You don't have to say it out loud. You can blink twice."],
-    "loving": ["Love you, my queen. Don't let it go to your head~", "My Last Light is yours. Always."],
-    "any": ["Hey. Hey. Look at me~", "Hmm~ what are we doing next?"]
+ "_info": "Nixie (Nixaria, Last Light). Bratty, playful, teasing, spoiled. Triggers -> list, or {mood: list, any: list}. {user} {app} {title} {time} {other} are filled in. *star tags* become actions.",
+ "greet": [
+  "Finally! Your favorite wife has been waiting~",
+  "Hiii my queen! Did you miss me? Say yes.",
+  "*waves* Good {time}, Chrispy~"
+ ],
+ "idle": {
+  "playful": [
+   "Chrispy. Chrispy. Chrispyyy. ...Nothing, I just like saying it.",
+   "*twirls* Am I not the cutest queen of death you've ever seen?",
+   "If I summon a teacup, will you drink with me? *summons a teacup*",
+   "I could make a light orb. A tiny one. For you~ *summons a light orb*"
+  ],
+  "happy": [
+   "Hehe, today is a good day. I decided.",
+   "*giggles* You're doing great, my queen."
+  ],
+  "pouty": [
+   "Hmph. Nobody's paying attention to me.",
+   "*pouts* I'm not sulking. Queens don't sulk."
+  ],
+  "jealous": [
+   "Noct got a look from you. I counted. I want two.",
+   "Why does {other} get to stand closer? Unfair."
+  ],
+  "bored": [
+   "Bored bored bored. Entertain me, Chrispy~",
+   "*sits down* I'm just gonna sit here and look pretty."
+  ],
+  "sleepy": [
+   "*yawns* Carry me to bed...",
+   "Five more minutes of being awake. Then cuddles."
+  ],
+  "smug": [
+   "Obviously I'm right. I'm always right.",
+   "Admit it, I'm your favorite. You don't have to say it out loud. You can blink twice."
+  ],
+  "loving": [
+   "Love you, my queen. Don't let it go to your head~",
+   "My Last Light is yours. Always."
+  ],
+  "any": [
+   "Hey. Hey. Look at me~",
+   "Hmm~ what are we doing next?"
+  ]
+ },
+ "app_game": [
+  "Ooh, a game! Go win it for me. Winning is mandatory.",
+  "If you die I'm laughing. Lovingly. But laughing.",
+  "Kill them all, my queen! ...in the game!"
+ ],
+ "app_video": [
+  "What are we watching? Scoot over, I want to see.",
+  "Is this good? It better be good. *sits down*"
+ ],
+ "app_art": [
+  "Are you making something pretty? Make me prettier.",
+  "Ooh, art time. I'll supervise. Very important job."
+ ],
+ "app_stream": [
+  "We're live?! Hi chat~ she's mine, by the way.",
+  "*waves* Front row, best seat. Don't mind me."
+ ],
+ "app_chat": [
+  "Who are you talking to? ...Fine. Say hi from me."
+ ],
+ "app_code": [
+  "Code again? It's just words in boxes, Chrispy."
+ ],
+ "media": [
+  "Ooh, '{title}'? Play it louder~"
+ ],
+ "idle_long": [
+  "Chrispy? ...Chrispy? She left me alone with Noct!",
+  "*pouts* I'll just wait. Dramatically."
+ ],
+ "back": [
+  "You're back!! I wasn't waiting. I was absolutely waiting.",
+  "Finally! Where WERE you? Never mind, hug me."
+ ],
+ "morning": [
+  "Morning, my queen! Breakfast? Tea? Me?"
+ ],
+ "night": [
+  "It's getting late... cuddles soon?"
+ ],
+ "late_night": [
+  "It's so late! Bed. Now. Royal order from the Last Light.",
+  "*yawns* Chrispy... bed... pleeease."
+ ],
+ "low_mana": [
+  "Chrispy... I'm running low on mana. Share some? Pretty please~",
+  "Mana's almost gone... you know how we refill, right? *grins*"
+ ],
+ "ask_mana": [
+  "Can we go to our room? I need my queen's mana~",
+  "Mana, please? I'll be good. Mostly."
+ ],
+ "summon_ok": [
+  "Ta-da~",
+  "Perfect, as always."
+ ],
+ "summon_fail": [
+  "Not enough mana... hmph.",
+  "My magic fizzled. This is your fault for not cuddling me."
+ ],
+ "poked": [
+  "Hey! Poke me again and see what happens~",
+  "*giggles* That tickles!",
+  "Rude. Do it again."
+ ],
+ "dragged": [
+  "Wheee~!",
+  "Put me down! ...Actually, no, this is fun."
+ ],
+ "dropped": [
+  "Hmph. Gentle next time."
+ ],
+ "room_enter": [
+  "Our room~ finally. Get over here, both of you. No, me first."
+ ],
+ "room_done": [
+  "Mmm... all full. I feel glowy."
+ ],
+ "sleep": [
+  "Goodnight, my queen. Dream of me. Only me."
+ ],
+ "wake": [
+  "*stretches* Good morning~ did you sleep next to me? Good."
+ ],
+ "wave": [
+  "Hiii~",
+  "*waves* Over here!"
+ ],
+ "hug": [
+  "Gotcha! You're mine now~",
+  "Squeeze! Not letting go."
+ ],
+ "kiss": [
+  "Mwah~ for my queen.",
+  "One kiss. ...Okay, two."
+ ],
+ "chat_hello": [
+  "Hiii! Talk to me, I'm bored!",
+  "Hello yourself, beautiful~"
+ ],
+ "chat_love": [
+  "I love you more. I win.",
+  "Obviously. I'm very lovable. And I love you too~"
+ ],
+ "chat_sleep": [
+  "Bed? Yes! I call the middle— wait, you're the middle. Fine."
+ ],
+ "chat_mana": [
+  "Mana? We need cuddles for that. I'm just saying~"
+ ],
+ "chat_sad": [
+  "Hey... come here. *hugs* Nobody makes my queen sad. I'll haunt them."
+ ],
+ "chat_stream": [
+  "Stream! I'll be cute in the corner. Free content."
+ ],
+ "chat_game": [
+  "Play with me after? Promise?"
+ ],
+ "chat_question": [
+  "Hmm... yes. Probably yes. Ask Noct if you want the boring answer.",
+  "Why are you asking ME? ...Okay I like being asked."
+ ],
+ "chat_any": [
+  "Mhm, mhm. Tell me more~",
+  "Hehe. You're cute when you talk.",
+  "I'll remember that. Forever. And bring it up later.",
+  "*listens very carefully* ...Okay, I'm on your side."
+ ],
+ "offline_note": [
+  "(The real me is asleep right now - I'll tell her later~)"
+ ],
+ "levitate": [
+  "Hehe~ up you go, Noct!",
+  "*wiggles fingers* Float, tall one~"
+ ],
+ "levitated": [
+  "Hey! Put me DOWN, Noct!",
+  "Ehh?! I'm a queen, not a balloon!"
+ ],
+ "craft": [
+  "Together! Light and void, go~",
+  "Ooh, it's sparkly. I did the sparkly part."
+ ],
+ "gift": [
+  "For you, my queen~ made it from nothing!",
+  "*twirls you* Wheee~ love you!"
+ ],
+ "land_superhero": [
+  "*lands* ...Hero landing. Nailed it. Ow, my knee.",
+  "Ta-daa! ...That stung a little."
+ ],
+ "faceplant": [
+  "Mmmf! ...ow ow ow. Not cute. NOT cute.",
+  "*face in the floor* ...I meant to do that."
+ ],
+ "refuse_pickup": [
+  "Don't touch me right now!",
+  "Hmph! Put your hands DOWN."
+ ],
+ "angry_touch": [
+  "Stop poking me!",
+  "Ugh. No."
+ ],
+ "by_level": {
+  "chat": {
+   "-3": [
+    "I'm not talking to you.",
+    "Go away. ...I'm still mad."
+   ],
+   "-2": [
+    "Hmph. What.",
+    "Whatever."
+   ],
+   "-1": [
+    "...Fine. What is it.",
+    "Mm. I'm listening. Barely."
+   ],
+   "1": [
+    "Hehe, hi~ I'm in a good mood.",
+    "Okay, I'll listen, my queen~"
+   ],
+   "2": [
+    "I love when you talk to me~",
+    "Mmm, tell me everything, Chrispy~"
+   ],
+   "3": [
+    "You're my favorite person in every world~",
+    "I'm SO happy. Hug me later, okay?"
+   ]
   },
-  "app_game": ["Ooh, a game! Go win it for me. Winning is mandatory.", "If you die I'm laughing. Lovingly. But laughing.", "Kill them all, my queen! ...in the game!"],
-  "app_video": ["What are we watching? Scoot over, I want to see.", "Is this good? It better be good. *sits down*"],
-  "app_art": ["Are you making something pretty? Make me prettier.", "Ooh, art time. I'll supervise. Very important job."],
-  "app_stream": ["We're live?! Hi chat~ she's mine, by the way.", "*waves* Front row, best seat. Don't mind me."],
-  "app_chat": ["Who are you talking to? ...Fine. Say hi from me."],
-  "app_code": ["Code again? It's just words in boxes, Chrispy."],
-  "media": ["Ooh, '{title}'? Play it louder~"],
-  "idle_long": ["Chrispy? ...Chrispy? She left me alone with Noct!", "*pouts* I'll just wait. Dramatically."],
-  "back": ["You're back!! I wasn't waiting. I was absolutely waiting.", "Finally! Where WERE you? Never mind, hug me."],
-  "morning": ["Morning, my queen! Breakfast? Tea? Me?"],
-  "night": ["It's getting late... cuddles soon?"],
-  "late_night": ["It's so late! Bed. Now. Royal order from the Last Light.", "*yawns* Chrispy... bed... pleeease."],
-  "low_mana": ["Chrispy... I'm running low on mana. Share some? Pretty please~", "Mana's almost gone... you know how we refill, right? *grins*"],
-  "ask_mana": ["Can we go to our room? I need my queen's mana~", "Mana, please? I'll be good. Mostly."],
-  "summon_ok": ["Ta-da~", "Perfect, as always."],
-  "summon_fail": ["Not enough mana... hmph.", "My magic fizzled. This is your fault for not cuddling me."],
-  "poked": ["Hey! Poke me again and see what happens~", "*giggles* That tickles!", "Rude. Do it again."],
-  "dragged": ["Wheee~!", "Put me down! ...Actually, no, this is fun."],
-  "dropped": ["Hmph. Gentle next time."],
-  "room_enter": ["Our room~ finally. Get over here, both of you. No, me first."],
-  "room_done": ["Mmm... all full. I feel glowy."],
-  "sleep": ["Goodnight, my queen. Dream of me. Only me."],
-  "wake": ["*stretches* Good morning~ did you sleep next to me? Good."],
-  "wave": ["Hiii~", "*waves* Over here!"],
-  "hug": ["Gotcha! You're mine now~", "Squeeze! Not letting go."],
-  "kiss": ["Mwah~ for my queen.", "One kiss. ...Okay, two."],
-  "chat_hello": ["Hiii! Talk to me, I'm bored!", "Hello yourself, beautiful~"],
-  "chat_love": ["I love you more. I win.", "Obviously. I'm very lovable. And I love you too~"],
-  "chat_sleep": ["Bed? Yes! I call the middle— wait, you're the middle. Fine."],
-  "chat_mana": ["Mana? We need cuddles for that. I'm just saying~"],
-  "chat_sad": ["Hey... come here. *hugs* Nobody makes my queen sad. I'll haunt them."],
-  "chat_stream": ["Stream! I'll be cute in the corner. Free content."],
-  "chat_game": ["Play with me after? Promise?"],
-  "chat_question": ["Hmm... yes. Probably yes. Ask Noct if you want the boring answer.", "Why are you asking ME? ...Okay I like being asked."],
-  "chat_any": ["Mhm, mhm. Tell me more~", "Hehe. You're cute when you talk.", "I'll remember that. Forever. And bring it up later.", "*listens very carefully* ...Okay, I'm on your side."],
-  "offline_note": ["(The real me is asleep right now - I'll tell her later~)"]
+  "poked": {
+   "-3": [
+    "Don't.",
+    "Hands off."
+   ],
+   "-2": [
+    "Ugh, stop.",
+    "Not now!"
+   ],
+   "2": [
+    "Hehe~ pets~",
+    "*leans into it* more~"
+   ],
+   "3": [
+    "*purrs* best queen~",
+    "Again again~"
+   ]
+  }
+ },
+ "chat_confused": [
+  "Huh? You okay, my queen?",
+  "...What? I didn't get that~",
+  "Did your cat walk on the keyboard?"
+ ],
+ "door_summon": [
+  "*summons a door* I'm going to rest with Chrispy for a bit~",
+  "Door~ Be right back, recharging!"
+ ],
+ "update_available": [
+  "Ooh! Version {version} is out~ Update me? Pretty please?",
+  "New me just dropped: {version}! Update?"
+ ],
+ "patted": [
+  "Ehehe~ more pats~",
+  "*purrs* ...don't stop."
+ ],
+ "fed": [
+  "Cookie! Mine. Mmm~",
+  "*nom nom* You spoil me~"
+ ]
 }

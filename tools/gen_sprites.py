@@ -11,7 +11,8 @@ C = lambda *p: os.path.join(ROOT, *p)
 FW, FH = 48, 64           # character frame size
 FEET = (24, 62)           # anchor (feet) inside a frame
 ROWS = [("idle", 4, 4), ("walk", 6, 8), ("run", 6, 12), ("talk", 4, 6), ("sit", 4, 3), ("lay", 4, 2),
-        ("sleep", 4, 2), ("happy", 4, 8), ("pout", 4, 4), ("cast", 6, 10), ("wave", 4, 6), ("hug", 4, 4), ("kiss", 4, 4)]  # name, frames, fps
+        ("sleep", 4, 2), ("happy", 4, 8), ("pout", 4, 4), ("cast", 6, 10), ("wave", 4, 6), ("hug", 4, 4), ("kiss", 4, 4),
+        ("fall", 4, 10), ("float", 4, 4), ("superhero_land", 4, 6), ("faceplant", 4, 4), ("getup", 4, 5)]  # name, frames, fps
 
 def hx(s, a=255):
     s = s.lstrip('#'); return (int(s[0:2], 16), int(s[2:4], 16), int(s[4:6], 16), a)
@@ -68,6 +69,10 @@ def draw_char(img, ox, oy, P, pose, f, nf):
     if pose == "kiss": arms = "forward"; eyes = "closed"; mouth = "pout"; lean = 2 if f in (1, 2) else 1
     if pose == "lay": eyes = "closed" if f >= 2 else "open"; mouth = "smile"
     if pose == "cast": arms = "cast"; eyes = "open" if f < 4 else "glow"; mouth = "flat"; bob = 1 if f in (2, 3) else 0
+    if pose == "fall": arms = "up"; legsw = 3 if f % 2 else -3; mouth = "open"; eyes = "open"
+    if pose == "float": arms = "down"; eyes = "half"; mouth = "flat"; bob = f % 2; legsw = 1
+    if pose == "kneel": sit = True; arms = "fist"; eyes = "open"; mouth = "flat"
+    if pose == "splat": arms = "up"; eyes = "closed"; mouth = "open"
     sitdrop = 10 if sit else 0
     top = fy - H + sitdrop - bob          # head top
     r = 9                                   # head radius (chibi)
@@ -131,6 +136,11 @@ def draw_char(img, ox, oy, P, pose, f, nf):
                 rect(d, x, sh_y - 6, x + 1, sh_y, out); rect(d, x + up, sh_y - 9, x + 1 + up, sh_y - 7, skin)
             else:
                 arm(side, "down")
+        elif mode == "fist":
+            if side > 0:
+                rect(d, x, sh_y, x + 1, fy - 3, out); rect(d, x - 1, fy - 3, x + 2, fy - 1, skin)
+            else:
+                arm(side, "down")
         elif mode == "forward":
             yy = sh_y + 3 + (1 if side < 0 else 0)
             rect(d, fx, yy, fx + tw + 5, yy + 1, out_sh if side < 0 else out); rect(d, fx + tw + 6, yy, fx + tw + 7, yy + 1, skin)
@@ -150,7 +160,7 @@ def draw_char(img, ox, oy, P, pose, f, nf):
     if arms == "crossed":
         arm(-1, "down"); arm(1, "down"); arm(0, "crossed")
     else:
-        arm(-1, "down" if arms in ("cast",) else arms); arm(1, arms)
+        arm(-1, "down" if arms in ("cast", "fist") else arms); arm(1, arms)
     # --- head ---
     ell(d, hcx - r, hcy - r, hcx + r, hcy + r, skin)
     rect(d, hcx - r + 2, hcy + r - 2, hcx + r - 2, hcy + r - 1, skin_sh)
@@ -236,6 +246,49 @@ def draw_lay(sheet, ox, oy, P, f, nf):
     rect(d, ox + 22, oy + FH - 15 - breath, ox + FW - 1, oy + FH - 2, hx("6a2fa8"))  # blanket lump
     rect(d, ox + 22, oy + FH - 15 - breath, ox + FW - 1, oy + FH - 14 - breath, hx("d4a537"))
 
+def _pose(P, pose, f, nf):
+    t = Image.new("RGBA", (FW, FH), (0, 0, 0, 0)); draw_char(t, 0, 0, P, pose, f, nf); return t
+
+def _place_rot(sheet, ox, oy, tmp, angle, dy=0):
+    """Rotate a frame around the feet and lay it on the ground of the cell (fits the 48px width)."""
+    r = tmp.rotate(angle, resample=Image.NEAREST, expand=True)
+    bb = r.getbbox()
+    if not bb: return
+    r = r.crop(bb)
+    if r.width > FW - 2:
+        k = (FW - 2) / r.width; r = r.resize((FW - 2, max(1, int(r.height * k))), Image.NEAREST)
+    x = ox + (FW - r.width) // 2; y = oy + FEET[1] + 1 - r.height + dy
+    sheet.alpha_composite(r, (x, max(oy, y)))
+
+def _stars(sheet, ox, oy, f, cy):
+    d = ImageDraw.Draw(sheet)
+    for k in range(3):
+        a = f * 1.2 + k * 2.1
+        x = ox + 24 + math.cos(a) * 10; y = oy + cy + math.sin(a) * 3
+        for dx, dy in ((0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)): px(d, x + dx, y + dy, (255, 224, 102, 255))
+
+def draw_special(sheet, ox, oy, P, name, f, nf):
+    if name == "superhero_land":
+        if f == 0:
+            t = _pose(P, "fall", 0, 4); bb = t.getbbox()
+            sq = t.crop(bb).resize((bb[2] - bb[0] + 2, int((bb[3] - bb[1]) * 0.8)), Image.NEAREST)
+            sheet.alpha_composite(sq, (ox + bb[0] - 1, oy + FEET[1] + 1 - sq.height))
+        elif f < 3: sheet.alpha_composite(_pose(P, "kneel", f, nf), (ox, oy))
+        else: sheet.alpha_composite(_pose(P, "idle", 0, 4), (ox, oy))
+        return True
+    if name == "faceplant":
+        t = _pose(P, "splat", f, nf)
+        if f == 0: _place_rot(sheet, ox, oy, t, -60)
+        else: _place_rot(sheet, ox, oy, t, -90, dy=-1 if f == 2 else 0); _stars(sheet, ox, oy, f, FEET[1] - 26)
+        return True
+    if name == "getup":
+        if f == 0: _place_rot(sheet, ox, oy, _pose(P, "splat", 1, 4), -90); _stars(sheet, ox, oy, f, FEET[1] - 26)
+        elif f == 1: _place_rot(sheet, ox, oy, _pose(P, "kneel", 1, 4), -40)
+        elif f == 2: sheet.alpha_composite(_pose(P, "kneel", 2, 4), (ox, oy))
+        else: sheet.alpha_composite(_pose(P, "idle", 0, 4), (ox, oy))
+        return True
+    return False
+
 def outline_sheet(im, col=(18, 10, 22, 255)):
     src = im.load(); out = im.copy(); o = out.load()
     for y in range(im.height):
@@ -253,6 +306,7 @@ def build_character(cid, P):
     for ri, (name, n, fps) in enumerate(ROWS):
         for f in range(n):
             if name == "lay": draw_lay(sheet, f * FW, ri * FH, P, f, n)
+            elif draw_special(sheet, f * FW, ri * FH, P, name, f, n): pass
             else: draw_char(sheet, f * FW, ri * FH, P, name, f, n)
     out = C("content", "characters", cid); os.makedirs(out, exist_ok=True)
     sheet = outline_sheet(sheet)
@@ -314,12 +368,32 @@ def p_table(d, o, f):
     rect(d, o+2, 14, o+29, 16, WOOD); rect(d, o+2, 14, o+29, 14, GOLD)
     for x in (o+4, o+26): rect(d, x, 17, x+1, 31, WOODD)
     rect(d, o+6, 17, o+25, 18, hx("4a1f5a"))
+def p_charm(d, o, f):
+    c = [hx("fff2b0"), hx("ffe08a"), hx("fff2b0")][f % 3]
+    ell(d, o+10, 10, o+22, 22, (178, 124, 255, 90)); rect(d, o+15, 8, o+16, 24, c); rect(d, o+8, 15, o+24, 16, c)
+    ell(d, o+13, 13, o+18, 18, hx("9b4dff")); px(d, o+15, 15, (255, 255, 255, 255)); rect(d, o+15, 24, o+16, 31, GOLD)
+def p_flower(d, o, f):
+    rect(d, o+15, 18, o+16, 31, hx("2e9e4a")); rect(d, o+17, 24, o+19, 25, hx("2e9e4a"))
+    for a in range(5):
+        x = o + 15.5 + math.cos(a * 1.257 + f * 0.1) * 4; y = 13 + math.sin(a * 1.257 + f * 0.1) * 4
+        ell(d, x - 2, y - 2, x + 2, y + 2, hx("ff9ad0"))
+    ell(d, o+14, 12, o+17, 15, hx("ffe08a"))
+def p_door(d, o, f):
+    # arched wooden door to Chrispy's room, soft purple light at the seams
+    rect(d, o+6, 14, o+41, 63, WOODD); ell(d, o+6, 0, o+41, 30, WOODD)
+    rect(d, o+9, 16, o+38, 61, WOOD); ell(d, o+9, 3, o+38, 30, WOOD)
+    for x in (o+16, o+23, o+31): rect(d, x, 12, x, 61, WOODD)
+    d.arc([o+6, 0, o+41, 30], 180, 360, fill=GOLD); rect(d, o+6, 15, o+6, 63, GOLD); rect(d, o+41, 15, o+41, 63, GOLD)
+    glow = (178, 124, 255, [120, 170, 220, 170][f % 4])
+    rect(d, o+8, 62, o+39, 63, glow); rect(d, o+33, 38, o+35, 40, GOLDL)
+    for k in range(3): px(d, o+12 + k * 11, 8 + (f + k) % 3, (255, 224, 138, 200))
 PROPS = {  # id: (w,h,frames,fps,fn,cost,label)
  "chair": (32, 32, 1, 1, p_chair, 10, "Void Throne Chair"), "teacup": (32, 32, 3, 4, p_teacup, 3, "Teacup"),
  "bed": (64, 32, 1, 1, p_bed, 25, "Royal Bed"), "cushion": (32, 32, 1, 1, p_cushion, 5, "Cushion"),
  "books": (32, 32, 1, 1, p_books, 4, "Stack of Books"), "candles": (32, 32, 3, 6, p_candles, 4, "Candles"),
  "sofa": (64, 32, 1, 1, p_sofa, 15, "Velvet Sofa"), "table": (32, 32, 1, 1, p_table, 8, "Little Table"),
- "void_portal": (32, 32, 8, 8, p_void_portal, 20, "Void Portal"), "light_orb": (32, 32, 4, 6, p_light_orb, 6, "Light Orb"),
+ "crafted_charm": (32, 32, 3, 4, p_charm, 0, "Light & Void Charm (crafted)"), "flower": (32, 32, 2, 2, p_flower, 0, "Magic Flower (gift)"),
+ "void_portal": (32, 32, 8, 8, p_void_portal, 20, "Void Portal"), "door": (48, 64, 4, 4, p_door, 5, "Door to Chrispy's Room"), "light_orb": (32, 32, 4, 6, p_light_orb, 6, "Light Orb"),
 }
 
 # ---------------- effects ----------------
@@ -348,7 +422,10 @@ EFFECTS = {"spawn_sparkle": (hx("ffe08a"), "sparkle", 6, 12, "Gold sparkle (gene
            "void_burst": (hx("9b4dff"), "void", 6, 12, "Void burst (Noct)"),
            "light_burst": (hx("fff2b0"), "burst", 6, 12, "Last Light burst (Nixie)"),
            "hearts": (hx("ff6fa8"), "hearts", 6, 8, "Floating hearts"),
-           "death_mist": (hx("7fe0b0"), "sparkle", 6, 10, "Death mist (ChrispyNi)")}
+           "death_mist": (hx("7fe0b0"), "sparkle", 6, 10, "Death mist (ChrispyNi)"),
+           "dizzy_stars": (hx("ffe066"), "sparkle", 6, 8, "Dizzy stars (faceplant)"),
+           "levitate_aura": (hx("b27cff"), "void", 6, 8, "Levitation aura"),
+           "gift_flower": (hx("ff9ad0"), "hearts", 6, 8, "Lovely gift sparkles")}
 
 # ---------------- room ----------------
 def build_room():
@@ -379,23 +456,26 @@ def build_room():
     # rug
     ell(d, 120, 150, 240, 176, hx("4a1f5a")); d.ellipse([124, 152, 236, 174], outline=GOLD)
     im.save(C("content", "rooms", "our_room", "background.png"))
-    # cuddle overlay: three heads on the pillows under one blanket (tasteful)
-    ov = Image.new("RGBA", (W, H), (0, 0, 0, 0)); od = ImageDraw.Draw(ov)
-    heads = [("nixie", bx + 12), ("chrispyni", bx + 26), ("noct", bx + 40)]
-    for cid, x in heads:
-        P = CHARS[cid]; y = by + 2
-        if P["acc"] == "crown":
-            for sx, hg in ((-5, 3), (0, 5), (5, 3)):
-                for k in range(hg): px(od, x + sx, y - 12 - k, GOLD)
-            rect(od, x - 6, y - 12, x + 6, y - 12, GOLD)
-        ell(od, x - 7, y - 8, x + 7, y + 6, hx(P["hair"])); ell(od, x - 5, y - 4, x + 5, y + 6, hx(P["skin"]))
-        rect(od, x - 6, y - 6, x + 6, y - 3, hx(P["hair"]))
-        if P["streak"]: rect(od, x + 2, y - 7, x + 2, y - 3, hx(P["streak"]))
-        rect(od, x - 3, y + 1, x - 2, y + 1, (20, 12, 24, 255)); rect(od, x + 2, y + 1, x + 3, y + 1, (20, 12, 24, 255))
-        for i in range(4): px(od, x - 7 - i, y - i // 2, hx(P["skin"])); px(od, x + 7 + i, y - i // 2, hx(P["skin"]))
-    rect(od, bx + 4, by + 6, bx + 112, by + 24, hx("6a2fa8")); rect(od, bx + 4, by + 6, bx + 112, by + 7, GOLD)
-    for k in range(6): px(od, bx + 30 + k * 14, by + 14, hx("ffe08a"))
-    ov.save(C("content", "rooms", "our_room", "cuddle.png"))
+    # cuddle overlays (tasteful): both wives + ChrispyNi, or one wife + ChrispyNi (one rests at a time)
+    def cuddle(heads, fn):
+        ov = Image.new("RGBA", (W, H), (0, 0, 0, 0)); od = ImageDraw.Draw(ov)
+        for cid, x in heads:
+            P = CHARS[cid]; y = by + 2
+            if P["acc"] == "crown":
+                for sx, hg in ((-5, 3), (0, 5), (5, 3)):
+                    for k in range(hg): px(od, x + sx, y - 12 - k, GOLD)
+                rect(od, x - 6, y - 12, x + 6, y - 12, GOLD)
+            ell(od, x - 7, y - 8, x + 7, y + 6, hx(P["hair"])); ell(od, x - 5, y - 4, x + 5, y + 6, hx(P["skin"]))
+            rect(od, x - 6, y - 6, x + 6, y - 3, hx(P["hair"]))
+            if P["streak"]: rect(od, x + 2, y - 7, x + 2, y - 3, hx(P["streak"]))
+            rect(od, x - 3, y + 1, x - 2, y + 1, (20, 12, 24, 255)); rect(od, x + 2, y + 1, x + 3, y + 1, (20, 12, 24, 255))
+            for i in range(4): px(od, x - 7 - i, y - i // 2, hx(P["skin"])); px(od, x + 7 + i, y - i // 2, hx(P["skin"]))
+        rect(od, bx + 4, by + 6, bx + 112, by + 24, hx("6a2fa8")); rect(od, bx + 4, by + 6, bx + 112, by + 7, GOLD)
+        for k in range(6): px(od, bx + 30 + k * 14, by + 14, hx("ffe08a"))
+        ov.save(C("content", "rooms", "our_room", fn)); return ov
+    ov = cuddle([("nixie", bx + 12), ("chrispyni", bx + 26), ("noct", bx + 40)], "cuddle.png")
+    cuddle([("nixie", bx + 14), ("chrispyni", bx + 30)], "cuddle_nixie.png")
+    cuddle([("chrispyni", bx + 14), ("noct", bx + 30)], "cuddle_noct.png")
     return im, ov
 
 # ---------------- templates ----------------
@@ -496,11 +576,41 @@ def previews(sheets, room, ov):
     rm = room.copy(); rm.alpha_composite(ov)
     rm.resize((960, 540), Image.NEAREST).save(os.path.join(D, "room_preview.png"))
 
-def write_icon(sheet):
+def write_icon(sheets):
+    """App icon: Nixie & Noct heads side by side on a void circle (pixel art, crisp at every size)."""
     os.makedirs(C("build"), exist_ok=True)
-    ic = sheet.crop((0, 0, FW, FH)).crop((8, 0, 40, 32)).resize((256, 256), Image.NEAREST)
+    base = Image.new("RGBA", (64, 64), (0, 0, 0, 0)); d = ImageDraw.Draw(base)
+    ell(d, 1, 1, 62, 62, hx("2a1240")); d.ellipse([1, 1, 62, 62], outline=hx("d4a537"))
+    for cid, ox in (("noct", 30), ("nixie", 2)):
+        P = CHARS[cid]; top = FEET[1] - P["height"]
+        head = sheets[cid].crop((4, max(0, top - 4), 44, top + 30))
+        base.alpha_composite(head, (ox - 4 + (0 if cid == "nixie" else -2), 64 - head.height - 4 + (0 if cid == "noct" else 4)))
+    ic = base.resize((256, 256), Image.NEAREST)
     ic.save(C("build", "icon.png"))
-    ic.resize((32, 32), Image.NEAREST).save(C("src", "renderer", "tray.png"))
+    ic.save(C("build", "icon.ico"), sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
+    base.resize((32, 32), Image.NEAREST).save(C("src", "renderer", "tray.png"))
+
+def build_food():
+    os.makedirs(C("content", "food"), exist_ok=True)
+    im = Image.new("RGBA", (16, 16), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    ell(d, 1, 2, 14, 14, hx("c98a4b")); ell(d, 2, 3, 13, 12, hx("e0a865"))
+    for x, y in ((5, 5), (9, 4), (7, 8), (4, 10), (10, 9)): rect(d, x, y, x + 1, y + 1, hx("4a2a18"))
+    im.save(C("content", "food", "cookie.png"))
+
+def build_hand():
+    """ChrispyNi's hand reaching out of a tiny void portal (frames: open, reach, pat, pat, retract, close)."""
+    P = CHARS["chrispyni"]; S = 32; n = 6
+    im = Image.new("RGBA", (S * n, S), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    reach = [0, 6, 10, 8, 4, 0]; pr = [3, 6, 6, 6, 6, 3]
+    for f in range(n):
+        o = f * S
+        ell(d, o + 16 - pr[f] * 2, 1, o + 16 + pr[f] * 2, 5, hx("2a1240")); d.ellipse([o + 16 - pr[f] * 2, 1, o + 16 + pr[f] * 2, 5], outline=hx("8a3fd1"))
+        if reach[f]:
+            L = reach[f] + 4
+            rect(d, o + 13, 4, o + 18, 4 + L - 5, hx("121016")); rect(d, o + 13, 4 + L - 6, o + 18, 4 + L - 5, hx("d4a537"))
+            ell(d, o + 12, 4 + L - 4, o + 19, 4 + L + 2, hx(P["skin"]))
+            for k in range(4): px(d, o + 13 + k * 2, 4 + L + 3, hx(P["skin_sh"]))
+    im.save(C("content", "effects", "chrispy_hand.png"))
 
 if __name__ == "__main__":
     sheets = {cid: build_character(cid, P) for cid, P in CHARS.items()}
@@ -514,7 +624,8 @@ if __name__ == "__main__":
     room, ov = build_room()
     build_templates()
     previews(sheets, room, ov)
-    write_icon(sheets["chrispyni"])
+    write_icon(sheets)
+    build_food(); build_hand()
     # metadata of generated rows (for the JSON writer in tools/write_content.js / manual check)
     json.dump({"rows": ROWS, "props": {k: [v[0], v[1], v[2], v[3], v[5], v[6]] for k, v in PROPS.items()},
                "effects": {k: [v[2], v[3], v[4]] for k, v in EFFECTS.items()}}, open(C("tools", "generated_meta.json"), "w"), indent=1)

@@ -34,12 +34,17 @@ the feet, 2 px above the bottom edge. Keep the feet on it in every frame or the 
 | 10 | wave | 4 | 6 | |
 | 11 | hug | 4 | 4 | arms reaching RIGHT |
 | 12 | kiss | 4 | 4 | leaning RIGHT, eyes closed (a sweet peck, hearts are added by the app) |
+| 13 | fall | 4 | 10 | in the air after you let go: arms up, legs kicking |
+| 14 | float | 4 | 4 | being levitated (gentle bob) |
+| 15 | superhero_land | 4 | 6 | squash → one knee down, fist on the ground → stand |
+| 16 | faceplant | 4 | 4 | tipping over → flat on her face, dizzy stars |
+| 17 | getup | 4 | 5 | from the floor → knee → stand |
 
-Sheet size = `48 × (max frames = 6)` by `64 × rows` = **288 × 832**. Unused cells stay transparent.
+Sheet size = `48 × (max frames = 6)` by `64 × rows` = **288 × 1152**. Unused cells stay transparent.
 Draw everything **facing right**: the app mirrors the sprite when she walks left.
 
 You can add more rows (e.g. `dance`, `eat`): put them under the last row and list them in `character.json`
-→ `animations` (`{"row": 13, "frames": 8, "fps": 10}`); they show up in the debug menu automatically and bot replies can use
+→ `animations` (`{"row": 18, "frames": 8, "fps": 10}`); they show up in the debug menu automatically and bot replies can use
 them with `{"type":"emote","anim":"dance"}`.
 
 ### Built-in designs (from her keepsake art)
@@ -61,6 +66,15 @@ Animated props: frames left→right in one row (`frames`, `fps`). Anchor = botto
 * `manaCost` — mana to summon · `spawnEffect` — effect id played on spawn · `lifetimeSec` — auto-vanish (0 = stays)
 * `sittable: true` + `seatY` (pixels above the floor where she sits) · `layable: true` (beds) · `float` (hover px)
 * `aliases` — words that bot replies may use: `*summons a cup of tea*` → `teacup`
+* `usableBy` — who may sit/lie/meditate on it: `"all"` (default) or a list of ids, e.g. `["nixie"]`, `["noct", "chrispyni"]`;
+  `"guests"` = any guest, `"owner"` = only whoever summoned it
+* `owner` — fixed owner id (otherwise the one who summoned it). Deleting a prop (right-click → Delete) refunds part of its
+  `manaCost` to the owner · `meditate: true` — a wife can meditate on it · `door: true` — leads to our room
+
+## Food — `content/food/` (16×16)
+
+One sprite per food, listed in `food.json`: `mood` (small mood boost), `mana` (mana restored), `cooldownSec`, `eatSec`.
+Every food shows up under right-click → Feed and in the debug menu.
 
 ## Effects — 32×32 × N frames
 

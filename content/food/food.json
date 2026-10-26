@@ -1,0 +1,26 @@
+{
+ "_info": "Food (data-driven). Add more items here or in a mod's food/ folder. mood = small hidden-mood change, mana = mana restored, cooldownSec = how often it counts. frame/anchor like props.",
+ "items": [
+  {
+   "id": "cookie",
+   "name": "Cookie",
+   "image": "cookie.png",
+   "frame": {
+    "w": 16,
+    "h": 16
+   },
+   "anchor": {
+    "x": 8,
+    "y": 15
+   },
+   "mood": 0.15,
+   "mana": 3,
+   "cooldownSec": 300,
+   "eatSec": 2,
+   "aliases": [
+    "cookie",
+    "biscuit"
+   ]
+  }
+ ]
+}

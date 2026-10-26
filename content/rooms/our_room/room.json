@@ -46,5 +46,58 @@
     "our room",
     "bedroom",
     "room"
-  ]
+  ],
+  "overlays": {
+    "both": "cuddle.png",
+    "nixie": "cuddle_nixie.png",
+    "noct": "cuddle_noct.png"
+  },
+  "lines": {
+    "both": [
+      [
+        "Nixie",
+        "Our room~ finally. Me first. ...Okay, you in the middle."
+      ],
+      [
+        "Noct",
+        "Lie down, my love."
+      ],
+      [
+        "Nixie",
+        "Shh. Cuddles now."
+      ],
+      [
+        "Noct",
+        "...Warm."
+      ]
+    ],
+    "nixie": [
+      [
+        "Nixie",
+        "Just us two~ Noct can keep watch."
+      ],
+      [
+        "Nixie",
+        "Mmm. Recharge me, my queen..."
+      ],
+      [
+        "Nixie",
+        "*snuggles* ...Warm."
+      ]
+    ],
+    "noct": [
+      [
+        "Noct",
+        "Nixie is still out there. ...Good. Quiet."
+      ],
+      [
+        "Noct",
+        "Lie with me a while, love."
+      ],
+      [
+        "Noct",
+        "...Warm."
+      ]
+    ]
+  }
 }

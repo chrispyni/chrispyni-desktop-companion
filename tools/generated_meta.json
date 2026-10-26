@@ -64,6 +64,31 @@
    "kiss",
    4,
    4
+  ],
+  [
+   "fall",
+   4,
+   10
+  ],
+  [
+   "float",
+   4,
+   4
+  ],
+  [
+   "superhero_land",
+   4,
+   6
+  ],
+  [
+   "faceplant",
+   4,
+   4
+  ],
+  [
+   "getup",
+   4,
+   5
   ]
  ],
  "props": {
@@ -131,6 +156,22 @@
    8,
    "Little Table"
   ],
+  "crafted_charm": [
+   32,
+   32,
+   3,
+   4,
+   0,
+   "Light & Void Charm (crafted)"
+  ],
+  "flower": [
+   32,
+   32,
+   2,
+   2,
+   0,
+   "Magic Flower (gift)"
+  ],
   "void_portal": [
    32,
    32,
@@ -138,6 +179,14 @@
    8,
    20,
    "Void Portal"
+  ],
+  "door": [
+   48,
+   64,
+   4,
+   4,
+   5,
+   "Door to Chrispy's Room"
   ],
   "light_orb": [
    32,
@@ -173,6 +222,21 @@
    6,
    10,
    "Death mist (ChrispyNi)"
+  ],
+  "dizzy_stars": [
+   6,
+   8,
+   "Dizzy stars (faceplant)"
+  ],
+  "levitate_aura": [
+   6,
+   8,
+   "Levitation aura"
+  ],
+  "gift_flower": [
+   6,
+   8,
+   "Lovely gift sparkles"
   ]
  }
 }

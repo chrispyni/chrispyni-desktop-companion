@@ -1,0 +1,2 @@
+{ "_info": "Drops: height as a fraction of the work area. Below normalBelow = fine; below superheroBelow = superhero landing; higher = faceplant.",
+  "gravity": 2600, "normalBelow": 0.33, "superheroBelow": 0.5 }

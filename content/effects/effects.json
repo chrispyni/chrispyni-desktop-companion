@@ -111,6 +111,82 @@
         "death mist",
         "mist"
       ]
+    },
+    {
+      "id": "dizzy_stars",
+      "name": "Dizzy stars (faceplant)",
+      "image": "dizzy_stars.png",
+      "frame": {
+        "w": 32,
+        "h": 32
+      },
+      "frames": 6,
+      "fps": 8,
+      "anchor": {
+        "x": 16,
+        "y": 16
+      },
+      "manaCost": 0,
+      "loop": false,
+      "scale": 2,
+      "aliases": []
+    },
+    {
+      "id": "levitate_aura",
+      "name": "Levitation aura",
+      "image": "levitate_aura.png",
+      "frame": {
+        "w": 32,
+        "h": 32
+      },
+      "frames": 6,
+      "fps": 8,
+      "anchor": {
+        "x": 16,
+        "y": 16
+      },
+      "manaCost": 0,
+      "loop": false,
+      "scale": 2,
+      "aliases": []
+    },
+    {
+      "id": "gift_flower",
+      "name": "Lovely gift sparkles",
+      "image": "gift_flower.png",
+      "frame": {
+        "w": 32,
+        "h": 32
+      },
+      "frames": 6,
+      "fps": 8,
+      "anchor": {
+        "x": 16,
+        "y": 16
+      },
+      "manaCost": 0,
+      "loop": false,
+      "scale": 2,
+      "aliases": []
+    },
+    {
+      "id": "chrispy_hand",
+      "name": "ChrispyNi's hand from a void portal (pat)",
+      "image": "chrispy_hand.png",
+      "frame": {
+        "w": 32,
+        "h": 32
+      },
+      "frames": 6,
+      "fps": 4,
+      "anchor": {
+        "x": 16,
+        "y": 2
+      },
+      "manaCost": 0,
+      "loop": false,
+      "scale": 2,
+      "aliases": []
     }
   ]
 }

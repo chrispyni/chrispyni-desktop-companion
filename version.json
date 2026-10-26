@@ -1,1 +1,1 @@
-{ "version": "0.1.1-alpha", "date": "2026-10-26", "notes": "Self-contained folder build: everything (mods, data, logs, cache) lives in the app folder.", "download": "https://github.com/chrispyni/project-wives/releases" }
+{"version": "0.1.2-alpha", "date": "2026-10-27", "notes": "Own mana per wife, hidden moods, falls, door to our room, right-click menus, auto-update.", "download": "https://github.com/chrispyni/project-wives/releases"}

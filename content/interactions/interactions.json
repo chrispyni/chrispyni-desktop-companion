@@ -1,9 +1,145 @@
 {
-  "_comment": "Paired character interactions. The actor walks to the partner, both face each other and play their anims. 'forbidPairs' are never allowed (Nixie & Noct are both ChrispyNi's wives, not a couple). 'requires' = one of the two must have this id/role.",
-  "items": [
-    {"id": "wave", "name": "Wave", "anim": "wave", "partnerAnim": "wave", "distance": 70, "durationSec": 2.5, "effect": null, "allowed": "any", "lines": "wave"},
-    {"id": "hug", "name": "Hug", "anim": "hug", "partnerAnim": "hug", "distance": 26, "durationSec": 3, "effect": "hearts", "requires": "chrispyni", "forbidPairs": [["nixie", "noct"]], "lines": "hug"},
-    {"id": "kiss", "name": "Kiss (peck)", "anim": "kiss", "partnerAnim": "kiss", "distance": 22, "durationSec": 2, "effect": "hearts", "requires": "chrispyni", "forbidPairs": [["nixie", "noct"]], "lines": "kiss"},
-    {"id": "high_five", "name": "Wave hello (wives)", "anim": "wave", "partnerAnim": "happy", "distance": 40, "durationSec": 2, "allowed": "any", "lines": "wave"}
-  ]
+ "_comment": "Paired character interactions. The actor walks to the partner, both face each other and play their anims. 'forbidPairs' are never allowed (Nixie & Noct are both ChrispyNi's wives, not a couple). 'requires' = one of the two must have this id/role. Magic ones ('magic': true) cost mana from the actor's OWN pool ('manaCost'; craft also 'partnerManaCost'). 'levitatePartner' floats the partner, 'craftItem' makes a prop appear (free, paid by the spell). 'forbidWith' = never with these ids.",
+ "items": [
+  {
+   "id": "wave",
+   "name": "Wave",
+   "anim": "wave",
+   "partnerAnim": "wave",
+   "distance": 70,
+   "durationSec": 2.5,
+   "effect": null,
+   "allowed": "any",
+   "lines": "wave"
+  },
+  {
+   "id": "hug",
+   "name": "Hug",
+   "anim": "hug",
+   "partnerAnim": "hug",
+   "distance": 26,
+   "durationSec": 3,
+   "effect": "hearts",
+   "requires": "chrispyni",
+   "forbidPairs": [
+    [
+     "nixie",
+     "noct"
+    ]
+   ],
+   "lines": "hug",
+   "manaGift": 3
+  },
+  {
+   "id": "kiss",
+   "name": "Kiss (peck)",
+   "anim": "kiss",
+   "partnerAnim": "kiss",
+   "distance": 22,
+   "durationSec": 2,
+   "effect": "hearts",
+   "requires": "chrispyni",
+   "forbidPairs": [
+    [
+     "nixie",
+     "noct"
+    ]
+   ],
+   "lines": "kiss",
+   "manaGift": 2
+  },
+  {
+   "id": "high_five",
+   "name": "Wave hello (wives)",
+   "anim": "wave",
+   "partnerAnim": "happy",
+   "distance": 40,
+   "durationSec": 2,
+   "allowed": "any",
+   "lines": "wave"
+  },
+  {
+   "id": "levitate",
+   "name": "Levitate (magic)",
+   "magic": true,
+   "manaCost": 10,
+   "anim": "cast",
+   "partnerAnim": "float",
+   "distance": 60,
+   "durationSec": 4,
+   "effect": "levitate_aura",
+   "levitatePartner": {
+    "height": 70,
+    "sec": 3.5
+   },
+   "lines": "levitate",
+   "partnerLines": "levitated",
+   "allowed": "any",
+   "forbidWith": [
+    "chrispyni"
+   ]
+  },
+  {
+   "id": "craft_together",
+   "name": "Craft together (magic)",
+   "magic": true,
+   "manaCost": 8,
+   "partnerManaCost": 8,
+   "anim": "cast",
+   "partnerAnim": "cast",
+   "distance": 50,
+   "durationSec": 2.5,
+   "effect": "spawn_sparkle",
+   "craftItem": [
+    "crafted_charm",
+    "light_orb",
+    "candles"
+   ],
+   "lines": "craft",
+   "partnerLines": "craft",
+   "forbidWith": [
+    "chrispyni"
+   ]
+  },
+  {
+   "id": "lovely_gift",
+   "name": "Lovely gift (magic)",
+   "magic": true,
+   "manaCost": 6,
+   "anim": "cast",
+   "partnerAnim": "happy",
+   "distance": 40,
+   "durationSec": 2.5,
+   "requires": "chrispyni",
+   "effect": "gift_flower",
+   "craftItem": [
+    "flower",
+    "teacup",
+    "light_orb"
+   ],
+   "lines": "gift",
+   "partnerLines": "gift_received",
+   "moodEvent": "lovely_magic"
+  },
+  {
+   "id": "lovely_twirl",
+   "name": "Gentle levitation twirl (magic)",
+   "magic": true,
+   "manaCost": 8,
+   "anim": "cast",
+   "partnerAnim": "float",
+   "distance": 50,
+   "durationSec": 3.5,
+   "requires": "chrispyni",
+   "effect": "hearts",
+   "levitatePartner": {
+    "height": 40,
+    "sec": 3,
+    "twirl": true
+   },
+   "lines": "gift",
+   "partnerLines": "levitated",
+   "moodEvent": "lovely_magic"
+  }
+ ]
 }
