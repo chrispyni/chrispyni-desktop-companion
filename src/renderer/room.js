@@ -9,6 +9,7 @@ const imgs = {}; const im = (p) => imgs[p] || (imgs[p] = Object.assign(new Image
 const LINES = [['Nixie', 'Our room~ finally. Me first. ...Okay, you in the middle.'], ['Noct', 'Lie down, my love.'], ['Nixie', 'Shh. Cuddles now.'], ['Noct', '...Warm.']];
 const parts = Array.from({ length: 40 }, () => ({ x: Math.random() * 320, y: 180 + Math.random() * 180, s: 0.3 + Math.random(), k: Math.random() < 0.5 ? 'h' : 's' }));
 function heart(x, y, c) { g.fillStyle = c; [[0,0],[2,0],[-1,1],[0,1],[1,1],[2,1],[3,1],[0,2],[1,2],[2,2],[1,3]].forEach(([a,b]) => g.fillRect(Math.round(x+a), Math.round(y+b), 1, 1)); }
+window.onerror = (m) => console.log('ERR ' + m);
 (async () => {
   const init = await ipcRenderer.invoke('init');
   content = loadContent(init.dirs.base, init.dirs.mods, { disabledMods: init.cfg.disabledMods });
@@ -16,7 +17,7 @@ function heart(x, y, c) { g.fillStyle = c; [[0,0],[2,0],[-1,1],[0,1],[1,1],[2,1]
   cv.width = room.size.w; cv.height = room.size.h;
   bg = im(room.background); ov = room.overlay && im(room.overlay);
   let last = performance.now();
-  requestAnimationFrame(function f(now) { const dt = (now - last) / 1000; last = now; t += dt; draw(dt); requestAnimationFrame(f); });
+  setInterval(() => { const now = performance.now(); const dt = Math.min(0.1, (now - last) / 1000); last = now; t += dt; try { draw(dt); } catch (e) { console.log('room draw error ' + e.stack); } }, 33);
 })();
 ipcRenderer.on('mana', (_e, m) => { mana = m; });
 document.getElementById('leave').onclick = () => window.close();

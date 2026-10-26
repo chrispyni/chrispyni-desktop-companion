@@ -71,8 +71,11 @@ function openRoom(roomId = 'our_room') {
   const w = Math.min(960, d.width), h = Math.round(w * 9 / 16);
   roomWin = new BrowserWindow({ width: w, height: h, x: d.x + Math.round((d.width - w) / 2), y: d.y + Math.round((d.height - h) / 2),
     frame: false, resizable: true, alwaysOnTop: true, backgroundColor: '#000000', title: 'Our Room',
-    webPreferences: { nodeIntegration: true, contextIsolation: false } });
+    webPreferences: { nodeIntegration: true, contextIsolation: false, backgroundThrottling: false } });
+  roomWin.setAlwaysOnTop(true, 'screen-saver', 1);
+  roomWin.once('ready-to-show', () => { roomWin.show(); roomWin.moveTop(); roomWin.focus(); });
   roomWin.loadFile(path.join(__dirname, 'renderer', 'room.html'), { query: { room: roomId } });
+  roomWin.webContents.on('console-message', (_e, _l, m) => log('[room]', m));
   send('room', { open: true, room: roomId });
   roomWin.on('closed', () => { roomWin = null; send('room', { open: false, room: roomId }); });
 }
