@@ -1,0 +1,2 @@
+{ "id": "example-mod", "name": "Example mod", "version": "1.0.0", "priority": 100, "enabled": true,
+  "description": "Folder names starting with _ are ignored. Rename to 'example-mod' to switch it on. Shows: extra lines, a prop override, a new rare event." }

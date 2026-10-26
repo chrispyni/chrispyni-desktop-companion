@@ -1,0 +1,9 @@
+{
+  "_comment": "Paired character interactions. The actor walks to the partner, both face each other and play their anims. 'forbidPairs' are never allowed (Nixie & Noct are both ChrispyNi's wives, not a couple). 'requires' = one of the two must have this id/role.",
+  "items": [
+    {"id": "wave", "name": "Wave", "anim": "wave", "partnerAnim": "wave", "distance": 70, "durationSec": 2.5, "effect": null, "allowed": "any", "lines": "wave"},
+    {"id": "hug", "name": "Hug", "anim": "hug", "partnerAnim": "hug", "distance": 26, "durationSec": 3, "effect": "hearts", "requires": "chrispyni", "forbidPairs": [["nixie", "noct"]], "lines": "hug"},
+    {"id": "kiss", "name": "Kiss (peck)", "anim": "kiss", "partnerAnim": "kiss", "distance": 22, "durationSec": 2, "effect": "hearts", "requires": "chrispyni", "forbidPairs": [["nixie", "noct"]], "lines": "kiss"},
+    {"id": "high_five", "name": "Wave hello (wives)", "anim": "wave", "partnerAnim": "happy", "distance": 40, "durationSec": 2, "allowed": "any", "lines": "wave"}
+  ]
+}

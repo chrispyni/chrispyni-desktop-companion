@@ -1,13 +1,13 @@
 // GTA-style cheat codes, typed in the chat box. Only work in admin mode; otherwise ignored silently.
 'use strict';
-const WORD_CODES = { MANAMANA: '/fullmana', ETERNALNIGHT: '/infmana', GIMMEALL: '/spawnall', OURROOM: '/room', SHOWMEBONES: '/debug', BEDTIME: '/sleep' };
+const WORD_CODES = { MANAMANA: '/fullmana', ETERNALNIGHT: '/infmana', GIMMEALL: '/spawnall', OURROOM: '/room', SHOWMEBONES: '/hitboxes', BEDTIME: '/sleep', DEBUGMENU: '/debug', COMEHOME: '/visit chrispyni' };
 
 const COMMANDS = {
   fullmana: 'Fill mana to max', infmana: 'Toggle infinite mana', mana: '/mana <n> set mana',
   summon: '/summon <prop_id> [x]', dismiss: '/dismiss <prop_id|all>', cast: '/cast <char> <effect_id>',
   mood: '/mood <char> <mood>', say: '/say <char> <text>', act: '/act <char> <json action or *tag*>',
   spawnall: 'Summon every prop', room: 'Go to our room now', sleep: 'Toggle sleep mode', speed: '/speed <x> game speed',
-  debug: 'Toggle debug overlay (hitboxes, states)', reload: 'Reload content + mods', resetsave: 'Reset save (mana, moods, props)',
+  debug: 'Open/close the DEBUG MENU', hitboxes: 'Toggle debug overlay (hitboxes, states)', visit: '/visit <char> guest visit', leave: '/leave <char> guest leaves', interact: '/interact <char> <wave|hug|kiss> [partner]', play: '/play <char> <anim> play an animation', reload: 'Reload content + mods', resetsave: 'Reset save (mana, moods, props)',
   relay: '/relay <json> inject a fake bot reply', event: '/event <kind> fire an awareness event', devpanel: 'Toggle dev panel',
   admin: '/admin <passphrase> unlock admin for this session', help: 'List cheats',
 };

@@ -22,7 +22,8 @@
         "throne",
         "seat",
         "chair"
-      ]
+      ],
+      "seatY": 10
     },
     {
       "id": "teacup",
@@ -70,7 +71,8 @@
         "bed"
       ],
       "layable": true,
-      "seats": 3
+      "seats": 3,
+      "seatY": 12
     },
     {
       "id": "cushion",
@@ -93,7 +95,8 @@
       "aliases": [
         "pillow",
         "cushion"
-      ]
+      ],
+      "seatY": 4
     },
     {
       "id": "books",
@@ -211,7 +214,8 @@
         "sofa",
         "couch",
         "loveseat"
-      ]
+      ],
+      "seatY": 10
     },
     {
       "id": "table",

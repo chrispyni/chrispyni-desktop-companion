@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const KINDS = ['characters', 'props', 'effects', 'rooms', 'lines'];
+const KINDS = ['characters', 'props', 'effects', 'rooms', 'events', 'interactions', 'lines'];
 
 function readJSON(p) {
   return JSON.parse(fs.readFileSync(p, 'utf8').replace(/^\uFEFF/, ''));
@@ -29,7 +29,7 @@ function resolveFiles(obj, dir) {
 
 /** Load one content root (base "content" dir or a mod dir). Returns partial content. */
 function loadRoot(root, source) {
-  const out = { characters: {}, props: {}, effects: {}, rooms: {}, lines: {}, plugins: [] };
+  const out = { characters: {}, props: {}, effects: {}, rooms: {}, events: {}, interactions: {}, lines: {}, plugins: [] };
   if (!fs.existsSync(root)) return out;
   // characters/<id>/character.json , rooms/<id>/room.json
   for (const [kind, file] of [['characters', 'character.json'], ['rooms', 'room.json']]) {
@@ -44,7 +44,7 @@ function loadRoot(root, source) {
     }
   }
   // props/*.json, effects/*.json (one file may hold one object or {items:[...]})
-  for (const kind of ['props', 'effects']) {
+  for (const kind of ['props', 'effects', 'events', 'interactions']) {
     const d = path.join(root, kind);
     if (!fs.existsSync(d)) continue;
     for (const fn of fs.readdirSync(d).filter((x) => x.endsWith('.json'))) {
@@ -103,9 +103,9 @@ function listMods(modDirs) {
 /** Full load: base content, then each enabled mod on top. Character/prop/effect/room JSON deep-merges. */
 function loadContent(baseDir, modDirs = [], opts = {}) {
   const disabled = new Set(opts.disabledMods || []);
-  const result = { characters: {}, props: {}, effects: {}, rooms: {}, lines: {}, plugins: [], mods: [], errors: [] };
+  const result = { characters: {}, props: {}, effects: {}, rooms: {}, events: {}, interactions: {}, lines: {}, plugins: [], mods: [], errors: [] };
   const apply = (part) => {
-    for (const k of ['characters', 'props', 'effects', 'rooms']) {
+    for (const k of ['characters', 'props', 'effects', 'rooms', 'events', 'interactions']) {
       for (const [id, v] of Object.entries(part[k])) {
         if (v.remove) { delete result[k][id]; continue; }      // mods can delete: {"id":"x","remove":true}
         result[k][id] = result[k][id] ? deepMerge(result[k][id], v) : v;

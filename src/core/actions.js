@@ -4,7 +4,7 @@
 'use strict';
 
 const ACTION_TYPES = ['say', 'walk_to', 'sit', 'sleep', 'wake', 'emote', 'summon', 'dismiss', 'cast',
-  'change_mood', 'go_to_room', 'ask_mana', 'wait', 'face', 'jump'];
+  'change_mood', 'go_to_room', 'ask_mana', 'wait', 'face', 'jump', 'lay', 'run_to', 'interact', 'visit', 'leave'];
 
 function norm(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9а-яё_ ]+/gi, ' ').replace(/\s+/g, ' ').trim(); }
 
@@ -34,6 +34,10 @@ const VERBS = [
   [/\b(dismiss|banish|vanish|unsummon|unmake|remove)(es|s)?\b/, (t, I) => ({ type: 'dismiss', item: /\b(all|everything)\b/.test(t) ? 'all' : (findIn(I.props, t) || 'last') })],
   [/\b(cast|channel|weave)s?\b/, (t, I) => ({ type: 'cast', effect: findIn(I.effects, t) || null })],
   [/\b(sits?|sitting|plops?)\b/, (t, I) => ({ type: 'sit', on: findIn(I.props, t) || null })],
+  [/\b(hugs?|cuddles?|squeezes?)\b/, () => ({ type: 'interact', kind: 'hug', with: 'chrispyni' })],
+  [/\b(kiss(es)?|pecks?|smooch(es)?)\b/, () => ({ type: 'interact', kind: 'kiss', with: 'chrispyni' })],
+  [/\b(waves?)\b/, () => ({ type: 'emote', anim: 'wave' })],
+  [/\b(lies? down|lays? down|flops? on)\b/, (t, I) => ({ type: 'lay', on: findIn(I.props, t) || null })],
   [/\b(sleeps?|falls? asleep|naps?|dozes?)\b/, () => ({ type: 'sleep' })],
   [/\b(wakes? up|stretches)\b/, () => ({ type: 'wake' })],
   [/\b(walks?|wanders?|strolls?|struts?|runs?|goes|moves?)\b.*\b(left|right|center|centre|middle|you|chrispy|her)\b/, (t) => {
@@ -59,7 +63,7 @@ function parseStarTag(tag, I) {
 function parseBracket(body) {
   // [summon:teacup] [walk_to:left] [mood:smug] [cast:void_burst] [say:hi]
   const [k, ...rest] = body.split(':'); const v = rest.join(':').trim(); const key = norm(k).replace(/ /g, '_');
-  const map = { summon: 'item', dismiss: 'item', cast: 'effect', walk_to: 'target', emote: 'anim', go_to_room: 'room', sit: 'on', say: 'text', wait: 'sec' };
+  const map = { summon: 'item', dismiss: 'item', cast: 'effect', walk_to: 'target', run_to: 'target', lay: 'on', interact: 'kind', visit: 'guest', emote: 'anim', go_to_room: 'room', sit: 'on', say: 'text', wait: 'sec' };
   if (key === 'mood' || key === 'change_mood') return { type: 'change_mood', mood: v };
   if (!ACTION_TYPES.includes(key)) return null;
   const a = { type: key }; if (map[key] && v) a[map[key]] = key === 'wait' ? Number(v) : v; return a;

@@ -1,0 +1,9 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Our Room</title>
+<style>html,body{margin:0;background:#000;overflow:hidden;font-family:"Segoe UI",sans-serif;-webkit-app-region:drag}
+canvas{width:100vw;height:100vh;image-rendering:pixelated;display:block}
+#bar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);width:260px;height:14px;border:2px solid #d4a537;border-radius:8px;background:#1a1024cc;overflow:hidden}
+#fill{height:100%;background:linear-gradient(90deg,#6a2fa8,#b27cff,#ffe08a);width:0}
+#txt{position:fixed;left:0;right:0;top:14px;text-align:center;color:#ffe9b0;text-shadow:0 0 4px #000;font-size:16px}
+#leave{position:fixed;right:10px;top:8px;-webkit-app-region:no-drag;background:#2a1a3a;color:#eee;border:1px solid #6a2fa8;border-radius:5px;cursor:pointer}
+</style></head><body><canvas id="c" width="320" height="180"></canvas><div id="txt"></div><div id="bar"><div id="fill"></div></div>
+<button id="leave">leave room ✕</button><script src="room.js"></script></body></html>

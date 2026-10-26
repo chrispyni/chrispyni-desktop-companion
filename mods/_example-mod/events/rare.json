@@ -1,0 +1,2 @@
+{ "items": [ { "id": "mod_one_percent_dance", "name": "Mod: 1% dance", "on": "tick", "chance": 0.01, "weight": 1, "cooldownSec": 3600,
+  "steps": [ {"who": "nixie", "type": "emote", "anim": "happy", "sec": 3}, {"who": "noct", "type": "say", "text": "...Fine. One dance."}, {"who": "noct", "type": "emote", "anim": "happy", "sec": 3} ] } ] }

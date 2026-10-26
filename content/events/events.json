@@ -1,0 +1,33 @@
+{
+  "_comment": "Weighted / rare events. 'on' = what checks it (tick = every checkSec while idle; or an event name like app:video, idle_long, sleep, back, stream_watch). 'chance' = probability per check (0.01 = 1%). If several pass, one is picked by 'weight'. 'steps' are actions; each may have 'who' (a character id, 'any_wife', 'other_wife' or 'guest').",
+  "checkSec": 60,
+  "items": [
+    {"id": "rare_star_shower", "name": "Star shower (rare 1%)", "on": "tick", "chance": 0.01, "weight": 1, "cooldownSec": 3600, "manaCost": 0,
+     "conditions": {"timeOfDay": ["evening", "night", "late_night"]},
+     "steps": [
+       {"who": "noct", "type": "say", "text": "Look up, Chrispy. I unmade the clouds for you."},
+       {"who": "noct", "type": "cast", "effect": "void_burst"},
+       {"who": "nixie", "type": "cast", "effect": "light_burst"},
+       {"who": "nixie", "type": "say", "text": "And I lit every single star! Mine are prettier~"},
+       {"who": "any_wife", "type": "cast", "effect": "hearts"}
+     ]},
+    {"id": "rare_tea_party", "name": "Surprise tea party (rare 2%)", "on": "tick", "chance": 0.02, "weight": 2, "cooldownSec": 2400,
+     "steps": [
+       {"who": "nixie", "type": "summon", "item": "table"},
+       {"who": "nixie", "type": "summon", "item": "teacup"},
+       {"who": "nixie", "type": "say", "text": "Tea party! Attendance is mandatory, my queen. Royal decree."},
+       {"who": "noct", "type": "walk_to", "target": "table"},
+       {"who": "noct", "type": "say", "text": "...I'll pour."}
+     ]},
+    {"id": "visit_take_to_bed", "name": "They come to take you to bed", "on": "sleep", "chance": 1, "weight": 1, "cooldownSec": 1800,
+     "steps": [
+       {"who": "nixie", "type": "say", "text": "Bedtime! No arguing. Come on, come on~"},
+       {"who": "noct", "type": "say", "text": "Our room. Now, my love."},
+       {"who": "noct", "type": "go_to_room", "room": "our_room"}
+     ]},
+    {"id": "afk_miss_you", "name": "Missing her while AFK", "on": "idle_long", "chance": 0.6, "weight": 1, "cooldownSec": 1200,
+     "steps": [{"who": "nixie", "type": "emote", "anim": "pout"}, {"who": "nixie", "type": "say", "text": "She left us... Noct, she LEFT us."}, {"who": "noct", "type": "say", "text": "She'll return. She always does."}]},
+    {"id": "guest_watch_stream", "name": "ChrispyNi visits to watch (stream detected)", "on": "app:stream", "chance": 0.3, "weight": 1, "cooldownSec": 3600,
+     "steps": [{"who": "guest", "type": "visit", "guest": "chrispyni"}, {"who": "nixie", "type": "say", "text": "Ooh, are we going live? I'm sitting in the front row."}]}
+  ]
+}

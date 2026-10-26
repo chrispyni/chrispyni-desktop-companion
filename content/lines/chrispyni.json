@@ -1,0 +1,10 @@
+{
+  "_info": "ChrispyNi as a guest character (God of Death). Lines used when she visits or is played as a character.",
+  "greet": ["My queens. Miss me?", "*floats the crown a little higher* I'm here."],
+  "idle": {"smug": ["Kneel— no, hug. Hugging is better."], "happy": ["You two are adorable."], "any": ["Mm, my wives.", "Death is cozy tonight."]},
+  "visit": ["Room for one more? Of course there is. It's my desktop.", "Came to check on my queens~"],
+  "leave": ["Back to work. Behave, both of you.", "I'll be back. I always come back."],
+  "app_stream": ["Shh, I'm live. ...Hi chat."],
+  "wave": ["*waves*"], "hug": ["Come here, both of you."], "kiss": ["*kisses back*"],
+  "chat_any": ["Mhm."]
+}
