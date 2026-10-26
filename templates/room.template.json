@@ -1,0 +1,20 @@
+{
+  "id": "my_room",
+  "name": "My Room",
+  "background": "background.png",
+  "overlay": "cuddle.png",
+  "size": {
+    "w": 320,
+    "h": 180
+  },
+  "scale": 3,
+  "floorY": 120,
+  "spots": {
+    "bed": {
+      "x": 168,
+      "y": 100
+    }
+  },
+  "manaRestorePerSecond": 4,
+  "music": null
+}

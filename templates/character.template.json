@@ -1,0 +1,70 @@
+{
+  "id": "my_char",
+  "name": "My Character",
+  "sheet": "sheet.png",
+  "frame": {
+    "w": 48,
+    "h": 64
+  },
+  "anchor": {
+    "x": 24,
+    "y": 62
+  },
+  "scale": 2,
+  "animations": {
+    "idle": {
+      "row": 0,
+      "frames": 4,
+      "fps": 4
+    },
+    "walk": {
+      "row": 1,
+      "frames": 6,
+      "fps": 8
+    },
+    "talk": {
+      "row": 2,
+      "frames": 4,
+      "fps": 6
+    },
+    "sit": {
+      "row": 3,
+      "frames": 4,
+      "fps": 3
+    },
+    "sleep": {
+      "row": 4,
+      "frames": 4,
+      "fps": 2
+    },
+    "happy": {
+      "row": 5,
+      "frames": 4,
+      "fps": 8
+    },
+    "pout": {
+      "row": 6,
+      "frames": 4,
+      "fps": 4
+    },
+    "cast": {
+      "row": 7,
+      "frames": 6,
+      "fps": 10
+    }
+  },
+  "palette": {
+    "primary": "#ffffff",
+    "accent": "#d4a537"
+  },
+  "personality": {
+    "lines": "my_char",
+    "talkativeness": 0.5,
+    "moods": [
+      "happy",
+      "bored"
+    ]
+  },
+  "walkSpeed": 40,
+  "castEffect": "spawn_sparkle"
+}

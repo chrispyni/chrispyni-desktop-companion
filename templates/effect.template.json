@@ -1,0 +1,17 @@
+{
+  "id": "my_effect",
+  "name": "My Effect",
+  "image": "my_effect.png",
+  "frame": {
+    "w": 32,
+    "h": 32
+  },
+  "frames": 6,
+  "fps": 12,
+  "anchor": {
+    "x": 16,
+    "y": 16
+  },
+  "manaCost": 5,
+  "loop": false
+}

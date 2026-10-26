@@ -1,0 +1,137 @@
+{
+ "rows": [
+  [
+   "idle",
+   4,
+   4
+  ],
+  [
+   "walk",
+   6,
+   8
+  ],
+  [
+   "talk",
+   4,
+   6
+  ],
+  [
+   "sit",
+   4,
+   3
+  ],
+  [
+   "sleep",
+   4,
+   2
+  ],
+  [
+   "happy",
+   4,
+   8
+  ],
+  [
+   "pout",
+   4,
+   4
+  ],
+  [
+   "cast",
+   6,
+   10
+  ]
+ ],
+ "props": {
+  "chair": [
+   32,
+   32,
+   1,
+   1,
+   10,
+   "Void Throne Chair"
+  ],
+  "teacup": [
+   32,
+   32,
+   3,
+   4,
+   3,
+   "Teacup"
+  ],
+  "bed": [
+   64,
+   32,
+   1,
+   1,
+   25,
+   "Royal Bed"
+  ],
+  "cushion": [
+   32,
+   32,
+   1,
+   1,
+   5,
+   "Cushion"
+  ],
+  "books": [
+   32,
+   32,
+   1,
+   1,
+   4,
+   "Stack of Books"
+  ],
+  "candles": [
+   32,
+   32,
+   3,
+   6,
+   4,
+   "Candles"
+  ],
+  "void_portal": [
+   32,
+   32,
+   8,
+   8,
+   20,
+   "Void Portal"
+  ],
+  "light_orb": [
+   32,
+   32,
+   4,
+   6,
+   6,
+   "Light Orb"
+  ]
+ },
+ "effects": {
+  "spawn_sparkle": [
+   6,
+   12,
+   "Gold sparkle (generic spawn)"
+  ],
+  "void_burst": [
+   6,
+   12,
+   "Void burst (Noct)"
+  ],
+  "light_burst": [
+   6,
+   12,
+   "Last Light burst (Nixie)"
+  ],
+  "hearts": [
+   6,
+   8,
+   "Floating hearts"
+  ],
+  "death_mist": [
+   6,
+   10,
+   "Death mist (ChrispyNi)"
+  ]
+ }
+}

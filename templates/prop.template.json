@@ -1,0 +1,21 @@
+{
+  "id": "my_prop",
+  "name": "My Prop",
+  "image": "my_prop.png",
+  "frame": {
+    "w": 32,
+    "h": 32
+  },
+  "frames": 1,
+  "fps": 1,
+  "anchor": {
+    "x": 16,
+    "y": 31
+  },
+  "manaCost": 5,
+  "spawnEffect": "spawn_sparkle",
+  "sittable": false,
+  "tags": [
+    "cozy"
+  ]
+}

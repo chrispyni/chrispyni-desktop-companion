@@ -1,0 +1,41 @@
+{
+  "name": "project-wives",
+  "productName": "Project Wives",
+  "version": "0.1.0-alpha",
+  "description": "Desktop companions: Nixie & Noct, elf queens of ChrispyNi",
+  "main": "src/main.js",
+  "author": "ChrispyNi",
+  "license": "SEE LICENSE IN LICENSE",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test tests/",
+    "sprites": "python3 tools/gen_sprites.py",
+    "set-passphrase": "node tools/set-passphrase.js",
+    "dist:win": "electron-builder --win portable zip --x64"
+  },
+  "optionalDependencies": {
+    "active-win": "^8.2.1"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.chrispyni.projectwives",
+    "productName": "Project Wives",
+    "files": ["src/**", "package.json", "node_modules/**"],
+    "extraResources": [
+      {"from": "content", "to": "content"},
+      {"from": "mods", "to": "mods"},
+      {"from": "plugins", "to": "plugins"},
+      {"from": "templates", "to": "templates"},
+      {"from": "config.example.json", "to": "config.example.json"},
+      {"from": "version.json", "to": "version.json"},
+      {"from": "README.md", "to": "README.md"},
+      {"from": "CHANGELOG.md", "to": "CHANGELOG.md"}
+    ],
+    "win": {"target": ["portable", "zip"], "icon": "build/icon.png"},
+    "portable": {"artifactName": "ProjectWives-${version}-portable.exe"},
+    "directories": {"output": "dist"}
+  }
+}
