@@ -36,4 +36,12 @@ function reply(lib, compiled, charId, text, rng = Math.random) {
   const out = pick(lines) || pick((lib.fallback || {})[charId]) || pick((lib.fallback || {}).any) || null;
   return { text: out, rule: r ? r.id : null, mood: (r && r.mood) || (reaction && reaction.mood) || null, affection: (r && r.affection) || (reaction && reaction.affection) || 0 };
 }
-module.exports = { norm, compile, mergeLibs, findRule, reply };
+/** Pick a reply line by rule id (ambient triggers like guest arrive/leave). */
+function pickById(lib, charId, ruleId, rng = Math.random) {
+  const pick = (a) => (a && a.length ? a[Math.floor(rng() * a.length)] : null);
+  const r = (lib.rules || []).find((x) => x.id === ruleId);
+  if (!r) return { text: null, rule: null };
+  const lines = r.replies && (r.replies[charId] || r.replies.any);
+  return { text: pick(lines), rule: r.id };
+}
+module.exports = { norm, compile, mergeLibs, findRule, reply, pickById };

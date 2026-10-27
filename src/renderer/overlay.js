@@ -16,6 +16,8 @@ const { EventSystem } = require('../core/events');
 const { Hooks, loadPlugins } = require('../core/plugins');
 const { Affection } = require('../core/affection');
 const { landingFor, PHYS_DEFAULTS, releaseVelocity, stepProjectile, pickThrow, nextThrowAt } = require('../core/physics');
+const { MIN_GAP, freeSpot, separationDelta, companionSlot } = require('../core/spacing');
+const { categoryOf, labeledName, groupByCategory } = require('../core/categories');
 const { inRect, spriteRect, wantsCapture, chatShouldClose } = require('../core/hit');
 const { sleepPlan } = require('../core/sleepplan');
 const { classifyChat, repliers } = require('../core/chatfilter');
@@ -150,6 +152,40 @@ const wives = () => Object.values(chars).filter((c) => c.role !== 'guest');
 const guestsOn = () => Object.values(chars).filter((c) => c.role === 'guest' && !c.hidden && !c.leaving);
 const isChrispyEdition = () => !!(cfg && cfg.edition === 'chrispyni') || !!(INIT && INIT.edition === 'chrispyni');
 const clampX = (x, ch) => clamp(x, wa.x + (ch ? ch.halfW : 20), wa.x + wa.w - (ch ? ch.halfW : 20));
+
+/** Standing characters that can collide (on the floor, not mid-air / seated / hugging). */
+function standingPeers(exceptId) {
+  return Object.values(chars).filter((c) => c && c.id !== exceptId && !c.hidden && !c.leaving && !c.fadeOut
+    && !c.seat && !c.fly && !c.falling && !c.levitate && !c.inDoor && !c.dragging
+    && !(c.allowCloseUntil && performance.now() < c.allowCloseUntil));
+}
+function spacingBounds(ch) {
+  return { minGap: MIN_GAP, left: wa.x + (ch ? ch.halfW : 20), right: wa.x + wa.w - (ch ? ch.halfW : 20) };
+}
+/** Walk targets avoid overlapping another avatar (hug/kiss set allowClose / skip this). */
+function spacedTarget(ch, x, preferredSide) {
+  if (!ch || ch.leaving) return x;
+  const peers = standingPeers(ch.id).map((c) => ({ id: c.id, x: c.target != null ? c.target : c.x }));
+  return freeSpot(x, ch.id, peers, { ...spacingBounds(ch), preferredSide: preferredSide || 0 });
+}
+/** Host(s) of the current edition: ChrispyNi in public; present wives in Wives. */
+function editionHosts() {
+  if (isChrispyEdition()) return chars.chrispyni && !chars.chrispyni.hidden && !chars.chrispyni.leaving ? [chars.chrispyni] : [];
+  return wives().filter((w) => !w.hidden && !w.leaving);
+}
+/** Host answers a guest arrive/leave line from the offline chat library, ~1–2s later. */
+function hostChatReply(ruleId, delayMs) {
+  const delay = delayMs != null ? delayMs : (1000 + Math.random() * 1000);
+  setTimeout(() => {
+    const hosts = editionHosts();
+    if (!hosts.length || !chatLib || !chatRules) return;
+    const host = hosts.length === 1 ? hosts[0] : hosts[Math.floor(Math.random() * hosts.length)];
+    const r = chatlib.pickById(chatLib, host.id, ruleId);
+    if (r && r.text) { host.facing = 1; host.say(r.text, 4); }
+  }, delay);
+}
+
+
 const charName = (id) => (content.characters[id] || {}).name || id;
 
 // --------------- talking via brain -------------
@@ -238,7 +274,7 @@ function startAction(ch, a) {
     case 'say': ch.say(a.text, a.sec); ch.waitUntil = now + Math.min(3000, 600 + (a.text || '').length * 40); return false;
     case 'walk_to': case 'run_to': {
       if (ch.seat) standUp(ch);
-      ch.target = ch.leaving ? clamp(resolveX(ch, a.target ?? a.x), wa.x + ch.halfW, wa.x + wa.w - ch.halfW) : clampX(resolveX(ch, a.target ?? a.x), ch); ch.state = a.type === 'run_to' || a.run ? 'run' : 'walk'; return false;
+      const raw = resolveX(ch, a.target ?? a.x); ch.target = ch.leaving ? clamp(raw, wa.x + ch.halfW, wa.x + wa.w - ch.halfW) : (a.closeOk ? clampX(raw, ch) : spacedTarget(ch, clampX(raw, ch))); ch.state = a.type === 'run_to' || a.run ? 'run' : 'walk'; return false;
     }
     case 'sit': case 'lay': {
       const flag = a.type === 'sit' ? 'sittable' : 'layable';
@@ -322,6 +358,7 @@ function startInteract(ch, a) {
   if (Math.abs(partner.x - ch.x) > dist + 4) {
     ch.queue.unshift({ ...a, with: partner.id });
     if (ch.seat) standUp(ch);
+    ch.allowCloseUntil = performance.now() + 12000; partner.allowCloseUntil = performance.now() + 12000;
     ch.target = clampX(partner.x + (partner.x > ch.x ? -dist : dist), ch); ch.state = 'walk'; return false;
   }
   if (partner.waitUntil && partner.waitUntil > performance.now() + 50) { ch.queue.unshift({ ...a, with: partner.id }); ch.waitUntil = partner.waitUntil + 200; return false; }
@@ -334,6 +371,8 @@ function startInteract(ch, a) {
   }
   if (partner.seat) standUp(partner);
   ch.facing = partner.x > ch.x ? 1 : -1; partner.facing = -ch.facing;
+  const closeMs = (def.durationSec || 2) * 1000 + 500;
+  ch.allowCloseUntil = performance.now() + closeMs; partner.allowCloseUntil = performance.now() + closeMs;
   ch.play(def.anim, def.durationSec); partner.play(def.partnerAnim || def.anim, def.durationSec);
   partner.queue = []; partner.current = null; partner.waitUntil = performance.now() + def.durationSec * 1000; partner.state = 'idle'; partner.target = null;
   ch.waitUntil = performance.now() + def.durationSec * 1000;
@@ -356,12 +395,13 @@ function visit(gid) {
   portal(c.x, 2600); setTimeout(() => { c.fadeIn = true; }, 700);      // a void portal opens at the edge, she steps out, it closes
   c.enqueue([{ type: 'walk_to', target: rnd(wa.x + wa.w * 0.3, wa.x + wa.w * 0.7) }]);
   speak(c, 'visit') || c.enqueue([{ type: 'say', text: 'Hi, my queens.' }]);
+  hostChatReply('guest_arrive_reply');
   c.leaveAt = performance.now() + (cfg.guestVisitMinutes || 3) * 60000;
   for (const w of wives()) { w.mood.react('back'); if (Math.random() < 0.7) w.enqueue([{ type: 'interact', kind: pick(['wave', 'hug']), with: gid, ambient: true }]); w.aff.event('with_chrispy'); }
   if (!isChrispyEdition() && gid === 'chrispyni' && !noAutoTake && !trip && !roomOpen && wives().some((w) => w.mana && w.mana.ratio < 0.6) && Math.random() < 0.3) setTimeout(chrispyTakes, 500);
   hooks.emit('visit', { guest: gid });
 }
-function leave(c) { speak(c, 'leave'); c.leaving = true; c.queue.push({ type: 'walk_to', target: c.x < wa.x + wa.w / 2 ? wa.x : wa.x + wa.w }); }   // walks to the edge, steps into a void portal
+function leave(c) { speak(c, 'leave'); hostChatReply('guest_leave_reply'); c.leaving = true; c.queue.push({ type: 'walk_to', target: c.x < wa.x + wa.w / 2 ? wa.x : wa.x + wa.w }); }   // walks to the edge, steps into a void portal
 /** Void portal (guests only): opens at x, closes after ms. */
 function portal(x, ms) {
   const def = content.props.void_portal; if (!def) return null;
@@ -571,17 +611,21 @@ const TO_CHRISPY = {
   noct: ['...You\'re here. Good.', 'Don\'t leave too soon, love.', 'Mm. I saved you a spot.', 'Took you long enough~'],
 };
 function visitingChrispy() { const g = chars.chrispyni; return g && !g.hidden && !g.leaving && !g.fadeOut ? g : null; }
-function nearChrispySpot(ch, g) {   // each wife keeps to her own side of ChrispyNi, within a short radius
-  const others = wives().filter((w) => !w.hidden); const side = others.indexOf(ch) % 2 === 0 ? -1 : 1;
-  return clampX(g.x + side * rnd(35, 110), ch);
+function nearChrispySpot(ch, g) {   // stay near the host/guest anchor, side by side (no overlap)
+  const others = (isChrispyEdition() ? presentWives() : wives().filter((w) => !w.hidden));
+  const idx = Math.max(0, others.indexOf(ch));
+  const desired = companionSlot(g.x, idx, MIN_GAP);
+  return spacedTarget(ch, clampX(desired, ch), idx % 2 === 0 ? -1 : 1);
 }
 /** Random spot across the whole work area; near an edge she heads back toward the middle (edge repulsion). */
 function wanderTarget(ch) {
   const gv = ch.role !== 'guest' && visitingChrispy(); if (gv) return nearChrispySpot(ch, gv);
   const rel = (ch.x - wa.x) / Math.max(1, wa.w);
-  if (rel < 0.15) return clampX(wa.x + wa.w * rnd(0.3, 0.85), ch);
-  if (rel > 0.85) return clampX(wa.x + wa.w * rnd(0.15, 0.7), ch);
-  return clampX(Math.random() < 0.6 ? wa.x + wa.w * rnd(0.08, 0.92) : ch.x + rnd(-350, 350), ch);
+  let raw;
+  if (rel < 0.15) raw = clampX(wa.x + wa.w * rnd(0.3, 0.85), ch);
+  else if (rel > 0.85) raw = clampX(wa.x + wa.w * rnd(0.15, 0.7), ch);
+  else raw = clampX(Math.random() < 0.6 ? wa.x + wa.w * rnd(0.08, 0.92) : ch.x + rnd(-350, 350), ch);
+  return spacedTarget(ch, raw);
 }
 function chatter(a, b) {
   // walk close, face each other, take turns with '...' bubbles (pixel-game style, no text)
@@ -651,6 +695,17 @@ function update(dt) {
     }
     if (!ch.seat && ch.y > ground) ch.y = ground;
     if (!ch.leaving) ch.x = clampX(ch.x, ch);
+    // Gently step apart if standing idle overlapping another avatar (hug/kiss sets allowCloseUntil).
+    if (!ch.seat && !ch.fly && !ch.falling && !ch.levitate && !ch.inDoor && !ch.dragging && !ch.leaving
+        && ch.target == null && !ch.queue.length && !(ch.allowCloseUntil && performance.now() < ch.allowCloseUntil)
+        && (ch.state === 'idle' || ch.state === 'talk' || ch.state === 'happy' || ch.state === 'pout' || ch.state === 'watch')) {
+      const peers = standingPeers(ch.id).map((c) => ({ id: c.id, x: c.x }));
+      const dlt = separationDelta(ch.x, ch.id, peers, { minGap: MIN_GAP, step: 1.5 });
+      if (dlt) {
+        const dest = spacedTarget(ch, clampX(ch.x + Math.sign(dlt) * MIN_GAP, ch), Math.sign(dlt));
+        if (Math.abs(dest - ch.x) > 2) { ch.target = dest; ch.state = 'walk'; }
+      }
+    }
     if (ch.role !== 'guest' && !ch.seat && ch.target == null && !ch.queue.length && !trip) {
       const rel = (ch.x - wa.x) / Math.max(1, wa.w);
       if (rel < 0.08 || rel > 0.92) { ch.edgeT = (ch.edgeT || 0) + dt; if (ch.edgeT > 8) { ch.edgeT = 0; ch.enqueue([{ type: 'walk_to', target: wanderTarget(ch) }]); } } else ch.edgeT = 0;
@@ -1426,8 +1481,16 @@ function buildDebug() {
   for (const p of Object.values(content.props)) s.append(btn(`${p.name || p.id} (${p.manaCost || 0})${p.usableBy && p.usableBy !== 'all' ? ' [' + [].concat(p.usableBy).join(',') + ']' : ''}${p.owner ? ' ♛' + p.owner : ''}`, () => summon(null, p.id)));
   s = section(root, 'Props on screen (owner · usable by)');
   for (const p of props) { if (p.portal) continue; const e = document.createElement('div'); e.textContent = `${p.id} #${p.uid} · owner ${p.owner || '-'} · usable by ${[].concat(p.def.usableBy || 'all').join(', ')} `; e.append(btn('delete', () => { deleteProp(p); buildDebug(); })); s.append(e); }
-  for (const ch of Object.values(chars)) {
-    const d = section(root, `${charName(ch.id)} (${ch.role})`);
+  // Characters grouped by category (Main / Wife / Friends / mod customs). Only Wife gets a "(wife)" tag.
+  for (const group of groupByCategory(content.characters, { includeEmpty: true })) {
+    section(root, group.category);
+    if (!group.items.length) {
+      const empty = document.createElement('div'); empty.style.opacity = '0.6'; empty.textContent = '(none yet)'; root.append(empty);
+      continue;
+    }
+    for (const def of group.items) {
+    const ch = chars[def.id]; if (!ch) continue;
+    const d = section(root, labeledName(ch.def, charName(ch.id)));
     const h = (txt) => { const e = document.createElement('h4'); e.textContent = txt; d.append(e); };
     const meter = document.createElement('div'); meter.dataset.meter = ch.id; meter.style.color = '#ffe08a'; d.append(meter);
     h('Hidden mood level (-3 angry … +3 happy)');
@@ -1471,6 +1534,7 @@ function buildDebug() {
     h('Move / talk');
     d.append(btn('walk left', () => ch.enqueue([{ type: 'walk_to', target: 'left' }])), btn('run right', () => ch.enqueue([{ type: 'run_to', target: 'right' }])),
       btn('jump', () => ch.enqueue([{ type: 'jump' }])), btn('idle line', () => speak(ch, 'idle')), btn('… bubble', () => ch.dots(3)), btn('? bubble', () => ch.question()));
+    }
   }
   refreshDebugMeters();
 }

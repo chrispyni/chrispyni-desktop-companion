@@ -1,230 +1,231 @@
 {
- "id": "noct",
- "name": "Noct",
- "fullName": "Noctaris",
- "title": "Unmaking",
- "role": "wife",
- "sheet": "sheet.png",
- "frame": {
-  "w": 48,
-  "h": 64
- },
- "anchor": {
-  "x": 24,
-  "y": 62
- },
- "scale": 2,
- "animations": {
-  "idle": {
-   "row": 0,
-   "frames": 4,
-   "fps": 4
+  "id": "noct",
+  "name": "Noct",
+  "fullName": "Noctaris",
+  "title": "Unmaking",
+  "role": "wife",
+  "category": "Wife",
+  "sheet": "sheet.png",
+  "frame": {
+    "w": 48,
+    "h": 64
   },
-  "walk": {
-   "row": 1,
-   "frames": 6,
-   "fps": 8
+  "anchor": {
+    "x": 24,
+    "y": 62
   },
-  "run": {
-   "row": 2,
-   "frames": 6,
-   "fps": 12
+  "scale": 2,
+  "animations": {
+    "idle": {
+      "row": 0,
+      "frames": 4,
+      "fps": 4
+    },
+    "walk": {
+      "row": 1,
+      "frames": 6,
+      "fps": 8
+    },
+    "run": {
+      "row": 2,
+      "frames": 6,
+      "fps": 12
+    },
+    "talk": {
+      "row": 3,
+      "frames": 4,
+      "fps": 6
+    },
+    "sit": {
+      "row": 4,
+      "frames": 4,
+      "fps": 3
+    },
+    "lay": {
+      "row": 5,
+      "frames": 4,
+      "fps": 2
+    },
+    "sleep": {
+      "row": 6,
+      "frames": 4,
+      "fps": 2
+    },
+    "happy": {
+      "row": 7,
+      "frames": 4,
+      "fps": 8
+    },
+    "pout": {
+      "row": 8,
+      "frames": 4,
+      "fps": 4
+    },
+    "cast": {
+      "row": 9,
+      "frames": 6,
+      "fps": 10
+    },
+    "wave": {
+      "row": 10,
+      "frames": 4,
+      "fps": 6
+    },
+    "hug": {
+      "row": 11,
+      "frames": 4,
+      "fps": 4
+    },
+    "kiss": {
+      "row": 12,
+      "frames": 4,
+      "fps": 4
+    },
+    "fall": {
+      "row": 13,
+      "frames": 4,
+      "fps": 10
+    },
+    "float": {
+      "row": 14,
+      "frames": 4,
+      "fps": 4
+    },
+    "superhero_land": {
+      "row": 15,
+      "frames": 4,
+      "fps": 6
+    },
+    "faceplant": {
+      "row": 16,
+      "frames": 4,
+      "fps": 4
+    },
+    "getup": {
+      "row": 17,
+      "frames": 4,
+      "fps": 5
+    },
+    "watch": {
+      "row": 18,
+      "frames": 4,
+      "fps": 2
+    }
   },
-  "talk": {
-   "row": 3,
-   "frames": 4,
-   "fps": 6
+  "palette": {
+    "primary": "#141018",
+    "hair": "#15121c",
+    "accent": "#8a3fd1",
+    "gem": "#b27cff",
+    "eyes": "#8e5ad8"
   },
-  "sit": {
-   "row": 4,
-   "frames": 4,
-   "fps": 3
+  "walkSpeed": 38,
+  "castEffect": "void_burst",
+  "bubble": {
+    "bg": "#1a1024",
+    "border": "#8a3fd1",
+    "text": "#e8dcff"
   },
-  "lay": {
-   "row": 5,
-   "frames": 4,
-   "fps": 2
+  "personality": {
+    "lines": "noct",
+    "talkativeness": 0.35,
+    "baseMood": "calm",
+    "moods": [
+      "calm",
+      "smug",
+      "loving",
+      "sleepy",
+      "bored",
+      "jealous",
+      "happy",
+      "pouty"
+    ],
+    "drift": {
+      "calm": 1.5,
+      "smug": 0.8,
+      "loving": 0.8,
+      "sleepy": 0.5,
+      "bored": 0.4,
+      "jealous": 0.3,
+      "happy": 0.5,
+      "pouty": 0.1
+    },
+    "reactions": {
+      "chat": {
+        "loving": 0.6,
+        "calm": 0.2
+      },
+      "ignored": {
+        "bored": 0.4
+      },
+      "other_got_attention": {
+        "jealous": 0.6,
+        "smug": 0.3
+      },
+      "app:game": {
+        "smug": 0.4
+      },
+      "app:art": {
+        "calm": 0.4,
+        "loving": 0.2
+      },
+      "app:video": {
+        "calm": 0.3
+      },
+      "poked": {
+        "smug": 0.6
+      },
+      "summon_fail": {
+        "calm": 0.5
+      },
+      "low_mana": {
+        "calm": 0.3
+      },
+      "room": {
+        "loving": 2
+      },
+      "night": {
+        "calm": 0.5,
+        "sleepy": 0.5
+      },
+      "late_night": {
+        "sleepy": 1.2
+      },
+      "idle_long": {
+        "sleepy": 0.8
+      },
+      "back": {
+        "loving": 0.8
+      },
+      "chat:loved": {
+        "loving": 1.2
+      },
+      "chat:sleepy": {
+        "sleepy": 1
+      },
+      "chat:sad": {
+        "loving": 0.4
+      },
+      "chat:annoyed": {
+        "smug": 0.3,
+        "loving": -0.8
+      },
+      "chat:happy": {
+        "loving": 0.5
+      }
+    },
+    "sizeNote": "taller of the two wives"
   },
-  "sleep": {
-   "row": 6,
-   "frames": 4,
-   "fps": 2
-  },
-  "happy": {
-   "row": 7,
-   "frames": 4,
-   "fps": 8
-  },
-  "pout": {
-   "row": 8,
-   "frames": 4,
-   "fps": 4
-  },
-  "cast": {
-   "row": 9,
-   "frames": 6,
-   "fps": 10
-  },
-  "wave": {
-   "row": 10,
-   "frames": 4,
-   "fps": 6
-  },
-  "hug": {
-   "row": 11,
-   "frames": 4,
-   "fps": 4
-  },
-  "kiss": {
-   "row": 12,
-   "frames": 4,
-   "fps": 4
-  },
-  "fall": {
-   "row": 13,
-   "frames": 4,
-   "fps": 10
-  },
-  "float": {
-   "row": 14,
-   "frames": 4,
-   "fps": 4
-  },
-  "superhero_land": {
-   "row": 15,
-   "frames": 4,
-   "fps": 6
-  },
-  "faceplant": {
-   "row": 16,
-   "frames": 4,
-   "fps": 4
-  },
-  "getup": {
-   "row": 17,
-   "frames": 4,
-   "fps": 5
-  },
-  "watch": {
-   "row": 18,
-   "frames": 4,
-   "fps": 2
+  "eyes": {
+    "y": 20,
+    "x": [
+      19,
+      28
+    ],
+    "w": 2,
+    "h": 3,
+    "iris": "#8e5ad8",
+    "pupil": "#3a1a66",
+    "white": "#ffffff"
   }
- },
- "palette": {
-  "primary": "#141018",
-  "hair": "#15121c",
-  "accent": "#8a3fd1",
-  "gem": "#b27cff",
-  "eyes": "#8e5ad8"
- },
- "walkSpeed": 38,
- "castEffect": "void_burst",
- "bubble": {
-  "bg": "#1a1024",
-  "border": "#8a3fd1",
-  "text": "#e8dcff"
- },
- "personality": {
-  "lines": "noct",
-  "talkativeness": 0.35,
-  "baseMood": "calm",
-  "moods": [
-   "calm",
-   "smug",
-   "loving",
-   "sleepy",
-   "bored",
-   "jealous",
-   "happy",
-   "pouty"
-  ],
-  "drift": {
-   "calm": 1.5,
-   "smug": 0.8,
-   "loving": 0.8,
-   "sleepy": 0.5,
-   "bored": 0.4,
-   "jealous": 0.3,
-   "happy": 0.5,
-   "pouty": 0.1
-  },
-  "reactions": {
-   "chat": {
-    "loving": 0.6,
-    "calm": 0.2
-   },
-   "ignored": {
-    "bored": 0.4
-   },
-   "other_got_attention": {
-    "jealous": 0.6,
-    "smug": 0.3
-   },
-   "app:game": {
-    "smug": 0.4
-   },
-   "app:art": {
-    "calm": 0.4,
-    "loving": 0.2
-   },
-   "app:video": {
-    "calm": 0.3
-   },
-   "poked": {
-    "smug": 0.6
-   },
-   "summon_fail": {
-    "calm": 0.5
-   },
-   "low_mana": {
-    "calm": 0.3
-   },
-   "room": {
-    "loving": 2
-   },
-   "night": {
-    "calm": 0.5,
-    "sleepy": 0.5
-   },
-   "late_night": {
-    "sleepy": 1.2
-   },
-   "idle_long": {
-    "sleepy": 0.8
-   },
-   "back": {
-    "loving": 0.8
-   },
-   "chat:loved": {
-    "loving": 1.2
-   },
-   "chat:sleepy": {
-    "sleepy": 1
-   },
-   "chat:sad": {
-    "loving": 0.4
-   },
-   "chat:annoyed": {
-    "smug": 0.3,
-    "loving": -0.8
-   },
-   "chat:happy": {
-    "loving": 0.5
-   }
-  },
-  "sizeNote": "taller of the two wives"
- },
- "eyes": {
-  "y": 20,
-  "x": [
-   19,
-   28
-  ],
-  "w": 2,
-  "h": 3,
-  "iris": "#8e5ad8",
-  "pupil": "#3a1a66",
-  "white": "#ffffff"
- }
 }

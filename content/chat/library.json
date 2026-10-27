@@ -1,37 +1,305 @@
 {
   "_comment": "Offline chat library. Each rule: match (words/phrases, or /regex/flags), replies per character (or 'any'), optional mood (react key) and affection (+/-). Mods can add content/chat/library.json with more rules; same id replaces.",
   "rules": [
-    { "id": "greet", "match": ["hi", "hello", "hey", "yo", "good morning", "good evening", "morning"], "mood": "back",
-      "replies": { "nixie": ["Hmph, finally you say hi~", "Heyyy! You took your time.", "Oh, it's you~ Hi hi!"],
-                   "noct": ["Hello, love.", "Mm. Welcome back.", "Hi. I was waiting."] } },
-    { "id": "how_are_you", "match": ["how are you", "how r u", "how are u", "you ok", "how's it going", "hows it going"], "priority": 1,
-      "replies": { "nixie": ["Bored! Entertain me~", "Great, now that you're here. Obviously.", "Hungry. And cute. Mostly cute."],
-                   "noct": ["Calm. Content. And you?", "Better now.", "Quiet day. I like it."] } },
-    { "id": "love", "match": ["i love you", "love you", "ily", "love u", "my queen", "my queens"], "priority": 2, "mood": "loved", "affection": 1,
-      "replies": { "nixie": ["W-well, obviously! ...I love you too, dummy.", "Say it again~ Louder!", "Hehe~ I know~ ♥"],
-                   "noct": ["I love you too. Always.", "...Mm. Same. Forever.", "Come closer and say that."] } },
-    { "id": "cute", "match": ["cute", "pretty", "beautiful", "gorgeous", "adorable"], "mood": "loved", "affection": 1,
-      "replies": { "nixie": ["I know, right?~", "Flattery works. Continue.", "Hmph! ...thanks."], "noct": ["...You're sweet.", "Only for you.", "Mm. Thank you."] } },
-    { "id": "food", "match": ["hungry", "food", "eat", "cookie", "cookies", "snack", "dinner", "lunch", "breakfast"],
-      "replies": { "nixie": ["Cookies! Gimme gimme~", "Did someone say snacks?!", "Feed me and I'll be nice. Maybe."],
-                   "noct": ["Tea and something sweet would be nice.", "Eat properly, love.", "I could share a cookie."] } },
-    { "id": "sleep", "match": ["sleep", "tired", "sleepy", "good night", "goodnight", "gn", "bed"], "mood": "sleepy",
-      "replies": { "nixie": ["Already? ...fine. Sweet dreams, dummy.", "Sleepy? Lame~ ...rest well.", "Nap time! I call the warm side."],
-                   "noct": ["Rest. I'll watch over you.", "Good night, love.", "Sleep well. We'll be here."] } },
-    { "id": "thanks", "match": ["thanks", "thank you", "thx", "ty"],
-      "replies": { "nixie": ["You're welcome~ You owe me a cookie.", "Hehe, of course!", "Obviously~"], "noct": ["Anytime.", "Of course, love.", "Mm."] } },
-    { "id": "bye", "match": ["bye", "goodbye", "see you", "see ya", "cya", "gotta go", "brb"], "priority": 1, "mood": "sad",
-      "replies": { "nixie": ["Leaving?! ...come back soon, okay?", "Bye bye! Don't forget me~", "Hmph. Fine. Hurry back."],
-                   "noct": ["Take care. We'll be here.", "See you soon, love.", "Come back safe."] } },
-    { "id": "sorry", "match": ["sorry", "my bad", "apologize"], "affection": 1,
-      "replies": { "nixie": ["Hmm... forgiven. This time.", "Cookies would help me forgive you~"], "noct": ["It's alright.", "Already forgotten."] } }
+    {
+      "id": "greet",
+      "match": [
+        "hi",
+        "hello",
+        "hey",
+        "yo",
+        "good morning",
+        "good evening",
+        "morning"
+      ],
+      "mood": "back",
+      "replies": {
+        "nixie": [
+          "Hmph, finally you say hi~",
+          "Heyyy! You took your time.",
+          "Oh, it's you~ Hi hi!"
+        ],
+        "noct": [
+          "Hello, love.",
+          "Mm. Welcome back.",
+          "Hi. I was waiting."
+        ]
+      }
+    },
+    {
+      "id": "how_are_you",
+      "match": [
+        "how are you",
+        "how r u",
+        "how are u",
+        "you ok",
+        "how's it going",
+        "hows it going"
+      ],
+      "priority": 1,
+      "replies": {
+        "nixie": [
+          "Bored! Entertain me~",
+          "Great, now that you're here. Obviously.",
+          "Hungry. And cute. Mostly cute."
+        ],
+        "noct": [
+          "Calm. Content. And you?",
+          "Better now.",
+          "Quiet day. I like it."
+        ]
+      }
+    },
+    {
+      "id": "love",
+      "match": [
+        "i love you",
+        "love you",
+        "ily",
+        "love u",
+        "my queen",
+        "my queens"
+      ],
+      "priority": 2,
+      "mood": "loved",
+      "affection": 1,
+      "replies": {
+        "nixie": [
+          "W-well, obviously! ...I love you too, dummy.",
+          "Say it again~ Louder!",
+          "Hehe~ I know~ ♥"
+        ],
+        "noct": [
+          "I love you too. Always.",
+          "...Mm. Same. Forever.",
+          "Come closer and say that."
+        ]
+      }
+    },
+    {
+      "id": "cute",
+      "match": [
+        "cute",
+        "pretty",
+        "beautiful",
+        "gorgeous",
+        "adorable"
+      ],
+      "mood": "loved",
+      "affection": 1,
+      "replies": {
+        "nixie": [
+          "I know, right?~",
+          "Flattery works. Continue.",
+          "Hmph! ...thanks."
+        ],
+        "noct": [
+          "...You're sweet.",
+          "Only for you.",
+          "Mm. Thank you."
+        ]
+      }
+    },
+    {
+      "id": "food",
+      "match": [
+        "hungry",
+        "food",
+        "eat",
+        "cookie",
+        "cookies",
+        "snack",
+        "dinner",
+        "lunch",
+        "breakfast"
+      ],
+      "replies": {
+        "nixie": [
+          "Cookies! Gimme gimme~",
+          "Did someone say snacks?!",
+          "Feed me and I'll be nice. Maybe."
+        ],
+        "noct": [
+          "Tea and something sweet would be nice.",
+          "Eat properly, love.",
+          "I could share a cookie."
+        ]
+      }
+    },
+    {
+      "id": "sleep",
+      "match": [
+        "sleep",
+        "tired",
+        "sleepy",
+        "good night",
+        "goodnight",
+        "gn",
+        "bed"
+      ],
+      "mood": "sleepy",
+      "replies": {
+        "nixie": [
+          "Already? ...fine. Sweet dreams, dummy.",
+          "Sleepy? Lame~ ...rest well.",
+          "Nap time! I call the warm side."
+        ],
+        "noct": [
+          "Rest. I'll watch over you.",
+          "Good night, love.",
+          "Sleep well. We'll be here."
+        ]
+      }
+    },
+    {
+      "id": "thanks",
+      "match": [
+        "thanks",
+        "thank you",
+        "thx",
+        "ty"
+      ],
+      "replies": {
+        "nixie": [
+          "You're welcome~ You owe me a cookie.",
+          "Hehe, of course!",
+          "Obviously~"
+        ],
+        "noct": [
+          "Anytime.",
+          "Of course, love.",
+          "Mm."
+        ]
+      }
+    },
+    {
+      "id": "bye",
+      "match": [
+        "bye",
+        "goodbye",
+        "see you",
+        "see ya",
+        "cya",
+        "gotta go",
+        "brb"
+      ],
+      "priority": 1,
+      "mood": "sad",
+      "replies": {
+        "nixie": [
+          "Leaving?! ...come back soon, okay?",
+          "Bye bye! Don't forget me~",
+          "Hmph. Fine. Hurry back."
+        ],
+        "noct": [
+          "Take care. We'll be here.",
+          "See you soon, love.",
+          "Come back safe."
+        ]
+      }
+    },
+    {
+      "id": "sorry",
+      "match": [
+        "sorry",
+        "my bad",
+        "apologize"
+      ],
+      "affection": 1,
+      "replies": {
+        "nixie": [
+          "Hmm... forgiven. This time.",
+          "Cookies would help me forgive you~"
+        ],
+        "noct": [
+          "It's alright.",
+          "Already forgotten."
+        ]
+      }
+    },
+    {
+      "id": "guest_arrive_reply",
+      "match": [
+        "__guest_arrive__"
+      ],
+      "priority": 50,
+      "replies": {
+        "nixie": [
+          "Chrispyyy~! You came!",
+          "Finally! I was waiting, dummy.",
+          "Hi hi! Stay. Don't you dare leave yet."
+        ],
+        "noct": [
+          "…You're here. Good.",
+          "Hello, love. Took you long enough~",
+          "Mm. I saved you a spot."
+        ],
+        "chrispyni": [
+          "Room for one more? Of course.",
+          "Came to check on my queens~"
+        ]
+      }
+    },
+    {
+      "id": "guest_leave_reply",
+      "match": [
+        "__guest_leave__"
+      ],
+      "priority": 50,
+      "replies": {
+        "nixie": [
+          "Leaving?! …come back soon, okay?",
+          "Hmph. Fine. Hurry back to me!",
+          "Bye bye! Don't forget your favorite."
+        ],
+        "noct": [
+          "Until later, love.",
+          "We'll be here.",
+          "Go. But come back."
+        ],
+        "chrispyni": [
+          "Behave, both of you.",
+          "I'll be back."
+        ]
+      }
+    }
   ],
   "reactions": [
-    { "match": ["stupid", "dumb", "hate you", "shut up", "ugly"], "mood": "annoyed", "affection": -1 },
-    { "match": ["yay", "awesome", "great", "nice", "lol", "haha"], "mood": "happy" }
+    {
+      "match": [
+        "stupid",
+        "dumb",
+        "hate you",
+        "shut up",
+        "ugly"
+      ],
+      "mood": "annoyed",
+      "affection": -1
+    },
+    {
+      "match": [
+        "yay",
+        "awesome",
+        "great",
+        "nice",
+        "lol",
+        "haha"
+      ],
+      "mood": "happy"
+    }
   ],
   "fallback": {
-    "nixie": ["Huh? Say that again, but cuter.", "Mhm, mhm. Totally listening~", "Whatever you say~", "Hmph. Interesting, I guess."],
-    "noct": ["Mm. I hear you.", "Tell me more.", "...I see.", "Go on, love."]
+    "nixie": [
+      "Huh? Say that again, but cuter.",
+      "Mhm, mhm. Totally listening~",
+      "Whatever you say~",
+      "Hmph. Interesting, I guess."
+    ],
+    "noct": [
+      "Mm. I hear you.",
+      "Tell me more.",
+      "...I see.",
+      "Go on, love."
+    ]
   }
 }

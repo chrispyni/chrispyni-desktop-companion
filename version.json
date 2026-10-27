@@ -1,6 +1,6 @@
 {
   "version": "0.1.7-alpha",
   "date": "2026-10-27",
-  "notes": "Fix invisible avatars (edition sheet path). Public: Hug/Kiss on guest menus, not ChrispyNi's.",
+  "notes": "Invisible avatar fix; standing spacing; guest greet/goodbye replies; Hug/Kiss on guest menus; character categories (Main/Wife/Friends).",
   "download": "https://github.com/chrispyni/chrispyni-desktop-companion/releases"
 }
