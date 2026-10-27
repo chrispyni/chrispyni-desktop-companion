@@ -7,7 +7,7 @@ Templates live in `templates/`:
 
 | File | What it is |
 |---|---|
-| `character_template_guide.png` | Grid with row names, frame numbers, red **feet anchor** cross, ground line, green/blue height guides (short ≈46 px = Nixie, tall ≈58 px = Noct) |
+| `character_template_guide.png` | Grid with row names, frame numbers, red **feet anchor** cross, ground line, green/blue height guides (short ≈46 px, tall ≈58 px) |
 | `character_template_blank.png` | Same size, fully transparent, with one red pixel at each feet anchor: draw on top of it, then delete the red pixels |
 | `prop_template_guide.png` / `prop_template_blank.png` | 32×32 frames, red = floor anchor (16,31). Wide furniture (bed, sofa) = 64×32 |
 | `effect_template_guide.png` / `effect_template_blank.png` | 32×32 × 6 frames, centre (16,16), plays once |
@@ -49,10 +49,10 @@ them with `{"type":"emote","anim":"dance"}`.
 
 ### Built-in designs (from her keepsake art)
 
-* **Nixie** — shorter (~44 px tall). Pale skin, long silver-white hair + ahoge, green eyes, gold circlet with green gems,
-  white/cream dress with gold trim, green gem accents. Light / death palette: `#f4ecdc #e4e4e8 #d4a537 #2e9e4a #3fa34a`.
-* **Noct** — taller (~56 px). Pale skin, long black hair with violet streaks + ahoge, violet eyes, black glossy dress,
-  choker, violet star accents. Void palette: `#141018 #15121c #8a3fd1 #b27cff #8e5ad8`.
+* **Short body** (~44 px). Example look used by the short companion sheet.
+
+* **Tall body** (~56 px). Example look used by the tall companion sheet.
+
 * **ChrispyNi** — between them (~50 px) + floating gold spiked crown (no horns). Dark skin, dark violet-black hair with gold
   streaks, violet eyes with red pupils, black outfit with gold star and trim: `#6b4330 #231a33 #d4a537 #8e5ad8 #d0202a`.
 
@@ -66,18 +66,18 @@ Animated props: frames left→right in one row (`frames`, `fps`). Anchor = botto
 * `manaCost` — mana to summon · `spawnEffect` — effect id played on spawn · `lifetimeSec` — auto-vanish (0 = stays)
 * `sittable: true` + `seatY` (pixels above the floor where she sits) · `layable: true` (beds) · `float` (hover px)
 * `aliases` — words that bot replies may use: `*summons a cup of tea*` → `teacup`
-* `usableBy` — who may sit/lie/meditate on it: `"all"` (default) or a list of ids, e.g. `["nixie"]`, `["noct", "chrispyni"]`;
-  `"guests"` = any guest, `"owner"` = only whoever summoned it
+* `usableBy` — who may sit/lie/meditate on it: `"all"` (default) or a list of ids, e.g. `["chrispyni"]` or a list of character ids;
+  `"guests"` = any visiting companion, `"owner"` = only whoever summoned it
 * `owner` — fixed owner id (otherwise the one who summoned it). Deleting a prop (right-click → Delete) refunds part of its
-  `manaCost` to the owner · `meditate: true` — a wife can meditate on it · `door: true` — leads to our room
+  `manaCost` to the owner · `meditate: true` — she can meditate on it · `door: true` — opens a rest scene
 
 ## Food — `content/food/` (16×16)
 
 One sprite per food, listed in `food.json`: `mood` (small mood boost), `mana` (mana per bite), `eatSec`, and `limits` `{ maxInRow: [4,5], cooldownMin: [15,20], streakResetMin: 30 }` (how many in a row before she's full, and for how long).
 
-Props can set `use` (`sit`, `lay`, `sip`, `read`, `light`, `play`) so the wives use them on their own, and `idleDespawnMin` (minutes unused before the owner tidies it away; `0` = never).
+Props can set `use` (`sit`, `lay`, `sip`, `read`, `light`, `play`) so she uses them on her own, and `idleDespawnMin` (minutes unused before the owner tidies it away; `0` = never).
 
-Characters: the `watch` row is a sitting pose seen from behind (watching the screen). Guests may define `pity` `{ base, perFail, max, actions }` to use their own visit curve.
+Characters: the `watch` row is a sitting pose seen from behind (watching the screen). Optional visitors may define `pity` `{ base, perFail, max, actions }` to use their own visit curve.
 Every food shows up under right-click → Feed and in the debug menu.
 
 ## Effects — 32×32 × N frames
@@ -94,7 +94,7 @@ Plays once at the spot (set `"loop": true` for looping). `manaCost` is charged w
 2. Put it in a mod folder, e.g. `ChrispyNiDesktopCompanion\mods\my-stuff\props\` (the `mods` folder next to the exe):
    `fox_plush.png` + `fox_plush.json` (`"id":"fox_plush","image":"fox_plush.png",...`).
    For a character: `mods/my-stuff/characters/<id>/character.json` + `sheet.png`.
-   To **replace** Nixie's look only: `mods/my-stuff/characters/nixie/character.json` with `{"sheet":"sheet.png"}` + your sheet.
+   To **replace** ChrispyNi's look only: `mods/my-stuff/characters/chrispyni/character.json` with `{"sheet":"sheet.png"}` + your sheet.
 3. The app hot-reloads (or tray → Settings → Reload). Check it in the debug menu (`/debug`).
 4. Want it in the official version? Open an issue on the GitHub page and attach it.
 
