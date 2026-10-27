@@ -95,6 +95,23 @@ test('ambient summon: wives conjure a usable prop now and then (gated by cooldow
   let n = 0, last = 0; for (let t = 0; t < 120; t++) { const id = pickAmbientSummon({ ...base, now: T0 + t * 10000 + 9 * MIN, lastSummonAt: last, rng: Math.random }); if (id) { n++; last = T0 + t * 10000 + 9 * MIN; } }
   assert.ok(n >= 1 && n <= 3, 'summons in 20 min: ' + n);
 });
+
+test('ambient summon: usableBy restricts who may conjure a prop (gaming_pc = chrispyni only)', () => {
+  const { mayUseDef } = require('../src/core/propuse');
+  const gaming = { id: 'gaming_pc', manaCost: 8, use: 'stream', usableBy: ['chrispyni'] };
+  const tea = { id: 'teacup', manaCost: 3, use: 'sip' };
+  assert.strictEqual(mayUseDef(gaming, 'chrispyni'), true);
+  assert.strictEqual(mayUseDef(gaming, 'nixie'), false);
+  assert.strictEqual(mayUseDef(tea, 'nixie'), true);
+  const props = { gaming_pc: gaming, teacup: tea };
+  const base = { now: T0, lastSummonAt: 0, manaValue: 80, manaRatio: 0.8, onScreen: [], props, rng: () => 0 };
+  assert.strictEqual(pickAmbientSummon({ ...base, charId: 'chrispyni' }), 'gaming_pc', 'chrispyni can pick restricted prop when listed first by rng');
+  // force only gaming on screen filter: with nixie, gaming filtered out → teacup
+  assert.strictEqual(pickAmbientSummon({ ...base, charId: 'nixie' }), 'teacup', 'nixie cannot summon chrispyni-only prop');
+  assert.strictEqual(pickAmbientSummon({ ...base, charId: 'nixie', props: { gaming_pc: gaming } }), null, 'nothing left for nixie');
+  assert.strictEqual(useOf(gaming), 'stream');
+});
+
 const chatlib = require('../src/core/chatlib');
 test('offline chat library: keyword rules per character, priority, fallback, reactions, mods merge', () => {
   const base = JSON.parse(require('fs').readFileSync(path.join(__dirname, '..', 'content', 'chat', 'library.json'), 'utf8'));

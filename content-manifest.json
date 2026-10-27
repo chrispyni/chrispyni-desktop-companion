@@ -1,11 +1,11 @@
 {
- "content/characters/chrispyni/character.json": "649811066767086a4254016b25c2af635a13d75179d173a171d425b79637756d",
+ "content/characters/chrispyni/character.json": "6ce75108a4df9792ff0ac0868a5ed402245363be38385fbaa1fad474602d51c5",
  "content/characters/chrispyni/sheet.png": "22b62bf1bf7c284323f2ef2ce2bc4eb8ac2693be4c27cade1e370448f775364f",
- "content/characters/nixie/character.json": "fe01dd33e7ff7d3ddb0e66989ee969b5a6d28e6389825356224af0190e10f211",
+ "content/characters/nixie/character.json": "baf91fef5b09c86b440f0523a19e4aac0efeb5f9bff7f36beabda0fe8e4b139f",
  "content/characters/nixie/sheet.png": "7d737df3dfaff68f7a571689085e1b18c7cf7b24a6e10ad4633359e948b33391",
- "content/characters/noct/character.json": "536278ebc2c8d8c64a348e1ccc3c6a085b1683d7652996c7b794c1ad082b85fa",
+ "content/characters/noct/character.json": "dbb504ff2787e3d6f21e0d46841b2a7e601148cce79da93d0baf56f17d6ad659",
  "content/characters/noct/sheet.png": "e11f15d6b19b225b3d4860be7c6d36c7a35b3aa340ab1cb4c352c9dda65f6053",
- "content/chat/library.json": "3f6d7ccdeb1709bc027cc268a0431c3fca1e1ed468022cb10ef3fa2b7855b0ed",
+ "content/chat/library.json": "e59721b618e4f323d792fcb167a5b20339a2042e58485818df733c5430e894f3",
  "content/effects/chrispy_hand.png": "246ea6313f8d558cea6a94625b474c33a48771a9a5850591f2daad525312540e",
  "content/effects/death_mist.png": "c5aced5cfd10717547895c702506536ab42f4af3686d5a9a56207e68778ef7d9",
  "content/effects/dizzy_stars.png": "7caa27994b5eb4330cb2c6d4aed5170cfb2f4e5727550bec5e52904530bc39d1",
@@ -22,7 +22,7 @@
  "content/food/cookie.png": "968a88a586e3c041c2250e637e628ec5953a0b4a2dee0a417fb5fb71ade2eca3",
  "content/food/food.json": "12d3e2e619c53c84bd5a5485174e6826f2f985977726bc3128246b8324d7ab3d",
  "content/interactions/interactions.json": "7d5d834128feee247688fe28416a521aa0fcfbf4e3993a4aaac765be4fbfc7ba",
- "content/lines/chrispyni.json": "e41b3b4f5a2ef2f96c5f5648da0b9902e188dfe5ec9b379e3ff7f054a2129164",
+ "content/lines/chrispyni.json": "067ee975a5d36295d284c88a699425f110b86169625ae3ff37d43e4a8436c8ca",
  "content/lines/nixie.json": "fe442cd7db7849d0260460d519a29d671a539d83cb5cd96536ea3188b19c3695",
  "content/lines/noct.json": "b3f83d6da89315caf4e523706c7a053f7c32945f9c36f3876781675745317519",
  "content/props/bed.png": "999183133d2ae38358b9986bf7b8b1a60eeff6557579229e1c2b2e941f75c7be",
@@ -33,8 +33,9 @@
  "content/props/cushion.png": "ab339cfeba8f34bb87b01228efd10e686e00202f59d1510a25687b9127beddd2",
  "content/props/door.png": "16dafeffabcc4281f9fbdf6ada08949722674e73562546d3642dfd7617a7a51f",
  "content/props/flower.png": "ad95aa5d647ee963ae627a71f0a038f93c0855d103244249f409a8bddb1c27af",
+ "content/props/gaming_pc.png": "37910fbf469b74470c898f436e000f3d52b526c316208a5223ec13dad4465c17",
  "content/props/light_orb.png": "4b61e18c69979698b2c69e3f6a10f1597cae74ecb3be12e24d0d86c8fff635b0",
- "content/props/props.json": "a9c24b96c937d087dbddac89cd3414dd1b27f1a4aae4f3a1891bf6067e3e5419",
+ "content/props/props.json": "92853afeb24bc186b4d0710a97c9d4f7b46760a7326681021cdc3ad768d00660",
  "content/props/sofa.png": "808dfc84ad0b461e7faa147303a23560ea1189a41d9e064bc211abb9f1058708",
  "content/props/table.png": "b996be8a16346d046225d889de6f39f088047fe2a08aeaecbe78ec53ad4c1b42",
  "content/props/teacup.png": "1269ca2d93b9d420b003af583783cd98b13ff3c978bae9f6437176e4814cb12c",
@@ -48,5 +49,5 @@
  "content/rules/mana.json": "5d98e038678abc02e818f83100eef8eaeacb24f613de64cbcd5fc87f274fc06f",
  "content/rules/mood.json": "27ae9308b42a4c44d1219957caa72331c9dcfb1cff399e1de2adeb6ec1ee72b7",
  "content/rules/physics.json": "158d2b4fe6dd4dca8b34b6219d4aca2cf94ba778cb09e4dd6257ad970133a989",
- "content/rules/props.json": "8b834fdba9219007c1a9336edbf0b25dbbf8c4544e3f2c92153d9386f88d351e"
+ "content/rules/props.json": "a8bae3fa3aab2f4fa9ad9863e65eb2076c9ae5e9b48015a56155ba464e8da7f7"
 }

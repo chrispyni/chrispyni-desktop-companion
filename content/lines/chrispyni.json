@@ -44,5 +44,14 @@
   "take_wives": [
     "Come. Our room. Just for a moment.",
     "I'm taking my wives for a little while."
+  ],
+  "prop_stream": [
+    "One more match.",
+    "I'm live. Shh.",
+    "GG."
+  ],
+  "prop_use": [
+    "Comfy.",
+    "This'll do."
   ]
 }

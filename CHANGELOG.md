@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.1.7-alpha
+* New prop: **Gaming PC Desk** (pixel art, dual monitors that flicker). Only ChrispyNi can use it — she sits/stands there to stream or play for a while (monitors glow; occasional nonchalant reaction line). Guests can't use it but may watch her. Follows autonomous anti-repeat caps. Both editions.
 * ChrispyNi dialogue rewritten (nonchalant / mature; no "~" except secret horny mood when talking to the wives).
 * Secret **horny** mood: unlocks after enough voluntary sleep-togethers (not AFK/auto sleep, not mana-room rest); 5–10% chance on wake; mana ceiling 200% of max while active; hidden from normal mood lists.
 * Max mana grows and persists: +1–5 per mana spend, +5–10 after voluntary sleep-together, +10–20 after 8+ hours since last app close (system clock; quick relaunch gives nothing).

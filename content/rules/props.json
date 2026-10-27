@@ -1,9 +1,19 @@
 {
- "_info": "Wives use props now and then (prop.use: sit/lay/sip/read/light/play). A prop nobody used for idleDespawnMin is cleaned up by whoever made it (50% mana back).",
+ "_info": "Wives use props now and then (prop.use: sit/lay/sip/read/light/play/stream). A prop nobody used for idleDespawnMin is cleaned up by whoever made it (50% mana back). usableBy limits who may use a prop.",
  "useChance": 0.12,
  "idleDespawnMin": 20,
  "useSec": [
   6,
   14
- ]
+ ],
+ "streamSec": [
+  18,
+  40
+ ],
+ "ambientSummon": {
+  "chance": 0.08,
+  "cooldownMin": 8,
+  "maxOnScreen": 4,
+  "minManaRatio": 0.35
+ }
 }

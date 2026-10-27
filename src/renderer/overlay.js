@@ -530,21 +530,29 @@ function usablePropFor(ch) {
   const ok = props.filter((p) => useOf(p.def) && !p.portal && !p.def.door && canUse(p, ch) && !countOn(p));
   return ok.length ? pick(ok) : null;
 }
-function canUse(p, ch) { const u = p.def.usableBy; return !u || u === 'all' || (Array.isArray(u) && u.includes(ch.id)); }
-/** sit/lay reuse the seat actions; sip/read/light/play: walk over, do the thing for a bit. */
+function canUse(p, ch) { return usableBy(p, ch); }
+/** sit/lay reuse the seat actions; sip/read/light/play/stream: walk over, do the thing for a bit. */
 function useProp(ch, a) {
   const p = props.find((q) => q.uid === a.uid); if (!p) return true;
+  if (!canUse(p, ch)) return true; // guests can't take ChrispyNi's gaming desk
   const use = useOf(p.def); p.lastUsed = Date.now();
   if (use === 'sit' || use === 'lay') { ch.queue.unshift({ type: use }); return true; }
-  if (Math.abs(ch.x - p.x) > 24) { ch.queue.unshift({ type: 'walk_to', target: p.x + (ch.x < p.x ? -22 : 22) }, a); return true; }
+  if (Math.abs(ch.x - p.x) > 28) { ch.queue.unshift({ type: 'walk_to', target: p.x + (ch.x < p.x ? -26 : 26) }, a); return true; }
   ch.facing = p.x >= ch.x ? 1 : -1;
-  const [lo, hi] = (rules().props || {}).useSec || [6, 14];
-  const anim = { sip: 'happy', read: 'talk', light: 'cast', play: 'happy' }[use] || 'idle';
+  const isStream = use === 'stream';
+  const [lo, hi] = isStream ? ((rules().props || {}).streamSec || [18, 40]) : ((rules().props || {}).useSec || [6, 14]);
+  const anim = { sip: 'happy', read: 'talk', light: 'cast', play: 'happy', stream: 'happy' }[use] || 'idle';
   const sec = rnd(lo, hi);
   ch.loopAnim = null; // never lock think behind a looping cast/sparkle pose
   ch.play(anim, sec, false); ch.waitUntil = performance.now() + sec * 1000;
-  if (use === 'light') spawnFx('sparkle', p.x, p.y - 20);
-  if (Math.random() < 0.1) speak(ch, 'prop_use', { ambient: true }); else if (Math.random() < 0.3) ch.dots(2);
+  if (isStream) {
+    ch.streamingUntil = Date.now() + sec * 1000;
+    spawnFx('sparkle', p.x - 14, p.y - 22); spawnFx('sparkle', p.x + 14, p.y - 22);
+    if (Math.random() < 0.55) speak(ch, 'prop_stream', { ambient: true }); else if (Math.random() < 0.45) ch.dots(2);
+  } else {
+    if (use === 'light') spawnFx('sparkle', p.x, p.y - 20);
+    if (Math.random() < 0.1) speak(ch, 'prop_use', { ambient: true }); else if (Math.random() < 0.3) ch.dots(2);
+  }
   return true;
 }
 /** Unused for a while: whoever made it comes and dismisses it (50% back); ownerless props just fade. */
@@ -599,7 +607,19 @@ function think(ch, now) {
     }
   }
   const guest = (!isChrispyEdition() && ch.role !== 'guest' && visitingChrispy()) || (isChrispyEdition() && ch.role === 'guest' && chars.chrispyni && !chars.chrispyni.hidden && chars.chrispyni);
-  if (guest && !trip && ch.state !== 'watch') {      // ChrispyNi is here: stay close, face her, fuss over her
+  if (guest && !trip && ch.state !== 'watch') {      // ChrispyNi is here: stay close, face her, fuss over her (or watch her stream)
+    // Guests may watch ChrispyNi at her gaming PC (they cannot use it).
+    if (guest.streamingUntil && guest.streamingUntil > Date.now() && !blocked('guest_watch_stream') && r < 0.55) {
+      commit('guest_watch_stream');
+      const d0 = Math.abs(ch.x - guest.x);
+      if (d0 > 90) ch.enqueue([{ type: 'walk_to', target: nearChrispySpot(ch, guest) }]);
+      else {
+        ch.facing = guest.x > ch.x ? 1 : -1;
+        ch.play('happy', rnd(2, 4));
+        if (Math.random() < 0.3) ch.dots(2);
+      }
+      ch.nextThink = now + rnd(5000, 11000) / speed; return;
+    }
     const d = Math.abs(ch.x - guest.x);
     const nearChoices = [];
     if (d > 170) nearChoices.push('guest_approach');
@@ -628,7 +648,7 @@ function think(ch, now) {
   if (canAct && ch.mana && r < 0.05 && ch.mana.ratio > 0.5 && Date.now() - (ch.lastMagic || 0) > ((rules().mana || {}).ambientMagicCooldownMin || 40) * 60000)
     candidates.push('magic');
   let ambSum = null;
-  if (canAct && ch.mana && !watching && ch.state !== 'watch' && (ambSum = pickAmbientSummon({ lastSummonAt: Math.max(ch.lastSummon || 0, lastAnySummon), manaValue: ch.mana.value, manaRatio: ch.mana.ratio, onScreen: props.map((p) => p.id), props: content.props, opts: (rules().props || {}).ambientSummon })))
+  if (canAct && ch.mana && !watching && ch.state !== 'watch' && (ambSum = pickAmbientSummon({ lastSummonAt: Math.max(ch.lastSummon || 0, lastAnySummon), manaValue: ch.mana.value, manaRatio: ch.mana.ratio, onScreen: props.map((p) => p.id), props: content.props, charId: ch.id, opts: (rules().props || {}).ambientSummon })))
     candidates.push('summon');
   if (canAct && r < 0.12 + ((rules().props || {}).useChance ?? 0.12) && usablePropFor(ch))
     candidates.push('use_prop');
