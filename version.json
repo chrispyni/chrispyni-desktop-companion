@@ -1,1 +1,6 @@
-{"version": "0.1.6-alpha", "date": "2026-10-27", "notes": "ChrispyNi Desktop Companion \u2014 desktop pet features, offline chat, mods, auto-update.", "download": "https://github.com/chrispyni/chrispyni-desktop-companion/releases"}
+{
+  "version": "0.1.7-alpha",
+  "date": "2026-10-27",
+  "notes": "Fix invisible avatars (edition sheet path). Public: Hug/Kiss on guest menus, not ChrispyNi's.",
+  "download": "https://github.com/chrispyni/chrispyni-desktop-companion/releases"
+}

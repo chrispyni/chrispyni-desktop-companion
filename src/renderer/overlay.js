@@ -1019,10 +1019,12 @@ function charMenu(ch, x, y) {
   const canCare = ch.role !== 'guest' || ch.def.guestCanAct || isChrispyEdition();
   if (canCare) {
     items.push('-', { label: 'Pat', fn: () => pat(ch) });
+    // Wives edition: Hug/Kiss on a wife's menu while ChrispyNi visits (she walks over).
     if (!isChrispyEdition() && visitingChrispy() && ch.role !== 'guest')
       items.push({ label: 'Hug (ChrispyNi)', fn: () => chrispyAffection(ch, 'hug') }, { label: 'Kiss (ChrispyNi)', fn: () => chrispyAffection(ch, 'kiss') });
-    if (isChrispyEdition() && ch.id === 'chrispyni' && presentWives().length)
-      items.push({ label: 'Hug (wife)', fn: () => chrispyAffection(ch, 'hug') }, { label: 'Kiss (wife)', fn: () => chrispyAffection(ch, 'kiss') });
+    // Public ChrispyNi edition: Hug/Kiss on each present guest's menu (not on ChrispyNi herself).
+    if (isChrispyEdition() && ch.role === 'guest' && !ch.hidden && chars.chrispyni && !chars.chrispyni.hidden)
+      items.push({ label: 'Hug ChrispyNi', fn: () => chrispyAffection(ch, 'hug') }, { label: 'Kiss ChrispyNi', fn: () => chrispyAffection(ch, 'kiss') });
     for (const f of Object.values(content.food || {})) items.push({ label: `Feed: ${f.name || f.id}`, fn: () => feed(ch, f.id) });
   }
   openMenu(x, y, items);

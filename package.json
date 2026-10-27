@@ -1,7 +1,7 @@
 {
   "name": "chrispyni-desktop-companion",
   "productName": "ChrispyNi Desktop Companion",
-  "version": "0.1.6-alpha",
+  "version": "0.1.7-alpha",
   "description": "ChrispyNi Desktop Companion \u2014 a desktop pet for Windows \u00b7 Made with Grok AI",
   "main": "src/main.js",
   "author": "ChrispyNi",

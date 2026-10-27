@@ -38,3 +38,30 @@ test('no Project Wives branding left in edition labels', () => {
     assert.ok(!/Project Wives/i.test(e.productName + e.label + e.folderName + e.artifactPrefix));
   }
 });
+
+test('chrispyni edition keeps real sprite sheets (no invisible body)', () => {
+  const root = path.join(__dirname, '..');
+  const ed = editionDir(root, EDITIONS.chrispyni);
+  const c = loadContent(path.join(root, 'content'), [], { editionDir: ed, editionId: 'chrispyni' });
+  for (const id of ['chrispyni', 'nixie', 'noct']) {
+    const sheet = c.characters[id].sheet;
+    assert.ok(sheet && fs.existsSync(sheet), id + ' sheet missing: ' + sheet);
+    assert.match(sheet.replace(/\\/g, '/'), /content\/characters\//);
+  }
+});
+
+test('overlay restating sheet.png without a file keeps the base sheet', () => {
+  const root = path.join(__dirname, '..');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'pw-ed-'));
+  const charDir = path.join(tmp, 'characters', 'chrispyni');
+  fs.mkdirSync(charDir, { recursive: true });
+  fs.writeFileSync(path.join(charDir, 'character.json'), JSON.stringify({
+    id: 'chrispyni', role: 'wife', sheet: 'sheet.png'
+  }));
+  // deliberately NO sheet.png in overlay
+  const c = loadContent(path.join(root, 'content'), [], { editionDir: tmp, editionId: 'tmp' });
+  assert.ok(fs.existsSync(c.characters.chrispyni.sheet));
+  assert.match(c.characters.chrispyni.sheet.replace(/\\/g, '/'), /content\/characters\/chrispyni\/sheet\.png$/);
+  assert.strictEqual(c.characters.chrispyni.role, 'wife');
+  fs.rmSync(tmp, { recursive: true, force: true });
+});

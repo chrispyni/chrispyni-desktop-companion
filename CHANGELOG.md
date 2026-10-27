@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.7-alpha
+* Public edition: Hug / Kiss are on each guest's right-click menu (Nixie / Noct) while they're present — removed from ChrispyNi's own menu. Wives edition unchanged (still on the wife while ChrispyNi visits).
+* Fix: the avatar body was invisible (only the curious-look eyes showed). Edition overlays restated `sheet.png` without shipping the file, so the loader pointed at a missing path. The base sprite sheet is kept when an overlay path is missing.
+
+
 ## 0.1.6-alpha
 * Renamed to **ChrispyNi Desktop Companion**.
 * ChrispyNi is the desktop companion: walk, chat, mood, mana, pats, feeding, props, sleep, throw physics, mods, auto-update.

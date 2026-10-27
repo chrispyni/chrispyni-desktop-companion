@@ -11,15 +11,24 @@ function readJSON(p) {
 
 function isObj(o) { return o && typeof o === 'object' && !Array.isArray(o); }
 
+// Resolve every "*.png" style file field to an absolute path relative to the JSON file.
+const FILE_KEYS = ['sheet', 'image', 'background', 'overlay', 'icon', 'sound', 'music'];
+
 function deepMerge(a, b) {
   if (!isObj(a) || !isObj(b)) return b;
   const out = { ...a };
-  for (const k of Object.keys(b)) out[k] = isObj(a[k]) && isObj(b[k]) ? deepMerge(a[k], b[k]) : b[k];
+  for (const k of Object.keys(b)) {
+    // Edition/mod overlays often restate "sheet":"sheet.png" (etc.) without shipping the file.
+    // resolveFiles turns that into an absolute path under the overlay dir; if it is missing,
+    // keep the base asset so the character does not go invisible (eyes still draw procedurally).
+    if (FILE_KEYS.includes(k) && typeof b[k] === 'string') {
+      if (!b[k] || (!fs.existsSync(b[k]) && typeof a[k] === 'string' && fs.existsSync(a[k]))) continue;
+    }
+    out[k] = isObj(a[k]) && isObj(b[k]) ? deepMerge(a[k], b[k]) : b[k];
+  }
   return out;
 }
 
-// Resolve every "*.png" style file field to an absolute path relative to the JSON file.
-const FILE_KEYS = ['sheet', 'image', 'background', 'overlay', 'icon', 'sound', 'music'];
 function resolveFiles(obj, dir) {
   for (const k of FILE_KEYS) {
     if (typeof obj[k] === 'string' && obj[k] && !path.isAbsolute(obj[k])) obj[k] = path.join(dir, obj[k]);
