@@ -4,7 +4,8 @@ const { ipcRenderer } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const { loadContent } = require('../core/content');
-const { Mana } = require('../core/mana');
+const { Mana, growFromUse, growFromSleepTogether, growFromLongAway, qualifiesLongAway } = require('../core/mana');
+const { freshHornyState, noteVoluntarySleepTogether, rollHornyOnWake, isHorny, clearHorny } = require('../core/horny');
 const { MoodState, animForMood } = require('../core/mood');
 const { OfflineBrain } = require('../core/brain');
 const { parseReply, parseText, buildIndex } = require('../core/actions');
@@ -46,6 +47,9 @@ const chars = {};          // id -> Char
 const props = [];          // {uid,id,def,x,y,t}
 const fx = [];             // {id,def,x,y,t}
 let uidSeq = 1, sleepMode = false, sleepManual = false, roomOpen = false, adminSession = false;
+let sessionMeta = { lastCloseAt: null, lastLaunchAt: Date.now() };
+let hornyState = freshHornyState();
+let sleepTogetherActive = false;
 let chatLib = { rules: [], fallback: {}, reactions: [] }, chatRules = [];
 const aw = { app: null, category: null, idleSec: 0, idleLongFired: false, tod: null, lastReact: {}, stream: false };
 let SAVE_PATH = '';
@@ -197,15 +201,26 @@ function vars(ch) {
 }
 /** Ambient (unprompted) talk is only an animated '...' bubble; real text is for replies & important things. */
 function ambient(ch, sec) { if (!ch || ch.hidden) return; if (Math.random() < (cfg.talk?.ambientTextChance || 0)) return; ch.dots(sec || rnd(2.5, 4)); }
+function chrispyPolish(ch, text, extra = {}) {
+  if (!text || ch.id !== 'chrispyni') return text;
+  const horny = isHorny(hornyState) && (extra.toWives || extra.withWives);
+  if (horny) return text;
+  return String(text).replace(/~/g, '');
+}
 function speak(ch, trigger, extra = {}) {
   if (!ch) return false;
   if (extra.ambient) { ambient(ch); return true; }
+  if (ch.id === 'chrispyni' && isHorny(hornyState) && (extra.toWives || extra.withWives) && chatLib) {
+    const hr = chatlib.pickById(chatLib, 'chrispyni', 'horny_to_wives');
+    if (hr && hr.text) { ch.enqueue([{ type: 'say', text: hr.text }]); return true; }
+  }
   const line = brain.pick(ch.def.personality.lines || ch.id, trigger, ch.mood.current, { ...vars(ch), ...extra }, ch.aff ? ch.aff.level : 0);
   if (!line) return false;
   const p = parseText(line, content);
-  ch.enqueue([{ type: 'say', text: p.text }, ...p.actions]);
+  ch.enqueue([{ type: 'say', text: chrispyPolish(ch, p.text, extra) }, ...p.actions]);
   return true;
 }
+
 
 // ---------------- actions ----------------
 function resolveX(ch, target) {
@@ -234,11 +249,16 @@ function nearestProp(x, idOrFlag, ch) {
   return best;
 }
 function costOk(ch, cost, what) {
-  if (!ch || !ch.mana || !cost || infinite || ch.mana.spend(cost)) { saveSoon(); return true; }
+  if (!ch || !ch.mana || !cost) { saveSoon(); return true; }
+  if (infinite || ch.mana.spend(cost)) {
+    if (!infinite && cost > 0) growFromUse(ch.mana);
+    saveSoon(); return true;
+  }
   ch.mood.react('summon_fail'); speak(ch, 'summon_fail') || ch.say('Not enough mana…');
   hooks.emit('mana_denied', { char: ch.id, what, cost });
   return false;
 }
+
 function spawnFx(id, x, y, scale) {
   const def = content.effects[id]; if (!def) return;
   const e = { id, def, x, y, t: 0, scale: scale || def.scale || 2 }; fx.push(e); return e;
@@ -457,7 +477,7 @@ function chrispyTakes() {
   if (!chars.chrispyni) visit('chrispyni');
   const c = chars.chrispyni; if (!c) return;
   c.leaveAt = performance.now() + 10 * 60000;
-  setTimeout(() => { if (!chars.chrispyni) return; speak(chars.chrispyni, 'take_wives') || chars.chrispyni.say('Come, my queens~'); setTimeout(() => goToRoom('our_room', [...wives().map((w) => w.id), 'chrispyni'], { source: 'guest' }), 1800); }, 3500);
+  setTimeout(() => { if (!chars.chrispyni) return; speak(chars.chrispyni, 'take_wives', { toWives: true }) || chars.chrispyni.say(chrispyPolish(chars.chrispyni, 'Come. My queens.', { toWives: isHorny(hornyState) })); setTimeout(() => goToRoom('our_room', [...wives().map((w) => w.id), 'chrispyni'], { source: 'guest' }), 1800); }, 3500);
 }
 function confirmReplenish(ch) {
   const plan = currentPlan(); const who = plan.length > 1 || (plan.length && plan[0] === ch.id) ? plan : [ch.id];
@@ -1401,19 +1421,52 @@ function goToBed(ch) {
 }
 let sleepSince = 0;
 function wakeUp(reason) { if (sleepMode && performance.now() - sleepSince > 4000) setSleep(false); }
+function applyHornyMul() {
+  const on = isHorny(hornyState);
+  for (const c of Object.values(chars)) {
+    if (!c.mana) continue;
+    const was = c.mana.mul || 1;
+    c.mana.setMul(on ? 2 : 1);
+    if (on && was < 2) c.mana.fill();
+  }
+}
 function setSleep(on, manual = false) {
-  if (on === sleepMode) return; sleepMode = on; if (manual) sleepManual = on;
-  if (on) { sleepSince = performance.now(); for (const c of wives()) { c.looking = 0; c.nearSince = 0; } }
+  if (on === sleepMode) return;
+  const wasManualSession = sleepTogetherActive;
+  sleepMode = on;
+  if (manual) sleepManual = on;
+  if (on) {
+    sleepSince = performance.now();
+    sleepTogetherActive = !!manual; // tray / explicit sleep-together only (not AFK auto-sleep)
+    for (const c of wives()) { c.looking = 0; c.nearSince = 0; }
+  }
   ipcRenderer.send('sleeping', on);
-  if (on) { trigger('sleep'); for (const c of wives()) { c.queue = []; c.target = null; c.nextThink = 0; } speak(chars.noct || wives()[0], 'sleep', { ambient: true }); sendEvent('sleep'); }
-  else {
+  if (on) {
+    trigger('sleep');
+    for (const c of wives()) { c.queue = []; c.target = null; c.nextThink = 0; }
+    speak(chars.noct || wives()[0], 'sleep', { ambient: true });
+    sendEvent('sleep');
+  } else {
     sleepManual = false;
+    if (wasManualSession) {
+      hornyState = noteVoluntarySleepTogether(hornyState);
+      for (const c of wives()) if (c.mana) growFromSleepTogether(c.mana);
+      if (chars.chrispyni && chars.chrispyni.mana) growFromSleepTogether(chars.chrispyni.mana);
+      if (rollHornyOnWake(hornyState)) {
+        applyHornyMul();
+        const host = (isChrispyEdition() ? chars.chrispyni : wives()[0]);
+        if (host) host.say(isChrispyEdition() ? 'Mm. Careful. I feel… warm.' : '…Something shifted.');
+      }
+      saveSoon();
+    }
+    sleepTogetherActive = false;
     for (const c of Object.values(chars)) { c.queue = []; c.target = null; c.holdUntil = 0; c.waitUntil = 0; c.current = null;
       if (c.state === 'sleep' || c.state === 'lay' || c.seat || c.loopAnim || c.anim === 'sleep' || c.anim === 'lay') { if (c.seat) standUp(c); c.loopAnim = null; c.state = 'idle'; c.enqueue([{ type: 'wake' }]); } if (c.bubble && c.bubble.z) c.bubble = null; }
     setTimeout(() => { for (let i = props.length - 1; i >= 0; i--) if (props[i].sleepBed) { spawnFx('void_burst', props[i].x, props[i].y - props[i].def.frame.h); props.splice(i, 1); } }, 1500);
   }
-  hooks.emit('sleep', { on });
+  hooks.emit('sleep', { on, voluntary: !!(on ? manual : wasManualSession) });
 }
+
 setInterval(() => {   // time of day + tick events
   const tod = timeOfDay();
   if (cfg.awareness.timeOfDay && tod !== aw.tod) { const first = aw.tod == null; aw.tod = tod; if (!first) { for (const c of wives()) c.mood.react(tod); speak(pick(wives()), tod, { ambient: true }); } }
@@ -1422,6 +1475,7 @@ setInterval(() => {   // time of day + tick events
   cleanupProps(); guestCheck();
   if (watching) for (const c of wives()) c.aff.event('media_together');   // watching together
   if (chars.chrispyni) for (const c of wives()) c.aff.event('with_chrispy');
+  const wasH = isHorny(hornyState); clearHorny(hornyState); if (wasH && !isHorny(hornyState)) applyHornyMul();
   saveSoon();
 }, ((content && content.events && content.events.checkSec) || 60) * 1000);
 
@@ -1489,7 +1543,7 @@ function refreshDebugMeters() {
   for (const el of document.querySelectorAll('[data-meter]')) {
     if (el.dataset.meter === '_pity') { el.textContent = `guest visit chance ${(pity.chance * 100).toFixed(1)}% (base ${(pity.o.base * 100).toFixed(0)}%)`; continue; }
     const ch = chars[el.dataset.meter]; if (!ch) continue;
-    el.textContent = `hidden mood ${ch.aff.level > 0 ? '+' : ''}${ch.aff.level} (${ch.aff.value.toFixed(2)})` + (ch.mana ? ` · mana ${ch.mana.value.toFixed(1)}/${ch.mana.max}${ch.meditating ? ' · meditating' : ''}` : '');
+    el.textContent = `hidden mood ${ch.aff.level > 0 ? '+' : ''}${ch.aff.level} (${ch.aff.value.toFixed(2)})` + (ch.mana ? ` · mana ${ch.mana.value.toFixed(1)}/${ch.mana.max}` + (ch.mana.mul > 1 ? `×${ch.mana.mul}` : '') + (ch.meditating ? ' · meditating' : '') : '') + (isHorny(hornyState) ? ' · ※' : '');
   }
 }
 setInterval(() => { if (debugOpen) refreshDebugMeters(); }, 1000);
@@ -1590,28 +1644,37 @@ let saveT;
 function saveSoon() { clearTimeout(saveT); saveT = setTimeout(save, 2000); }
 function save() {
   try {
-    fs.writeFileSync(SAVE_PATH, JSON.stringify({ v: 2,
+    fs.writeFileSync(SAVE_PATH, JSON.stringify({ v: 3,
       chars: Object.fromEntries(Object.values(chars).filter((c) => c.role !== 'guest').map((c) => [c.id, { mana: c.mana.toJSON(), mood: c.mood.toJSON(), aff: c.aff.toJSON(), lastMeditate: c.lastMeditate || 0, food: c.foodState || {}, pat: c.patState || {} }])),
       pity: pity ? pity.toJSON() : null,
+      horny: hornyState,
+      session: sessionMeta,
       props: props.filter((p) => !p.sleepBed).map((p) => ({ id: p.id, x: (p.x - wa.x) / wa.w, born: p.born })), lastUserAt, savedAt: Date.now() }, null, 1));
   } catch (e) { console.error('save failed ' + e.message); }
 }
+
 function loadSave() {
   try {
     const s = JSON.parse(fs.readFileSync(SAVE_PATH, 'utf8'));
     const away = s.savedAt ? Math.min(8 * 3600, (Date.now() - s.savedAt) / 1000) : 0;
+    if (s.horny) hornyState = { ...freshHornyState(), ...s.horny };
+    clearHorny(hornyState);
     for (const w of wives()) {
       const c = (s.chars || {})[w.id];
-      if (c) { w.mana.value = clamp(c.mana.value, 0, w.mana.max); w.mood.load(c.mood); w.aff.load(c.aff); w.lastMeditate = c.lastMeditate || 0; w.foodState = c.food || {}; w.patState = c.pat || {}; }
-      else if (s.mana) { w.mana.value = clamp(s.mana.value, 0, w.mana.max); if (s.moods && s.moods[w.id]) w.mood.load(s.moods[w.id]); }   // v1 save
+      if (c && c.mana) { w.mana.load(c.mana); w.mood.load(c.mood); w.aff.load(c.aff); w.lastMeditate = c.lastMeditate || 0; w.foodState = c.food || {}; w.patState = c.pat || {}; }
+      else if (c) { w.mana.value = clamp(c.mana.value, 0, w.mana.max); w.mood.load(c.mood); w.aff.load(c.aff); w.lastMeditate = c.lastMeditate || 0; w.foodState = c.food || {}; w.patState = c.pat || {}; }
+      else if (s.mana) { w.mana.value = clamp(s.mana.value, 0, w.mana.max); if (s.moods && s.moods[w.id]) w.mood.load(s.moods[w.id]); }
       w.mana.tick(away, 'awake');
     }
+    applyHornyMul();
     if (s.lastUserAt) lastUserAt = s.lastUserAt;
     if (s.pity && pity) pity.load(s.pity);
+    if (s.session) sessionMeta = { ...sessionMeta, ...s.session };
     for (const p of s.props || []) if (content.props[p.id]) { const q = summon(null, p.id, wa.x + p.x * wa.w, true); if (q) q.born = p.born; }
     fx.length = 0;
   } catch {}
 }
+
 setInterval(save, 30000);
 
 // ---------------- plugin API ----------------
@@ -1629,6 +1692,16 @@ function pluginApi() {
 }
 
 // ---------------- IPC from main ----------------
+ipcRenderer.on('session-times', (_e, meta) => {
+  sessionMeta = { ...sessionMeta, ...meta };
+  sessionMeta.lastLaunchAt = meta.lastLaunchAt || Date.now();
+  if (qualifiesLongAway(sessionMeta.lastCloseAt, sessionMeta.lastLaunchAt)) {
+    for (const w of wives()) if (w.mana) growFromLongAway(w.mana);
+    if (chars.chrispyni && chars.chrispyni.mana) growFromLongAway(chars.chrispyni.mana);
+    toast('Rested. Max mana grew a little.');
+    saveSoon();
+  }
+});
 ipcRenderer.on('cmd', (_e, c) => {
   if (c.cmd === 'chat') { chatIsOpen() ? closeChat() : openChat(); }
   if (c.cmd === 'sleep') setSleep(c.on, true);
@@ -1692,6 +1765,15 @@ function resize() {
   const ids = (cfg.characters || ['nixie', 'noct']).filter((id) => content.characters[id]);
   ids.forEach((id, i) => addChar(id, wa.x + wa.w * rnd(0.2 + i * 0.35, 0.4 + i * 0.35), 'wife'));
   loadSave();
+  if (INIT.session) {
+    sessionMeta = { ...sessionMeta, ...INIT.session };
+    if (qualifiesLongAway(sessionMeta.lastCloseAt, sessionMeta.lastLaunchAt || Date.now())) {
+      for (const w of wives()) if (w.mana) growFromLongAway(w.mana);
+      if (chars.chrispyni && chars.chrispyni.mana) growFromLongAway(chars.chrispyni.mana);
+      toast('Rested. Max mana grew a little.');
+      saveSoon();
+    }
+  }
   aw.tod = timeOfDay();
   setTimeout(() => { speak(chars.nixie, 'greet'); setTimeout(() => chars.noct && chars.noct.dots(2.5), 2500); }, 1500);
   hooks.emit('ready', {});

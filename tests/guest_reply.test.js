@@ -28,8 +28,8 @@ test('chrispyni edition library: mommy-style host replies for ChrispyNi', () => 
   const l = chatlib.pickById(lib, 'chrispyni', 'guest_leave_reply', () => 0);
   assert.ok(a.text, 'arrive');
   assert.ok(l.text, 'leave');
-  assert.match(a.text, /cute one|baby|Missed|portal|Good girl|Come here/i);
-  assert.match(l.text, /baby|waiting|Bye|Leaving|Come home|Safe trip|come back|Go on then/i);
+  assert.match(a.text, /Come here|Missed|portal|Stay a while|say hi properly|Good\./i);
+  assert.match(l.text, /waiting|Bye|Leaving|Come home|Safe trip|come back|Go on then|Behave/i);
 });
 
 test('reply() also matches __guest_arrive__ / __guest_leave__ magic phrases', () => {

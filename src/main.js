@@ -64,6 +64,13 @@ function loadConfig() {
   if (!cfg.guests || !cfg.guests.length) cfg.guests = (EDITION.guests || []).slice();
   return cfg;
 }
+const SESSION_PATH = path.join(USER_DIR, 'session.json');
+function readSession() { try { return JSON.parse(fs.readFileSync(SESSION_PATH, 'utf8')); } catch { return {}; } }
+function writeSession(partial) {
+  const next = { ...readSession(), ...partial };
+  try { fs.writeFileSync(SESSION_PATH, JSON.stringify(next, null, 2)); } catch (e) { log('session write ' + e.message); }
+  return next;
+}
 function saveConfig() {
   const p = path.join(USER_DIR, 'config.json');
   let user = {}; try { user = JSON.parse(fs.readFileSync(p, 'utf8')); } catch {}
@@ -177,13 +184,18 @@ ipcMain.on('sleeping', (_e, on) => {
 });
 ipcMain.on('set-sleep', (_e, on) => { sleepManual = on; buildTray(); });
 ipcMain.on('log', (_e, m) => log('[renderer]', m));
-ipcMain.handle('init', () => ({
-  cfg, dirs: contentDirs(), version: PKG.version, platform: process.platform, edition: EDITION.id, editionLabel: EDITION.label,
-  // PC/account names never leave the main process; the renderer only learns yes/no
-  adminByIdentity: require('./core/admin').isAdminByIdentity(cfg.admin, { username: os.userInfo().username, hostname: os.hostname() }),
-  workArea: screen.getPrimaryDisplay().workArea, bounds: screen.getPrimaryDisplay().bounds, scaleFactor: screen.getPrimaryDisplay().scaleFactor,
-  screenshot: process.env.PW_SCREENSHOT || '', demo: !!process.env.PW_DEMO,
-}));
+ipcMain.handle('init', () => {
+  const prev = readSession();
+  const lastLaunchAt = Date.now();
+  writeSession({ lastLaunchAt });
+  return {
+    cfg, dirs: contentDirs(), version: PKG.version, platform: process.platform, edition: EDITION.id, editionLabel: EDITION.label,
+    adminByIdentity: require('./core/admin').isAdminByIdentity(cfg.admin, { username: os.userInfo().username, hostname: os.hostname() }),
+    workArea: screen.getPrimaryDisplay().workArea, bounds: screen.getPrimaryDisplay().bounds, scaleFactor: screen.getPrimaryDisplay().scaleFactor,
+    screenshot: process.env.PW_SCREENSHOT || '', demo: !!process.env.PW_DEMO,
+    session: { lastCloseAt: prev.lastCloseAt || null, lastLaunchAt },
+  };
+});
 ipcMain.handle('capture', async (_e, which, file) => {
   const w = which === 'room' ? roomWin : overlay; if (!w) return false;
   const img = await w.webContents.capturePage(); fs.writeFileSync(file, img.toPNG()); return true;
@@ -433,6 +445,6 @@ app.whenReady().then(() => {
   screen.on('display-metrics-changed', () => { const d = screen.getPrimaryDisplay(); if (overlay) overlay.setBounds(d.bounds); send('workarea', { workArea: d.workArea, bounds: d.bounds, scale: d.scaleFactor }); });
   log(`started ${PKG.version} root=${APP_ROOT} data=${DATA_DIR} userData=${app.getPath('userData')}`);
 });
-app.on('will-quit', () => { globalShortcut.unregisterAll(); if (winWatcher) winWatcher.kill(); stopClickWatcher(); });
+app.on('will-quit', () => { writeSession({ lastCloseAt: Date.now() }); globalShortcut.unregisterAll(); if (winWatcher) winWatcher.kill(); stopClickWatcher(); });
 app.on('window-all-closed', () => app.quit());
 module.exports = { openRoom };

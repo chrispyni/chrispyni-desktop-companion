@@ -23,6 +23,11 @@
           "Hello, love.",
           "Mm. Welcome back.",
           "Hi. I was waiting."
+        ],
+        "chrispyni": [
+          "Hey.",
+          "There you are.",
+          "Hi. Don't just hover."
         ]
       }
     },
@@ -47,6 +52,11 @@
           "Calm. Content. And you?",
           "Better now.",
           "Quiet day. I like it."
+        ],
+        "chrispyni": [
+          "Better now that you're talking.",
+          "Fine. Soft. A little spoiled.",
+          "Good. Tell me about your day."
         ]
       }
     },
@@ -73,6 +83,11 @@
           "I love you too. Always.",
           "...Mm. Same. Forever.",
           "Come closer and say that."
+        ],
+        "chrispyni": [
+          "I love you too. Always.",
+          "Say it again.",
+          "Mm. Mine. Come here."
         ]
       }
     },
@@ -97,6 +112,11 @@
           "...You're sweet.",
           "Only for you.",
           "Mm. Thank you."
+        ],
+        "chrispyni": [
+          "Flattery noted. Continue.",
+          "Eyes up here.",
+          "Thank you."
         ]
       }
     },
@@ -123,6 +143,11 @@
           "Tea and something sweet would be nice.",
           "Eat properly, love.",
           "I could share a cookie."
+        ],
+        "chrispyni": [
+          "Cookie? Or are you feeding me.",
+          "Snack time. I'm watching.",
+          "Hungry? Handle it."
         ]
       }
     },
@@ -148,6 +173,11 @@
           "Rest. I'll watch over you.",
           "Good night, love.",
           "Sleep well. We'll be here."
+        ],
+        "chrispyni": [
+          "Then rest. I'll keep watch.",
+          "Good night. That's an order.",
+          "Sleep. I'm right here."
         ]
       }
     },
@@ -168,6 +198,11 @@
         "noct": [
           "Anytime.",
           "Of course, love.",
+          "Mm."
+        ],
+        "chrispyni": [
+          "Anytime.",
+          "You're welcome.",
           "Mm."
         ]
       }
@@ -195,6 +230,11 @@
           "Take care. We'll be here.",
           "See you soon, love.",
           "Come back safe."
+        ],
+        "chrispyni": [
+          "Come back soon. I'll be waiting.",
+          "Bye. Be safe.",
+          "Don't be long."
         ]
       }
     },
@@ -214,6 +254,11 @@
         "noct": [
           "It's alright.",
           "Already forgotten."
+        ],
+        "chrispyni": [
+          "Already forgiven. Come here.",
+          "It's fine.",
+          "Drop it. We're good."
         ]
       }
     },
@@ -235,8 +280,10 @@
           "Mm. I saved you a spot."
         ],
         "chrispyni": [
-          "Room for one more? Of course.",
-          "Came to check on my queens~"
+          "There you are. Come here.",
+          "Mm. Missed that face. Stay a while.",
+          "Hey. Don't just stand there. Say hi properly.",
+          "Look who crawled out of a portal. Good."
         ]
       }
     },
@@ -258,8 +305,25 @@
           "Go. But come back."
         ],
         "chrispyni": [
-          "Behave, both of you.",
-          "I'll be back."
+          "Go on then. I'll be right here when you come back.",
+          "Bye. Behave out there.",
+          "Leaving already? Fine. Don't make me wait too long.",
+          "Mm. Safe trip. Come home to me."
+        ]
+      }
+    },
+    {
+      "id": "horny_to_wives",
+      "match": [
+        "__horny_wife__"
+      ],
+      "priority": 80,
+      "replies": {
+        "chrispyni": [
+          "Come here, my queens~",
+          "Mm~ stay close.",
+          "Don't make me beg… okay, maybe a little~",
+          "You two. Closer~"
         ]
       }
     }
@@ -300,6 +364,12 @@
       "Tell me more.",
       "...I see.",
       "Go on, love."
+    ],
+    "chrispyni": [
+      "Mm. Tell me more.",
+      "I hear you.",
+      "Go on.",
+      "Interesting. Keep talking."
     ]
   }
 }

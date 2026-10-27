@@ -1,6 +1,6 @@
 {
   "version": "0.1.7-alpha",
   "date": "2026-10-27",
-  "notes": "Invisible avatar fix; spacing; guest replies; categories; no endless cast/sparkle loop; behavior variety caps.",
+  "notes": "Dialogue rewrite; secret horny mood; growing max mana; plus prior 0.1.7 fixes (sprites, spacing, guest replies, categories, no endless cast).",
   "download": "https://github.com/chrispyni/chrispyni-desktop-companion/releases"
 }

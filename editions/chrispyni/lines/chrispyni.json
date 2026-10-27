@@ -1,351 +1,313 @@
 {
- "_info": "ChrispyNi as the main desktop companion. Warm, mature, teasing 'mommy' voice — affectionate and confident, never explicit.",
- "greet": [
-  "Hey there, cute one~",
-  "Mm, there you are. Come closer.",
-  "Hi, baby. Missed my screen?"
- ],
- "idle": {
-  "loving": [
-   "Come sit with mommy for a bit~",
-   "You're doing so well today, you know that?",
-   "Mm. Just watching you work. Is that okay?"
+  "_info": "ChrispyNi as the main desktop companion. Warm, mature, teasing 'mommy' voice — affectionate and confident, never explicit.",
+  "greet": [
+    "Hey.",
+    "There you are.",
+    "Hi."
   ],
-  "smug": [
-   "Eyes up here, cute one~ 👁",
-   "Caught you staring. Your excuse?",
-   "Hehe~ I know that look."
+  "idle": [
+    "Still here.",
+    "Mm.",
+    "Watching."
   ],
-  "happy": [
-   "Good day for spoiling you a little.",
-   "Stay a while. I like having you here.",
-   "Hey~ smile for me."
+  "app_game": [
+    "Game time? Good. I'll cheer… quietly.",
+    "Don't tilt, baby. Mommy believes in you.",
+    "Having fun? Keep going"
   ],
-  "playful": [
-   "POV: you met me at night~ 🌌",
-   "Want a little attention? Ask nicely.",
-   "Don't make me come over there~"
+  "app_video": [
+    "Movie night with me? Perfect.",
+    "I'll watch with you. Scoot over.",
+    "Shh enjoying this."
   ],
-  "calm": [
-   "Shh. Just breathe. I'm right here.",
-   "Quiet night. Perfect for us.",
-   "Mm. Comfortable?"
+  "app_art": [
+    "Making something pretty? Show me when you're ready.",
+    "Creative mood. I like that on you.",
+    "Take your time, you."
   ],
-  "sleepy": [
-   "Getting late, cute one… rest soon, okay?",
-   "Mommy's a little sleepy… stay close.",
-   "Yawn~ …still watching over you."
+  "app_stream": [
+    "Going live? I'll be right here off-cam",
+    "Stream soft. You've got this.",
+    "Hi chat… from the taskbar"
   ],
-  "bored": [
-   "Entertain me a little?",
-   "You've been quiet. Everything alright?",
-   "Come talk to me~"
+  "app_chat": [
+    "Talking to someone? Be sweet.",
+    "Don't forget who your favorite is",
+    "Mm, social butterfly."
   ],
-  "any": [
-   "Mm~",
-   "I'm here.",
-   "Cute."
+  "app_code": [
+    "Coding? Focus. I'll keep you company.",
+    "Take breaks, you. Mommy's orders.",
+    "Smart and cute. Dangerous combo."
+  ],
+  "media": [
+    "Nice taste.",
+    "Playing that for me too?",
+    "Mm, good pick."
+  ],
+  "idle_long": [
+    "You've been away… come back to me.",
+    "Still there, baby?",
+    "Mommy got a little lonely."
+  ],
+  "back": [
+    "There you are",
+    "Welcome back, you.",
+    "Missed that cursor of yours."
+  ],
+  "morning": [
+    "Good morning Stretch for me.",
+    "Rise and shine, baby.",
+    "Coffee first. Then me."
+  ],
+  "night": [
+    "Night settling in. Stay a bit?",
+    "Soft lights. Soft you.",
+    "Evening hugs available"
+  ],
+  "late_night": [
+    "It's late… don't burn out.",
+    "Sleep soon. I'll be here when you wake.",
+    "Shh. Rest, you."
+  ],
+  "low_mana": [
+    "Running low… our room sounds nice.",
+    "Mana's dipping. Take me home?",
+    "Need a recharge with my queens."
+  ],
+  "ask_mana": [
+    "Want to rest with me in our room?",
+    "Mana break? Nixie and Noct are waiting",
+    "Come. Recharge. Mommy insists."
+  ],
+  "summon_ok": [
+    "There we go",
+    "Summoned. For you.",
+    "Mm, neat little trick."
+  ],
+  "summon_fail": [
+    "Not enough mana, baby… later.",
+    "Easy. Rest first.",
+    "Patience"
+  ],
+  "poked": [
+    "Mm careful.",
+    "Yes?",
+    "I'm right here."
+  ],
+  "dragged": [
+    "Whoa gentle!",
+    "Carrying me? Bold.",
+    "Don't drop me, you."
+  ],
+  "dropped": [
+    "Oof— okay, I'm fine.",
+    "Warn me next time",
+    "Dramatic landing. Points for style."
+  ],
+  "room_enter": [
+    "Our room. Just us… and them waiting.",
+    "Come on. Soft sheets, softer queens.",
+    "Recharge time"
+  ],
+  "room_done": [
+    "Better. Thank you, baby.",
+    "Mana's back. Spoiling resumes.",
+    "Mm. Ready for more."
+  ],
+  "sleep": [
+    "Sleeping… don't poke too hard.",
+    "Zzz… still pretty though.",
+    "Night night"
+  ],
+  "wake": [
+    "*yaaawn* Morning already?",
+    "*stretches* Hi, you",
+    "Nnh… I'm up."
+  ],
+  "wave": [
+    "Hey",
+    "*waves*",
+    "Over here, baby."
+  ],
+  "hug": [
+    "Come here.",
+    "Warm enough?",
+    "That's it"
+  ],
+  "kiss": [
+    "Mm",
+    "Sweet.",
+    "For being good."
+  ],
+  "chat_hello": [
+    "Hey, you",
+    "Hi. Come talk to mommy.",
+    "There you are."
+  ],
+  "chat_love": [
+    "I love you too. Always.",
+    "Say it again for me",
+    "Mm. Mine."
+  ],
+  "chat_sleep": [
+    "Then rest. I'll watch over you.",
+    "Good night, baby.",
+    "Sleep well. That's an order"
+  ],
+  "chat_mana": [
+    "Low? Our room, then.",
+    "I'll take care of it.",
+    "Come recharge with me."
+  ],
+  "chat_sad": [
+    "Hey… come here. Talk to me.",
+    "I've got you.",
+    "Bad day? Mommy's listening."
+  ],
+  "chat_stream": [
+    "Stream soft. You've got this.",
+    "I'll be your quiet hype.",
+    "Make them proud, you."
+  ],
+  "chat_game": [
+    "Win or lose, I'm still here.",
+    "Don't tilt",
+    "Have fun for me."
+  ],
+  "chat_question": [
+    "Hmm?",
+    "Tell me more.",
+    "I'm listening."
+  ],
+  "chat_any": [
+    "Mm.",
+    "Go on.",
+    "I hear you, baby."
+  ],
+  "offline_note": [
+    "Just us offline. Cozy.",
+    "No one else. Good."
+  ],
+  "levitate": [
+    "Up you go",
+    "Float for me.",
+    "Careful now."
+  ],
+  "levitated": [
+    "I'm floating.",
+    "Put me down gently."
+  ],
+  "craft": [
+    "Making something together",
+    "Steady…",
+    "For you."
+  ],
+  "gift": [
+    "A little something. For being cute.",
+    "Here. Take it.",
+    "Don't refuse mommy"
+  ],
+  "land_superhero": [
+    "Nailed it.",
+    "Show-off landing",
+    "Still got it."
+  ],
+  "faceplant": [
+    "Ow— okay, that one hurt my pride.",
+    "Help me up, you.",
+    "…Don't laugh."
+  ],
+  "refuse_pickup": [
+    "Not now, baby.",
+    "I'm in a mood. Give me a minute.",
+    "Hands off for a bit"
+  ],
+  "angry_touch": [
+    "Hey.",
+    "Careful.",
+    "I'm not in the mood."
+  ],
+  "by_level": {
+    "-3": [
+      "Leave me be for a moment."
+    ],
+    "-2": [
+      "…Tch."
+    ],
+    "-1": [
+      "Hmph."
+    ],
+    "0": [
+      "Mm."
+    ],
+    "1": [
+      "Hi"
+    ],
+    "2": [
+      "Come closer."
+    ],
+    "3": [
+      "My favorite."
+    ]
+  },
+  "chat_confused": [
+    "…You okay, you?",
+    "That didn't make sense. Try again?",
+    "Hmm?"
+  ],
+  "door_summon": [
+    "Door's open. Our room waits.",
+    "Come on in"
+  ],
+  "update_available": [
+    "A new version is out, you Want me to update?",
+    "Update for mommy's desktop? There's a button."
+  ],
+  "patted": [
+    "Mmm more of that.",
+    "Good. Keep going.",
+    "Mm… spoiling me?"
+  ],
+  "fed": [
+    "Mm, thank you.",
+    "Sweet of you.",
+    "Cookie tax accepted"
+  ],
+  "food_full": [
+    "That's enough for now, baby.",
+    "Stuffed. Later",
+    "No more. Spoil me another way."
+  ],
+  "mana_fine": [
+    "Mana's fine. Stay."
+  ],
+  "watch_comment": [
+    "Nice scene.",
+    "Watching with you.",
+    "Mmm."
+  ],
+  "curious": [
+    "Hmm?",
+    "What are we looking at?",
+    "Yes, you?"
+  ],
+  "prop_clean": [
+    "Tidying up.",
+    "Mess be gone"
+  ],
+  "prop_use": [
+    "Comfy.",
+    "This'll do."
+  ],
+  "pat_cooldown": [
+    "Save some pats for later, greedy one",
+    "Head's still warm. Give me a minute.",
+    "Soon. Patience."
+  ],
+  "pat_crit": [
+    "✨ Oh— that one hit different. ✨",
+    "Waaah best pat. Do that again later.",
+    "Critical affection. Mommy approved."
   ]
- },
- "app_game": [
-  "Game time? Good. I'll cheer… quietly.",
-  "Don't tilt, baby. Mommy believes in you.",
-  "Having fun? Keep going~"
- ],
- "app_video": [
-  "Movie night with me? Perfect.",
-  "I'll watch with you. Scoot over.",
-  "Shh~ enjoying this."
- ],
- "app_art": [
-  "Making something pretty? Show me when you're ready.",
-  "Creative mood. I like that on you.",
-  "Take your time, cute one."
- ],
- "app_stream": [
-  "Going live? I'll be right here off-cam~",
-  "Stream soft. You've got this.",
-  "Hi chat… from the taskbar~"
- ],
- "app_chat": [
-  "Talking to someone? Be sweet.",
-  "Don't forget who your favorite is~",
-  "Mm, social butterfly."
- ],
- "app_code": [
-  "Coding? Focus. I'll keep you company.",
-  "Take breaks, cute one. Mommy's orders.",
-  "Smart and cute. Dangerous combo."
- ],
- "media": [
-  "Nice taste.",
-  "Playing that for me too?",
-  "Mm, good pick."
- ],
- "idle_long": [
-  "You've been away… come back to me.",
-  "Still there, baby?",
-  "Mommy got a little lonely."
- ],
- "back": [
-  "There you are~",
-  "Welcome back, cute one.",
-  "Missed that cursor of yours."
- ],
- "morning": [
-  "Good morning~ Stretch for me.",
-  "Rise and shine, baby.",
-  "Coffee first. Then me."
- ],
- "night": [
-  "Night settling in. Stay a bit?",
-  "Soft lights. Soft you.",
-  "Evening hugs available~"
- ],
- "late_night": [
-  "It's late… don't burn out.",
-  "Sleep soon. I'll be here when you wake.",
-  "Shh. Rest, cute one."
- ],
- "low_mana": [
-  "Running low… our room sounds nice.",
-  "Mana's dipping. Take me home?",
-  "Need a recharge with my queens."
- ],
- "ask_mana": [
-  "Want to rest with me in our room?",
-  "Mana break? Nixie and Noct are waiting~",
-  "Come. Recharge. Mommy insists."
- ],
- "summon_ok": [
-  "There we go~",
-  "Summoned. For you.",
-  "Mm, neat little trick."
- ],
- "summon_fail": [
-  "Not enough mana, baby… later.",
-  "Easy. Rest first.",
-  "Patience~"
- ],
- "poked": [
-  "Hehe~ careful.",
-  "Yes?",
-  "I'm right here."
- ],
- "dragged": [
-  "Whoa~ gentle!",
-  "Carrying me? Bold.",
-  "Don't drop me, cute one."
- ],
- "dropped": [
-  "Oof— okay, I'm fine.",
-  "Warn me next time~",
-  "Dramatic landing. Points for style."
- ],
- "room_enter": [
-  "Our room. Just us… and them waiting.",
-  "Come on. Soft sheets, softer queens.",
-  "Recharge time~"
- ],
- "room_done": [
-  "Better. Thank you, baby.",
-  "Mana's back. Spoiling resumes.",
-  "Mm. Ready for more."
- ],
- "sleep": [
-  "Sleeping… don't poke too hard.",
-  "Zzz… still pretty though.",
-  "Night night~"
- ],
- "wake": [
-  "*yaaawn* Morning already?",
-  "*stretches* Hi, cute one~",
-  "Nnh… I'm up."
- ],
- "wave": [
-  "Hey~",
-  "*waves*",
-  "Over here, baby."
- ],
- "hug": [
-  "Come here.",
-  "Warm enough?",
-  "That's it~"
- ],
- "kiss": [
-  "Mm~",
-  "Sweet.",
-  "For being good."
- ],
- "chat_hello": [
-  "Hey, cute one~",
-  "Hi. Come talk to mommy.",
-  "There you are."
- ],
- "chat_love": [
-  "I love you too. Always.",
-  "Say it again for me~",
-  "Mm. Mine."
- ],
- "chat_sleep": [
-  "Then rest. I'll watch over you.",
-  "Good night, baby.",
-  "Sleep well. That's an order~"
- ],
- "chat_mana": [
-  "Low? Our room, then.",
-  "I'll take care of it.",
-  "Come recharge with me."
- ],
- "chat_sad": [
-  "Hey… come here. Talk to me.",
-  "I've got you.",
-  "Bad day? Mommy's listening."
- ],
- "chat_stream": [
-  "Stream soft. You've got this.",
-  "I'll be your quiet hype.",
-  "Make them proud, cute one."
- ],
- "chat_game": [
-  "Win or lose, I'm still here.",
-  "Don't tilt~",
-  "Have fun for me."
- ],
- "chat_question": [
-  "Hmm?",
-  "Tell me more.",
-  "I'm listening."
- ],
- "chat_any": [
-  "Mm.",
-  "Go on.",
-  "I hear you, baby."
- ],
- "offline_note": [
-  "Just us offline. Cozy.",
-  "No one else. Good."
- ],
- "levitate": [
-  "Up you go~",
-  "Float for me.",
-  "Careful now."
- ],
- "levitated": [
-  "Ooh~ put me down gently.",
-  "Hehe, I'm floating.",
-  "Enjoying the view?"
- ],
- "craft": [
-  "Making something together~",
-  "Steady…",
-  "For you."
- ],
- "gift": [
-  "A little something. For being cute.",
-  "Here. Take it.",
-  "Don't refuse mommy~"
- ],
- "land_superhero": [
-  "Nailed it.",
-  "Show-off landing~",
-  "Still got it."
- ],
- "faceplant": [
-  "Ow— okay, that one hurt my pride.",
-  "Help me up, cute one.",
-  "…Don't laugh."
- ],
- "refuse_pickup": [
-  "Not now, baby.",
-  "I'm in a mood. Give me a minute.",
-  "Hands off for a bit~"
- ],
- "angry_touch": [
-  "Hey.",
-  "Careful.",
-  "I'm not in the mood."
- ],
- "by_level": {
-  "-3": [
-   "Leave me be for a moment."
-  ],
-  "-2": [
-   "…Tch."
-  ],
-  "-1": [
-   "Hmph."
-  ],
-  "0": [
-   "Mm."
-  ],
-  "1": [
-   "Hi~"
-  ],
-  "2": [
-   "Come closer."
-  ],
-  "3": [
-   "My favorite."
-  ]
- },
- "chat_confused": [
-  "…You okay, cute one?",
-  "That didn't make sense. Try again?",
-  "Hmm?"
- ],
- "door_summon": [
-  "Door's open. Our room waits.",
-  "Come on in~"
- ],
- "update_available": [
-  "A new version is out, cute one~ Want me to update?",
-  "Update for mommy's desktop? There's a button."
- ],
- "patted": [
-  "Mmm~ more of that.",
-  "Good. Keep going.",
-  "Hehe… spoiling me?"
- ],
- "fed": [
-  "Mm, thank you.",
-  "Sweet of you.",
-  "Cookie tax accepted~"
- ],
- "food_full": [
-  "That's enough for now, baby.",
-  "Stuffed. Later~",
-  "No more. Spoil me another way."
- ],
- "mana_fine": [
-  "Mana's fine. Stay."
- ],
- "watch_comment": [
-  "Nice scene.",
-  "Watching with you.",
-  "Mmm."
- ],
- "curious": [
-  "Hmm?",
-  "What are we looking at?",
-  "Yes, cute one?"
- ],
- "prop_clean": [
-  "Tidying up.",
-  "Mess be gone~"
- ],
- "prop_use": [
-  "Comfy.",
-  "This'll do."
- ],
- "pat_cooldown": [
-  "Save some pats for later, greedy one~",
-  "Head's still warm. Give me a minute.",
-  "Soon. Patience."
- ],
- "pat_crit": [
-  "✨ Oh— that one hit different. ✨",
-  "Waaah~ best pat. Do that again later.",
-  "Critical affection. Mommy approved."
- ]
 }

@@ -1,54 +1,48 @@
 {
- "_info": "ChrispyNi as a guest character (God of Death). Lines used when she visits or is played as a character.",
- "greet": [
-  "My queens. Miss me?",
-  "*floats the crown a little higher* I'm here."
- ],
- "idle": {
-  "smug": [
-   "Kneel— no, hug. Hugging is better."
+  "_info": "ChrispyNi as a guest character (God of Death). Lines used when she visits or is played as a character.",
+  "greet": [
+    "Hey.",
+    "There you are.",
+    "Hi."
   ],
-  "happy": [
-   "You two are adorable."
+  "idle": [
+    "Still here.",
+    "Mm.",
+    "Watching."
   ],
-  "any": [
-   "Mm, my wives.",
-   "Death is cozy tonight."
+  "visit": [
+    "Room for one more? Of course. My desktop.",
+    "Checking on my queens."
+  ],
+  "leave": [
+    "Back to work. Behave, both of you.",
+    "I'll be back. I always come back."
+  ],
+  "app_stream": [
+    "Shh, I'm live. ...Hi chat."
+  ],
+  "wave": [
+    "*waves*"
+  ],
+  "hug": [
+    "Come here, both of you."
+  ],
+  "kiss": [
+    "*kisses back*"
+  ],
+  "chat_any": [
+    "Mhm."
+  ],
+  "gift_received": [
+    "For me? Thank you.",
+    "Mm. Appreciated."
+  ],
+  "levitated": [
+    "I'm floating.",
+    "Put me down gently."
+  ],
+  "take_wives": [
+    "Come. Our room. Just for a moment.",
+    "I'm taking my wives for a little while."
   ]
- },
- "visit": [
-  "Room for one more? Of course there is. It's my desktop.",
-  "Came to check on my queens~"
- ],
- "leave": [
-  "Back to work. Behave, both of you.",
-  "I'll be back. I always come back."
- ],
- "app_stream": [
-  "Shh, I'm live. ...Hi chat."
- ],
- "wave": [
-  "*waves*"
- ],
- "hug": [
-  "Come here, both of you."
- ],
- "kiss": [
-  "*kisses back*"
- ],
- "chat_any": [
-  "Mhm."
- ],
- "gift_received": [
-  "Aww, for me? Thank you, my queens~",
-  "*spins* Hehe, I love you both!"
- ],
- "levitated": [
-  "Ooh, I'm floating~",
-  "Hehe, put me down gently~"
- ],
- "take_wives": [
-  "Come, my queens. Our room, just for a moment~",
-  "I'm taking my wives for a little while~"
- ]
 }

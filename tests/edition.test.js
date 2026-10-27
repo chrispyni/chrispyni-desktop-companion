@@ -30,7 +30,7 @@ test('chrispyni edition overlay: roles + chat voice', () => {
   assert.strictEqual(r.rule, 'love');
   assert.match(r.text, /love you|Mine|again/i);
   const g = chatlib.reply(lib, C, 'chrispyni', 'hi there', () => 0);
-  assert.ok(/cute one|baby|there you are/i.test(g.text));
+  assert.ok(/Hey\.|There you are|Don't just hover|Hi\./i.test(g.text));
 });
 
 test('no Project Wives branding left in edition labels', () => {
