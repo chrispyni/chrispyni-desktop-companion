@@ -1,0 +1,194 @@
+{
+ "id": "chrispyni",
+ "name": "ChrispyNi",
+ "fullName": "ChrispyNi",
+ "title": "God of Death",
+ "role": "wife",
+ "sheet": "sheet.png",
+ "frame": {
+  "w": 48,
+  "h": 64
+ },
+ "anchor": {
+  "x": 24,
+  "y": 62
+ },
+ "scale": 2,
+ "animations": {
+  "idle": {
+   "row": 0,
+   "frames": 4,
+   "fps": 4
+  },
+  "walk": {
+   "row": 1,
+   "frames": 6,
+   "fps": 8
+  },
+  "run": {
+   "row": 2,
+   "frames": 6,
+   "fps": 12
+  },
+  "talk": {
+   "row": 3,
+   "frames": 4,
+   "fps": 6
+  },
+  "sit": {
+   "row": 4,
+   "frames": 4,
+   "fps": 3
+  },
+  "lay": {
+   "row": 5,
+   "frames": 4,
+   "fps": 2
+  },
+  "sleep": {
+   "row": 6,
+   "frames": 4,
+   "fps": 2
+  },
+  "happy": {
+   "row": 7,
+   "frames": 4,
+   "fps": 8
+  },
+  "pout": {
+   "row": 8,
+   "frames": 4,
+   "fps": 4
+  },
+  "cast": {
+   "row": 9,
+   "frames": 6,
+   "fps": 10
+  },
+  "wave": {
+   "row": 10,
+   "frames": 4,
+   "fps": 6
+  },
+  "hug": {
+   "row": 11,
+   "frames": 4,
+   "fps": 4
+  },
+  "kiss": {
+   "row": 12,
+   "frames": 4,
+   "fps": 4
+  },
+  "fall": {
+   "row": 13,
+   "frames": 4,
+   "fps": 10
+  },
+  "float": {
+   "row": 14,
+   "frames": 4,
+   "fps": 4
+  },
+  "superhero_land": {
+   "row": 15,
+   "frames": 4,
+   "fps": 6
+  },
+  "faceplant": {
+   "row": 16,
+   "frames": 4,
+   "fps": 4
+  },
+  "getup": {
+   "row": 17,
+   "frames": 4,
+   "fps": 5
+  },
+  "watch": {
+   "row": 18,
+   "frames": 4,
+   "fps": 2
+  }
+ },
+ "palette": {
+  "primary": "#121016",
+  "hair": "#231a33",
+  "accent": "#d4a537",
+  "gem": "#d4a537",
+  "eyes": "#8e5ad8"
+ },
+ "walkSpeed": 45,
+ "castEffect": "death_mist",
+ "bubble": {
+  "bg": "#120c18",
+  "border": "#d4a537",
+  "text": "#ffe9b0"
+ },
+ "personality": {
+  "lines": "chrispyni",
+  "talkativeness": 0.55,
+  "baseMood": "loving",
+  "moods": [
+   "smug",
+   "happy",
+   "calm",
+   "playful",
+   "sleepy",
+   "bored",
+   "loving"
+  ],
+  "drift": {
+   "smug": 1.3,
+   "happy": 1,
+   "playful": 0.9,
+   "calm": 0.7,
+   "loving": 0.6,
+   "bored": 0.4,
+   "sleepy": 0.4
+  },
+  "reactions": {
+   "chat": {
+    "happy": 0.8
+   },
+   "app:game": {
+    "playful": 0.8
+   },
+   "app:stream": {
+    "smug": 0.6,
+    "happy": 0.5
+   },
+   "poked": {
+    "smug": 0.5
+   },
+   "idle_long": {
+    "bored": 0.8
+   },
+   "back": {
+    "happy": 1
+   },
+   "late_night": {
+    "sleepy": 1.2
+   },
+   "room": {
+    "loving": 2
+   }
+  }
+ },
+ "note": "Main character of ChrispyNi Desktop Companion.",
+ "eyes": {
+  "y": 26,
+  "x": [
+   19,
+   28
+  ],
+  "w": 2,
+  "h": 3,
+  "iris": "#8e5ad8",
+  "pupil": "#d0202a",
+  "white": "#ffffff"
+ },
+ "mana": {
+  "max": 100
+ }
+}

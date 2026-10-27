@@ -1,7 +1,7 @@
-; Project Wives installer: default to a folder the user owns; data stays in the install folder.
+; ChrispyNi Desktop Companion installer: default to a folder the user owns; data stays in the install folder.
 !macro preInit
   SetRegView 64
-  StrCpy $INSTDIR "$PROFILE\ProjectWives"
+  StrCpy $INSTDIR "$PROFILE\ChrispyNiDesktopCompanion"
 !macroend
 ; Uninstall/update removes only program files and KEEPS data\, mods\, plugins\ (your saves, config, mods).
 !macro customRemoveFiles

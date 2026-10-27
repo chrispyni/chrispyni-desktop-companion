@@ -1,0 +1,273 @@
+{
+ "_comment": "Offline chat for ChrispyNi Desktop Companion. ChrispyNi = warm teasing mommy; guests keep their voices when present.",
+ "rules": [
+  {
+   "id": "greet",
+   "match": [
+    "hi",
+    "hello",
+    "hey",
+    "yo",
+    "good morning",
+    "good evening",
+    "morning"
+   ],
+   "mood": "back",
+   "replies": {
+    "chrispyni": [
+     "Hey, cute one~",
+     "Hi baby. Come closer.",
+     "There you are~"
+    ],
+    "nixie": [
+     "Hi hi! Finally!",
+     "Heyyy Chrispy's human~"
+    ],
+    "noct": [
+     "Hello.",
+     "Mm. Welcome."
+    ]
+   }
+  },
+  {
+   "id": "how_are_you",
+   "match": [
+    "how are you",
+    "how r u",
+    "how are u",
+    "you ok",
+    "how's it going"
+   ],
+   "priority": 1,
+   "replies": {
+    "chrispyni": [
+     "Better now that you're talking to me.",
+     "Soft and spoiled. You?",
+     "Good. Come tell me about your day."
+    ],
+    "nixie": [
+     "Bored! Entertain me~",
+     "Great, because Chrispy's here."
+    ],
+    "noct": [
+     "Calm. Content. And you?",
+     "Better with her nearby."
+    ]
+   }
+  },
+  {
+   "id": "love",
+   "match": [
+    "i love you",
+    "love you",
+    "ily",
+    "love u",
+    "mommy",
+    "my queen"
+   ],
+   "priority": 2,
+   "mood": "loved",
+   "affection": 1,
+   "replies": {
+    "chrispyni": [
+     "I love you too. Always.",
+     "Say it again for me~",
+     "Mm. Mine. Come here."
+    ],
+    "nixie": [
+     "Hey! Love Chrispy first— …okay love me too."
+    ],
+    "noct": [
+     "She knows. …We know."
+    ]
+   }
+  },
+  {
+   "id": "cute",
+   "match": [
+    "cute",
+    "pretty",
+    "beautiful",
+    "gorgeous",
+    "adorable",
+    "hot"
+   ],
+   "mood": "loved",
+   "affection": 1,
+   "replies": {
+    "chrispyni": [
+     "Eyes up here~ Hehe.",
+     "Flattery works. Continue.",
+     "Thank you, cute one."
+    ],
+    "nixie": [
+     "I know, right?~"
+    ],
+    "noct": [
+     "…You're sweet."
+    ]
+   }
+  },
+  {
+   "id": "food",
+   "match": [
+    "hungry",
+    "food",
+    "eat",
+    "cookie",
+    "cookies",
+    "snack"
+   ],
+   "replies": {
+    "chrispyni": [
+     "Want a cookie? Or are you feeding me~?",
+     "Snack time. Mommy's watching."
+    ],
+    "nixie": [
+     "Cookies! Gimme!"
+    ],
+    "noct": [
+     "Tea would be nice."
+    ]
+   }
+  },
+  {
+   "id": "sleep",
+   "match": [
+    "sleep",
+    "tired",
+    "sleepy",
+    "good night",
+    "goodnight",
+    "gn",
+    "bed"
+   ],
+   "mood": "sleepy",
+   "replies": {
+    "chrispyni": [
+     "Then rest. I'll watch over you.",
+     "Good night, baby. That's an order~",
+     "Sleep. Mommy's right here."
+    ],
+    "nixie": [
+     "Already?! …fine. Night."
+    ],
+    "noct": [
+     "Rest. We'll be here."
+    ]
+   }
+  },
+  {
+   "id": "thanks",
+   "match": [
+    "thanks",
+    "thank you",
+    "thx",
+    "ty"
+   ],
+   "replies": {
+    "chrispyni": [
+     "Anytime, cute one.",
+     "You're welcome~",
+     "Mm."
+    ],
+    "nixie": [
+     "You're welcome~ Cookie tax!"
+    ],
+    "noct": [
+     "Of course."
+    ]
+   }
+  },
+  {
+   "id": "bye",
+   "match": [
+    "bye",
+    "goodbye",
+    "see you",
+    "see ya",
+    "cya",
+    "gotta go",
+    "brb"
+   ],
+   "priority": 1,
+   "mood": "sad",
+   "replies": {
+    "chrispyni": [
+     "Come back soon. I'll be waiting.",
+     "Bye, baby. Be safe.",
+     "Don't be long~"
+    ],
+    "nixie": [
+     "Leaving?! Hmph. Hurry back."
+    ],
+    "noct": [
+     "Until later, love."
+    ]
+   }
+  },
+  {
+   "id": "sorry",
+   "match": [
+    "sorry",
+    "my bad",
+    "apologize"
+   ],
+   "affection": 1,
+   "replies": {
+    "chrispyni": [
+     "Already forgiven. Come here.",
+     "It's okay, cute one."
+    ],
+    "nixie": [
+     "Hmm… cookies help."
+    ],
+    "noct": [
+     "It's alright."
+    ]
+   }
+  }
+ ],
+ "reactions": [
+  {
+   "match": [
+    "stupid",
+    "dumb",
+    "hate you",
+    "shut up",
+    "ugly"
+   ],
+   "mood": "annoyed",
+   "affection": -1
+  },
+  {
+   "match": [
+    "yay",
+    "awesome",
+    "great",
+    "nice",
+    "lol",
+    "haha"
+   ],
+   "mood": "happy"
+  }
+ ],
+ "fallback": {
+  "chrispyni": [
+   "Mm. Tell me more.",
+   "I hear you, baby.",
+   "Go on~",
+   "Interesting. Keep talking."
+  ],
+  "nixie": [
+   "Huh? Say it cuter.",
+   "Mhm~",
+   "Whatever you say~"
+  ],
+  "noct": [
+   "Mm. I hear you.",
+   "Go on, love.",
+   "…I see."
+  ]
+ }
+}

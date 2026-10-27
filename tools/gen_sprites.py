@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generates all built-in pixel art for Project Wives (characters, props, effects, rooms,
+"""Generates all built-in pixel art for ChrispyNi Desktop Companion (characters, props, effects, rooms,
 templates, previews). Pure PIL, drawn pixel-by-pixel so it stays crisp. Re-run after edits:
     python3 tools/gen_sprites.py
 Hand-drawn PNGs dropped into content/ or mods/ always win over these (just overwrite the file)."""

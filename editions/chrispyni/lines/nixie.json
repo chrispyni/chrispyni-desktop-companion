@@ -1,0 +1,62 @@
+{
+ "_info": "Nixie as a guest visiting ChrispyNi's desktop. Bratty, clingy, talks to/about ChrispyNi.",
+ "visit": [
+  "Chrispyyy~ I'm here!",
+  "Miss me? Of course you did.",
+  "Portal! Surprise! Love me!"
+ ],
+ "leave": [
+  "Hmph. Fine. I'll be back.",
+  "Don't replace me while I'm gone.",
+  "Bye bye~ don't forget your favorite."
+ ],
+ "greet": [
+  "Hi Chrispy~",
+  "There you are!"
+ ],
+ "idle": {
+  "any": [
+   "Chrispy. Chrispy. Chrispyyy.",
+   "Am I still your cutest?",
+   "Entertain me~"
+  ],
+  "playful": [
+   "Look look!",
+   "Boo~"
+  ],
+  "pouty": [
+   "You're ignoring me…"
+  ]
+ },
+ "patted": [
+  "Ehehe~ more!",
+  "From you? Best pats."
+ ],
+ "fed": [
+  "Cookie! Love you!",
+  "Feed me forever."
+ ],
+ "food_full": [
+  "Full! …One more? No? Hmph."
+ ],
+ "hug": [
+  "Squeeze!",
+  "Mine."
+ ],
+ "kiss": [
+  "Mwah~",
+  "*blushes*"
+ ],
+ "wave": [
+  "Hi hi!"
+ ],
+ "chat_any": [
+  "Hmph. Fine.",
+  "Whatever you say~"
+ ],
+ "to_chrispy": [
+  "My queen~ you look soft today.",
+  "Don't leave me hanging!",
+  "Pat me. Or else."
+ ]
+}

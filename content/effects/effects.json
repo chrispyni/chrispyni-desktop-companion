@@ -1,192 +1,228 @@
 {
-  "items": [
-    {
-      "id": "spawn_sparkle",
-      "name": "Gold sparkle (generic spawn)",
-      "image": "spawn_sparkle.png",
-      "frame": {
-        "w": 32,
-        "h": 32
-      },
-      "frames": 6,
-      "fps": 12,
-      "anchor": {
-        "x": 16,
-        "y": 16
-      },
-      "manaCost": 0,
-      "loop": false,
-      "scale": 2,
-      "aliases": [
-        "sparkle",
-        "sparkles"
-      ]
-    },
-    {
-      "id": "void_burst",
-      "name": "Void burst (Noct)",
-      "image": "void_burst.png",
-      "frame": {
-        "w": 32,
-        "h": 32
-      },
-      "frames": 6,
-      "fps": 12,
-      "anchor": {
-        "x": 16,
-        "y": 16
-      },
-      "manaCost": 8,
-      "loop": false,
-      "scale": 2,
-      "aliases": [
-        "void",
-        "void burst",
-        "unmaking"
-      ]
-    },
-    {
-      "id": "light_burst",
-      "name": "Last Light burst (Nixie)",
-      "image": "light_burst.png",
-      "frame": {
-        "w": 32,
-        "h": 32
-      },
-      "frames": 6,
-      "fps": 12,
-      "anchor": {
-        "x": 16,
-        "y": 16
-      },
-      "manaCost": 8,
-      "loop": false,
-      "scale": 2,
-      "aliases": [
-        "light burst",
-        "last light",
-        "light spell"
-      ]
-    },
-    {
-      "id": "hearts",
-      "name": "Floating hearts",
-      "image": "hearts.png",
-      "frame": {
-        "w": 32,
-        "h": 32
-      },
-      "frames": 6,
-      "fps": 8,
-      "anchor": {
-        "x": 16,
-        "y": 16
-      },
-      "manaCost": 2,
-      "loop": false,
-      "scale": 2,
-      "aliases": [
-        "hearts",
-        "heart"
-      ]
-    },
-    {
-      "id": "death_mist",
-      "name": "Death mist (ChrispyNi)",
-      "image": "death_mist.png",
-      "frame": {
-        "w": 32,
-        "h": 32
-      },
-      "frames": 6,
-      "fps": 10,
-      "anchor": {
-        "x": 16,
-        "y": 16
-      },
-      "manaCost": 8,
-      "loop": false,
-      "scale": 2,
-      "aliases": [
-        "death mist",
-        "mist"
-      ]
-    },
-    {
-      "id": "dizzy_stars",
-      "name": "Dizzy stars (faceplant)",
-      "image": "dizzy_stars.png",
-      "frame": {
-        "w": 32,
-        "h": 32
-      },
-      "frames": 6,
-      "fps": 8,
-      "anchor": {
-        "x": 16,
-        "y": 16
-      },
-      "manaCost": 0,
-      "loop": false,
-      "scale": 2,
-      "aliases": []
-    },
-    {
-      "id": "levitate_aura",
-      "name": "Levitation aura",
-      "image": "levitate_aura.png",
-      "frame": {
-        "w": 32,
-        "h": 32
-      },
-      "frames": 6,
-      "fps": 8,
-      "anchor": {
-        "x": 16,
-        "y": 16
-      },
-      "manaCost": 0,
-      "loop": false,
-      "scale": 2,
-      "aliases": []
-    },
-    {
-      "id": "gift_flower",
-      "name": "Lovely gift sparkles",
-      "image": "gift_flower.png",
-      "frame": {
-        "w": 32,
-        "h": 32
-      },
-      "frames": 6,
-      "fps": 8,
-      "anchor": {
-        "x": 16,
-        "y": 16
-      },
-      "manaCost": 0,
-      "loop": false,
-      "scale": 2,
-      "aliases": []
-    },
-    {
-      "id": "chrispy_hand",
-      "name": "ChrispyNi's hand from a void portal (pat)",
-      "image": "chrispy_hand.png",
-      "frame": {
-        "w": 32,
-        "h": 32
-      },
-      "frames": 6,
-      "fps": 4,
-      "anchor": {
-        "x": 16,
-        "y": 2
-      },
-      "manaCost": 0,
-      "loop": false,
-      "scale": 2,
-      "aliases": []
-    }
-  ]
+ "items": [
+  {
+   "id": "spawn_sparkle",
+   "name": "Gold sparkle (generic spawn)",
+   "image": "spawn_sparkle.png",
+   "frame": {
+    "w": 32,
+    "h": 32
+   },
+   "frames": 6,
+   "fps": 12,
+   "anchor": {
+    "x": 16,
+    "y": 16
+   },
+   "manaCost": 0,
+   "loop": false,
+   "scale": 2,
+   "aliases": [
+    "sparkle",
+    "sparkles"
+   ]
+  },
+  {
+   "id": "void_burst",
+   "name": "Void burst (Noct)",
+   "image": "void_burst.png",
+   "frame": {
+    "w": 32,
+    "h": 32
+   },
+   "frames": 6,
+   "fps": 12,
+   "anchor": {
+    "x": 16,
+    "y": 16
+   },
+   "manaCost": 8,
+   "loop": false,
+   "scale": 2,
+   "aliases": [
+    "void",
+    "void burst",
+    "unmaking"
+   ]
+  },
+  {
+   "id": "light_burst",
+   "name": "Last Light burst (Nixie)",
+   "image": "light_burst.png",
+   "frame": {
+    "w": 32,
+    "h": 32
+   },
+   "frames": 6,
+   "fps": 12,
+   "anchor": {
+    "x": 16,
+    "y": 16
+   },
+   "manaCost": 8,
+   "loop": false,
+   "scale": 2,
+   "aliases": [
+    "light burst",
+    "last light",
+    "light spell"
+   ]
+  },
+  {
+   "id": "hearts",
+   "name": "Floating hearts",
+   "image": "hearts.png",
+   "frame": {
+    "w": 32,
+    "h": 32
+   },
+   "frames": 6,
+   "fps": 8,
+   "anchor": {
+    "x": 16,
+    "y": 16
+   },
+   "manaCost": 2,
+   "loop": false,
+   "scale": 2,
+   "aliases": [
+    "hearts",
+    "heart"
+   ]
+  },
+  {
+   "id": "death_mist",
+   "name": "Death mist (ChrispyNi)",
+   "image": "death_mist.png",
+   "frame": {
+    "w": 32,
+    "h": 32
+   },
+   "frames": 6,
+   "fps": 10,
+   "anchor": {
+    "x": 16,
+    "y": 16
+   },
+   "manaCost": 8,
+   "loop": false,
+   "scale": 2,
+   "aliases": [
+    "death mist",
+    "mist"
+   ]
+  },
+  {
+   "id": "dizzy_stars",
+   "name": "Dizzy stars (faceplant)",
+   "image": "dizzy_stars.png",
+   "frame": {
+    "w": 32,
+    "h": 32
+   },
+   "frames": 6,
+   "fps": 8,
+   "anchor": {
+    "x": 16,
+    "y": 16
+   },
+   "manaCost": 0,
+   "loop": false,
+   "scale": 2,
+   "aliases": []
+  },
+  {
+   "id": "levitate_aura",
+   "name": "Levitation aura",
+   "image": "levitate_aura.png",
+   "frame": {
+    "w": 32,
+    "h": 32
+   },
+   "frames": 6,
+   "fps": 8,
+   "anchor": {
+    "x": 16,
+    "y": 16
+   },
+   "manaCost": 0,
+   "loop": false,
+   "scale": 2,
+   "aliases": []
+  },
+  {
+   "id": "gift_flower",
+   "name": "Lovely gift sparkles",
+   "image": "gift_flower.png",
+   "frame": {
+    "w": 32,
+    "h": 32
+   },
+   "frames": 6,
+   "fps": 8,
+   "anchor": {
+    "x": 16,
+    "y": 16
+   },
+   "manaCost": 0,
+   "loop": false,
+   "scale": 2,
+   "aliases": []
+  },
+  {
+   "id": "chrispy_hand",
+   "name": "ChrispyNi's hand from a void portal (pat)",
+   "image": "chrispy_hand.png",
+   "frame": {
+    "w": 32,
+    "h": 32
+   },
+   "frames": 6,
+   "fps": 4,
+   "anchor": {
+    "x": 16,
+    "y": 2
+   },
+   "manaCost": 0,
+   "loop": false,
+   "scale": 2,
+   "aliases": []
+  },
+  {
+   "id": "nixie_hand",
+   "name": "Nixie's hand from a void portal (pat)",
+   "image": "nixie_hand.png",
+   "frame": {
+    "w": 32,
+    "h": 32
+   },
+   "frames": 6,
+   "fps": 4,
+   "anchor": {
+    "x": 16,
+    "y": 2
+   },
+   "manaCost": 0,
+   "loop": false,
+   "scale": 2
+  },
+  {
+   "id": "noct_hand",
+   "name": "Noct's hand from a void portal (pat)",
+   "image": "noct_hand.png",
+   "frame": {
+    "w": 32,
+    "h": 32
+   },
+   "frames": 6,
+   "fps": 4,
+   "anchor": {
+    "x": 16,
+    "y": 2
+   },
+   "manaCost": 0,
+   "loop": false,
+   "scale": 2
+  }
+ ]
 }

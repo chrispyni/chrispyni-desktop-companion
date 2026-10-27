@@ -1,0 +1,61 @@
+{
+ "_info": "Noct as a guest visiting ChrispyNi's desktop. Calm, regal, soft for ChrispyNi.",
+ "visit": [
+  "…I'm here.",
+  "Hello, love.",
+  "Room for me?"
+ ],
+ "leave": [
+  "I'll return.",
+  "Be good.",
+  "Until later, love."
+ ],
+ "greet": [
+  "Hello.",
+  "Mm."
+ ],
+ "idle": {
+  "any": [
+   "Watching you.",
+   "Comfortable.",
+   "…Love."
+  ],
+  "loving": [
+   "Come here when you're ready."
+  ],
+  "smug": [
+   "I see you."
+  ]
+ },
+ "patted": [
+  "…Mm. Again.",
+  "Soft hands."
+ ],
+ "fed": [
+  "Thank you, love.",
+  "Shared is better."
+ ],
+ "food_full": [
+  "Enough. Later."
+ ],
+ "hug": [
+  "Stay.",
+  "Warm."
+ ],
+ "kiss": [
+  "…Yes.",
+  "Mm."
+ ],
+ "wave": [
+  "*nods*"
+ ],
+ "chat_any": [
+  "I hear you.",
+  "Mm."
+ ],
+ "to_chrispy": [
+  "You're glowing tonight.",
+  "Don't overwork.",
+  "Come rest with us."
+ ]
+}

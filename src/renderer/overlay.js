@@ -1,4 +1,4 @@
-// Project Wives overlay: the desktop world where Nixie & Noct live.
+// ChrispyNi Desktop Companion overlay: the desktop world where Nixie & Noct live.
 'use strict';
 const { ipcRenderer } = require('electron');
 const fs = require('fs');
@@ -59,7 +59,7 @@ function img(p) {
 function loadAll() {
   for (const k of Object.keys(images)) delete images[k];
   for (const k of Object.keys(obCache)) delete obCache[k];
-  content = loadContent(INIT.dirs.base, INIT.dirs.mods, { disabledMods: cfg.disabledMods });
+  content = loadContent(INIT.dirs.base, INIT.dirs.mods, { disabledMods: cfg.disabledMods, editionDir: INIT.dirs.edition, editionId: INIT.dirs.editionId });
   loadChatLibrary();
   content._index = buildIndex(content);
   { const old = pity; pity = new Pity(rules().guests || {}); if (old) pity.load(old.toJSON()); }
@@ -110,7 +110,7 @@ class Char {
     this.queue = []; this.current = null; this.bubble = null; this.nextThink = performance.now() + rnd(2000, 6000);
     this.mood = new MoodState(this.def.personality || {});
     this.dragging = false; this.leaving = false;
-    this.mana = this.role === 'guest' ? null : new Mana({ ...cfg.mana, ...(this.def.mana || {}) });   // each wife has her OWN pool
+    this.mana = (this.role === 'guest' && !this.def.guestCanAct) ? null : new Mana({ ...cfg.mana, ...(this.def.mana || {}) });
     this.aff = new Affection(moodRules());                                                         // hidden mood meter -3..+3
     this.lift = 0; this.levitate = null; this.falling = null; this.hoverT = 0; this.alpha = 1; this.wriggleUntil = 0; this.hit = null;
   }
@@ -147,6 +147,8 @@ function addChar(id, x, role) {
   const c = new Char(id, x, role); chars[id] = c; return c;
 }
 const wives = () => Object.values(chars).filter((c) => c.role !== 'guest');
+const guestsOn = () => Object.values(chars).filter((c) => c.role === 'guest' && !c.hidden && !c.leaving);
+const isChrispyEdition = () => !!(cfg && cfg.edition === 'chrispyni') || !!(INIT && INIT.edition === 'chrispyni');
 const clampX = (x, ch) => clamp(x, wa.x + (ch ? ch.halfW : 20), wa.x + wa.w - (ch ? ch.halfW : 20));
 const charName = (id) => (content.characters[id] || {}).name || id;
 
@@ -356,7 +358,7 @@ function visit(gid) {
   speak(c, 'visit') || c.enqueue([{ type: 'say', text: 'Hi, my queens.' }]);
   c.leaveAt = performance.now() + (cfg.guestVisitMinutes || 3) * 60000;
   for (const w of wives()) { w.mood.react('back'); if (Math.random() < 0.7) w.enqueue([{ type: 'interact', kind: pick(['wave', 'hug']), with: gid, ambient: true }]); w.aff.event('with_chrispy'); }
-  if (gid === 'chrispyni' && !noAutoTake && !trip && !roomOpen && wives().some((w) => w.mana.ratio < 0.6) && Math.random() < 0.3) setTimeout(chrispyTakes, 500);
+  if (!isChrispyEdition() && gid === 'chrispyni' && !noAutoTake && !trip && !roomOpen && wives().some((w) => w.mana && w.mana.ratio < 0.6) && Math.random() < 0.3) setTimeout(chrispyTakes, 500);
   hooks.emit('visit', { guest: gid });
 }
 function leave(c) { speak(c, 'leave'); c.leaving = true; c.queue.push({ type: 'walk_to', target: c.x < wa.x + wa.w / 2 ? wa.x : wa.x + wa.w }); }   // walks to the edge, steps into a void portal
@@ -497,9 +499,10 @@ function pityFor(gid) { const d = content.characters[gid]; return d && d.pity ? 
 let lastGuestCheck = Date.now();
 function guestCheck() {
   const G = rules().guests || {}; if (Date.now() - lastGuestCheck < (G.checkMin ?? 20) * 60000) return; lastGuestCheck = Date.now();
-  if (roomOpen || sleepMode || trip || Object.values(chars).some((c) => c.role === 'guest')) return;
+  if (roomOpen || sleepMode || trip) return;   // multiple guests allowed (e.g. both wives visiting ChrispyNi)
   if (Date.now() - lastUserAt > ((cfg.talk || {}).userIgnoredMin ?? 3) * 60000) pity.act('ignored');
-  const gid = pick(Object.keys(content.characters).filter((id) => content.characters[id].role === 'guest' && !content.characters[id].noVisit));
+  const pool = (cfg.guests && cfg.guests.length) ? cfg.guests : Object.keys(content.characters).filter((id) => content.characters[id].role === 'guest');
+  const gid = pick(pool.filter((id) => content.characters[id] && !content.characters[id].noVisit && !chars[id]));
   if (!gid) return; const pp = pityFor(gid);
   if (pp.roll()) { if (pp !== pity) pity.reset(); visit(gid); }
   saveSoon();
@@ -515,7 +518,8 @@ function think(ch, now) {
   const ignored = Date.now() - lastUserAt > (T.userIgnoredMin ?? 3) * 60000;
   const other = wives().find((c) => c !== ch && !c.hidden);
   const M = medCfg();
-  if (ch.role !== 'guest' && !sleepMode && !trip) {      // angry tantrum: rarely throws a prop or the other wife / a guest
+  const canAct = ch.role !== 'guest' || ch.def.guestCanAct;
+  if (canAct && !sleepMode && !trip && ch.aff) {      // angry tantrum: rarely throws a prop or the other wife / a guest
     const th = pickThrow({ level: ch.aff.level, now: Date.now(), nextAt: ch.nextThrowAt || 0,
       props: props.map((p) => ({ uid: p.uid, pinned: p.pinned, door: p.def.door, sleepBed: p.sleepBed, occupied: countOn(p) > 0 || !!p.portal })),
       others: Object.values(chars).filter((c) => c !== ch && !c.hidden && !c.leaving).map((c) => ({ id: c.id, busy: c.dragging || !!c.fly || !!c.seat || c.inDoor })) });
@@ -525,7 +529,7 @@ function think(ch, now) {
       if (tx != null) { ch.enqueue([{ type: 'walk_to', target: tx + (ch.x < tx ? -24 : 24) }, { type: 'throw_it', ...th }]); ch.nextThink = now + 8000; return; }
     }
   }
-  const guest = ch.role !== 'guest' && visitingChrispy();
+  const guest = (!isChrispyEdition() && ch.role !== 'guest' && visitingChrispy()) || (isChrispyEdition() && ch.role === 'guest' && chars.chrispyni && !chars.chrispyni.hidden && chars.chrispyni);
   if (guest && !trip && ch.state !== 'watch') {      // ChrispyNi is here: stay close, face her, fuss over her
     const d = Math.abs(ch.x - guest.x);
     if (d > 170) ch.enqueue([{ type: 'walk_to', target: nearChrispySpot(ch, guest) }]);
@@ -535,23 +539,23 @@ function think(ch, now) {
     else { ch.facing = guest.x > ch.x ? 1 : -1; ch.play(animForMood(m, ch.def.moodAnims) === 'sleep' ? 'idle' : 'happy', rnd(1.5, 3)); }
     ch.nextThink = now + rnd(4000, 9000) / speed; return;
   }
-  if (ch.role !== 'guest' && !chars.chrispyni && Date.now() - lastUserAt > M.afterMin * 60000 && ch.mana.ratio < M.capRatio && Date.now() - (ch.lastMeditate || 0) > M.cooldownMin * 60000) {
+  if (canAct && !isChrispyEdition() && !chars.chrispyni && Date.now() - lastUserAt > M.afterMin * 60000 && ch.mana.ratio < M.capRatio && Date.now() - (ch.lastMeditate || 0) > M.cooldownMin * 60000) {
     ch.enqueue([{ type: 'meditate' }]);                 // Chrispy's been away a long while: meditate a little mana back (max 50%)
   }
-  else if (ch.role !== 'guest' && other && ignored && Date.now() - lastChatter > (T.idleChatterEveryMin ?? 4) * 60000 * rnd(0.7, 1.3) && r < 0.5 * tk + 0.2) {
+  else if (canAct && other && ignored && Date.now() - lastChatter > (T.idleChatterEveryMin ?? 4) * 60000 * rnd(0.7, 1.3) && r < 0.5 * tk + 0.2) {
     lastChatter = Date.now(); chatter(ch, other);          // ignored? they chat with EACH OTHER ('...' bubbles only)
   }
-  else if (ch.role !== 'guest' && r < 0.05 && ch.mana.ratio > 0.5 && Date.now() - (ch.lastMagic || 0) > ((rules().mana || {}).ambientMagicCooldownMin || 40) * 60000) {
+  else if (canAct && ch.mana && r < 0.05 && ch.mana.ratio > 0.5 && Date.now() - (ch.lastMagic || 0) > ((rules().mana || {}).ambientMagicCooldownMin || 40) * 60000) {
     const g = chars.chrispyni; const kinds = g ? ['lovely_gift', 'lovely_twirl'] : ['levitate', 'craft_together'];
     const kind = pick(kinds), with_ = g ? g.id : other && other.id;
     if (with_) ch.enqueue([{ type: 'interact', kind, with: with_, ambient: true }]);
   }
-  else if (ch.role !== 'guest' && !watching && ch.state !== 'watch' && (ambSum = pickAmbientSummon({ lastSummonAt: Math.max(ch.lastSummon || 0, lastAnySummon), manaValue: ch.mana.value, manaRatio: ch.mana.ratio, onScreen: props.map((p) => p.id), props: content.props, opts: (rules().props || {}).ambientSummon }))) {
+  else if (canAct && ch.mana && !watching && ch.state !== 'watch' && (ambSum = pickAmbientSummon({ lastSummonAt: Math.max(ch.lastSummon || 0, lastAnySummon), manaValue: ch.mana.value, manaRatio: ch.mana.ratio, onScreen: props.map((p) => p.id), props: content.props, opts: (rules().props || {}).ambientSummon }))) {
     ch.lastSummon = lastAnySummon = Date.now();                // conjures something to use now and then (costs her mana)
     ch.enqueue([{ type: 'summon', item: ambSum }]);
     setTimeout(() => { const p = props.filter((q) => q.id === ambSum).pop(); if (p && !ch.hidden) ch.enqueue([{ type: 'use_prop', uid: p.uid }]); }, 1200);
   }
-  else if (ch.role !== 'guest' && r < 0.12 + ((rules().props || {}).useChance ?? 0.12) && usablePropFor(ch)) {
+  else if (canAct && r < 0.12 + ((rules().props || {}).useChance ?? 0.12) && usablePropFor(ch)) {
     const p = usablePropFor(ch); ch.enqueue([{ type: 'use_prop', uid: p.uid }]);   // use what's lying around
   }
   else if (r < 0.5) { ch.enqueue([{ type: ch.mana && ch.mana.ratio > 0.6 && Math.random() < 0.15 ? 'run_to' : 'walk_to', target: wanderTarget(ch) }]); }
@@ -977,7 +981,7 @@ function openMenu(x, y, items) {
 function showInfo(ch) {   // name + mood label only (never numbers or hidden values)
   const el = $('info'); el.innerHTML = '';
   const b = document.createElement('b'); b.textContent = charName(ch.id) + (ch.def.title ? ` · ${ch.def.title}` : '');
-  const m = document.createElement('div'); m.textContent = 'Mood: ' + (ch.role === 'guest' ? 'Visiting' : moodLabel(ch));
+  const m = document.createElement('div'); m.textContent = 'Mood: ' + (ch.role === 'guest' && !ch.def.guestCanAct ? 'Visiting' : (ch.aff ? moodLabel(ch) : 'Visiting'));
   const x = document.createElement('span'); x.className = 'x'; x.textContent = '✕'; x.onmousedown = (e) => { e.stopPropagation(); closeMenus(); };
   el.append(x, b, m); el.classList.remove('hidden');
   const r = ch.hit || ch.bbox(); const er = el.getBoundingClientRect();
@@ -987,17 +991,24 @@ function showInfo(ch) {   // name + mood label only (never numbers or hidden val
 // Menu Hug / Kiss while ChrispyNi visits: she walks over and does it (mana via the interaction's manaGift).
 const HAPPY_AFTER = { hug: ['Mmm~ warm…', 'Again later, okay? ♥'], kiss: ['♥ …ehehe~', '*blushes* My queen…'] };
 function chrispyAffection(ch, kind) {
-  const g = visitingChrispy(); if (!g || !ch || ch.hidden || !content.interactions[kind]) return;
-  if (g.affBusyUntil && Date.now() < g.affBusyUntil) return;          // one at a time
+  // Wives edition: ChrispyNi visits and hugs a wife. ChrispyNi edition: a present wife hugs ChrispyNi (or vice versa).
+  let g, target;
+  if (isChrispyEdition()) {
+    target = ch.id === 'chrispyni' ? ch : chars.chrispyni;
+    g = ch.id === 'chrispyni' ? presentWives()[0] : ch;
+  } else { g = visitingChrispy(); target = ch; }
+  if (!g || !target || target.hidden || !content.interactions[kind]) return;
+  if (g.affBusyUntil && Date.now() < g.affBusyUntil) return;
   const def = content.interactions[kind]; g.affBusyUntil = Date.now() + 8000;
-  lastUserAt = Date.now(); ch.aff.markActive();
-  if (ch.seat) standUp(ch); ch.queue = []; ch.target = null; ch.nextThink = performance.now() + 7000;   // she waits for her
-  g.queue = []; g.target = null; g.enqueue([{ type: 'interact', kind, with: ch.id }]);
+  lastUserAt = Date.now(); target.aff && target.aff.markActive();
+  if (target.seat) standUp(target); target.queue = []; target.target = null; target.nextThink = performance.now() + 7000;
+  g.queue = []; g.target = null; g.enqueue([{ type: 'interact', kind, with: target.id }]);
+  ch = target; // rest of function uses ch as the hugged one
   const t0 = Date.now();
   const after = () => {
-    if (!chars.chrispyni || Date.now() - t0 > 15000) return;
+    if (Date.now() - t0 > 15000 || !chars[g.id]) return;
     if (g.current && g.current.kind === kind && !g.queue.length && g.target == null) {
-      ch.aff.event('with_chrispy'); ch.mood.react('back');
+      if (ch.aff) ch.aff.event('with_chrispy'); if (ch.mood) ch.mood.react('back');
       setTimeout(() => { if (!ch.hidden) ch.say(pick(HAPPY_AFTER[kind]), 4); g.affBusyUntil = 0; }, (def.durationSec || 2) * 1000 + 200);
     } else setTimeout(after, 200);
   };
@@ -1005,9 +1016,13 @@ function chrispyAffection(ch, kind) {
 }
 function charMenu(ch, x, y) {
   const items = [{ label: 'Info / Stats', fn: () => showInfo(ch) }];
-  if (ch.role !== 'guest') {
+  const canCare = ch.role !== 'guest' || ch.def.guestCanAct || isChrispyEdition();
+  if (canCare) {
     items.push('-', { label: 'Pat', fn: () => pat(ch) });
-    if (visitingChrispy()) items.push({ label: 'Hug (ChrispyNi)', fn: () => chrispyAffection(ch, 'hug') }, { label: 'Kiss (ChrispyNi)', fn: () => chrispyAffection(ch, 'kiss') });
+    if (!isChrispyEdition() && visitingChrispy() && ch.role !== 'guest')
+      items.push({ label: 'Hug (ChrispyNi)', fn: () => chrispyAffection(ch, 'hug') }, { label: 'Kiss (ChrispyNi)', fn: () => chrispyAffection(ch, 'kiss') });
+    if (isChrispyEdition() && ch.id === 'chrispyni' && presentWives().length)
+      items.push({ label: 'Hug (wife)', fn: () => chrispyAffection(ch, 'hug') }, { label: 'Kiss (wife)', fn: () => chrispyAffection(ch, 'kiss') });
     for (const f of Object.values(content.food || {})) items.push({ label: `Feed: ${f.name || f.id}`, fn: () => feed(ch, f.id) });
   }
   openMenu(x, y, items);
@@ -1038,35 +1053,52 @@ function patDone(ch, res) {
   saveSoon();
 }
 const PAT_CD_LINES = ['Mm~ I just got pats. Save some for later~', 'Hehe, greedy~ Pats again in a bit!', '*leans in anyway* ...soon, okay?', 'My head is still warm from the last one~'];
+function presentWives() { return guestsOn().filter((c) => c.id === 'nixie' || c.id === 'noct'); }
+function pattersFor(ch) {
+  if (isChrispyEdition()) {
+    if (ch.id === 'chrispyni') return presentWives();
+    return wives().filter((w) => w.id === 'chrispyni' && !w.hidden);
+  }
+  const g = chars.chrispyni; return (g && !g.hidden) ? [g] : [];
+}
 function pat(ch) {
   if (!ch || ch.hidden) return; lastUserAt = Date.now(); ch.aff.markActive();
   ch.patState = ch.patState || {};
   const res = tryPat(ch.patState);
-  if (!res.ok) {                 // 5 min cooldown per wife: cute response, no mana
-    ch.play('happy', 0.8); if (careOk(ch, 'patcd', 3)) speak(ch, 'pat_cooldown') || ch.say(pick(PAT_CD_LINES)); return;
-  }
+  if (!res.ok) { ch.play('happy', 0.8); if (careOk(ch, 'patcd', 3)) speak(ch, 'pat_cooldown') || ch.say(pick(PAT_CD_LINES)); return; }
   if (pity) pity.act('pat');
-  const g = chars.chrispyni;
-  if (g && !g.hidden) {    // Chrispy walks over and pats her head
-    g.queue = []; g.enqueue([{ type: 'walk_to', target: ch.x + (g.x > ch.x ? 26 : -26) }, { type: 'play', anim: 'hug', sec: 1.2 }]);
-    const wait = () => { if (g.target == null && !g.queue.length || !chars.chrispyni) { g.facing = ch.x > g.x ? 1 : -1; patDone(ch, res); } else setTimeout(wait, 200); };
-    ch.queue = []; ch.target = null; setTimeout(wait, 300);
-  } else {                 // a tiny void portal opens above her head and Chrispy's hand pats her
+  const helpers = pattersFor(ch);
+  if (helpers.length) {
+    ch.queue = []; ch.target = null; ch.nextThink = performance.now() + 7000;
+    let left = helpers.length;
+    const doneOne = () => { if (--left <= 0) patDone(ch, res); };
+    for (const h of helpers) {
+      h.queue = []; h.enqueue([{ type: 'walk_to', target: ch.x + (h.x > ch.x ? 26 : -26) }, { type: 'play', anim: 'hug', sec: 1.2 }]);
+      const wait = () => { if ((h.target == null && !h.queue.length) || !chars[h.id]) { h.facing = ch.x > h.x ? 1 : -1; doneOne(); } else setTimeout(wait, 200); };
+      setTimeout(wait, 300);
+    }
+  } else if (isChrispyEdition() && ch.id === 'chrispyni') {
+    ch.queue = []; ch.target = null; ch.waitUntil = performance.now() + 1800;
+    const r = ch.hit || ch.bbox();
+    const e1 = spawnFx('nixie_hand', ch.x - 14, r.y - 26); if (e1) { e1.follow = ch; e1.dy = r.y - 26 - ch.y; }
+    const e2 = spawnFx('noct_hand', ch.x + 14, r.y - 22); if (e2) { e2.follow = ch; e2.dy = r.y - 22 - ch.y; }
+    setTimeout(() => patDone(ch, res), 800);
+  } else {
     ch.queue = []; ch.target = null; ch.waitUntil = performance.now() + 1600;
     const r = ch.hit || ch.bbox(); const e = spawnFx('chrispy_hand', ch.x, r.y - 26); if (e) { e.follow = ch; e.dy = r.y - 26 - ch.y; }
     setTimeout(() => patDone(ch, res), 700);
   }
 }
-// Feeding: every click that's within her limit spawns food right away; she eats the queue one after another.
 function feed(ch, foodId = 'cookie') {
   const f = (content.food || {})[foodId]; if (!f || !ch || ch.hidden) return; lastUserAt = Date.now(); ch.aff.markActive();
   ch.foodState = ch.foodState || {};
   const res = tryEat(ch.foodState, f);
-  if (!res.ok) { ch.play('pout', 1.2); speak(ch, 'food_full') || ch.say("I'm full!"); saveSoon(); return; }   // 4-5 in a row, then a 15-20 min break
+  if (!res.ok) { ch.play('pout', 1.2); speak(ch, 'food_full') || ch.say("I'm full!"); saveSoon(); return; }
   if (pity) pity.act('feed');
   ch.feedQueue = ch.feedQueue || [];
-  const g = chars.chrispyni, entry = { f, item: null };
-  if (!(g && !g.hidden)) {     // it appears next to her on the ground, waiting its turn
+  const helpers = pattersFor(ch);   // same cast as pats: wives present feed Chrispy; Chrispy feeds a wife
+  const entry = { f, item: null, helperIds: helpers.map((h) => h.id) };
+  if (!helpers.length) {
     const fx0 = clampX(ch.x + (Math.random() < 0.5 ? -1 : 1) * rnd(40, 70) + ch.feedQueue.length * 14 * (Math.random() < 0.5 ? -1 : 1));
     entry.item = { def: f, x: fx0, y: ground, ground: true, queued: true }; foods.push(entry.item); spawnFx('spawn_sparkle', fx0, ground - 12);
   }
@@ -1089,18 +1121,23 @@ function nextFood(ch) {
   const done = () => { eatNow(ch, e.f); setTimeout(() => nextFood(ch), ((e.f.eatSec || 2) + 0.4) * 1000); };
   const t0 = Date.now();
   if (ch.hidden) { if (e.item) { const i = foods.indexOf(e.item); if (i >= 0) foods.splice(i, 1); } q.length = 0; ch.feeding = false; return; }
-  const g = chars.chrispyni;
-  if (!e.item && g && !g.hidden) {    // Chrispy walks over and hands it to her
-    g.queue = []; g.enqueue([{ type: 'walk_to', target: ch.x + (g.x > ch.x ? 30 : -30) }, { type: 'play', anim: 'hug', sec: 0.8 }]);
+  const helpers = (e.helperIds || []).map((id) => chars[id]).filter((h) => h && !h.hidden);
+  if (!e.item && helpers.length) {
     ch.queue = []; ch.target = null;
-    const wait = () => { if ((g.target == null && !g.queue.length) || !chars.chrispyni || Date.now() - t0 > 12000) { g.facing = ch.x > g.x ? 1 : -1; done(); } else setTimeout(wait, 200); };
-    setTimeout(wait, 300); return;
+    let left = helpers.length;
+    const oneDone = () => { if (--left <= 0) done(); };
+    for (const g of helpers) {
+      g.queue = []; g.enqueue([{ type: 'walk_to', target: ch.x + (g.x > ch.x ? 30 : -30) }, { type: 'play', anim: 'hug', sec: 0.8 }]);
+      const wait = () => { if ((g.target == null && !g.queue.length) || !chars[g.id] || Date.now() - t0 > 12000) { g.facing = ch.x > g.x ? 1 : -1; oneDone(); } else setTimeout(wait, 200); };
+      setTimeout(wait, 300);
+    }
+    return;
   }
   if (!e.item) { done(); return; }
   ch.queue = [{ type: 'walk_to', target: e.item.x }]; ch.target = null;
   const wait = () => {
     if ((ch.target == null && !ch.queue.length && !ch.dragging) || Date.now() - t0 > 15000) {
-      if (Math.abs(ch.x - e.item.x) > 30 && Date.now() - t0 < 15000) { ch.queue = [{ type: 'walk_to', target: e.item.x }]; setTimeout(wait, 300); return; }   // dragged away: walk back to it
+      if (Math.abs(ch.x - e.item.x) > 30 && Date.now() - t0 < 15000) { ch.queue = [{ type: 'walk_to', target: e.item.x }]; setTimeout(wait, 300); return; }
       const i = foods.indexOf(e.item); if (i >= 0) foods.splice(i, 1); done();
     } else setTimeout(wait, 150);
   };
@@ -1171,6 +1208,7 @@ function loadChatLibrary() {   // content/chat/library.json + any mods/*/chat/li
   const d = INIT.dirs, libs = [];
   const tryRead = (f) => { try { if (fs.existsSync(f)) libs.push(JSON.parse(fs.readFileSync(f, 'utf8').replace(/^\uFEFF/, ''))); } catch (e) { ipcRenderer.send('log', 'chat library ' + f + ': ' + e.message); } };
   tryRead(path.join(d.base, 'chat', 'library.json'));
+  if (d.edition) tryRead(path.join(d.edition, 'chat', 'library.json'));
   for (const m of d.mods) { try { for (const x of fs.readdirSync(m)) tryRead(path.join(m, x, 'chat', 'library.json')); } catch {} }
   chatLib = chatlib.mergeLibs(libs); chatRules = chatlib.compile(chatLib);
 }

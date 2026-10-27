@@ -1,0 +1,40 @@
+{
+ "items": [
+  {
+   "id": "nixie_hand",
+   "name": "Nixie's hand from a void portal (pat)",
+   "image": "nixie_hand.png",
+   "frame": {
+    "w": 32,
+    "h": 32
+   },
+   "frames": 6,
+   "fps": 4,
+   "anchor": {
+    "x": 16,
+    "y": 2
+   },
+   "manaCost": 0,
+   "loop": false,
+   "scale": 2
+  },
+  {
+   "id": "noct_hand",
+   "name": "Noct's hand from a void portal (pat)",
+   "image": "noct_hand.png",
+   "frame": {
+    "w": 32,
+    "h": 32
+   },
+   "frames": 6,
+   "fps": 4,
+   "anchor": {
+    "x": 16,
+    "y": 2
+   },
+   "manaCost": 0,
+   "loop": false,
+   "scale": 2
+  }
+ ]
+}

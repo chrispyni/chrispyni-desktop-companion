@@ -1,4 +1,4 @@
-# Project Wives - tells the app when a mouse button is pressed anywhere (or Esc), so open menus can close
+# ChrispyNi Desktop Companion - tells the app when a mouse button is pressed anywhere (or Esc), so open menus can close
 # without the overlay ever taking focus. Reads only the button/Esc state; no other keys, no positions logged.
 Add-Type @"
 using System; using System.Runtime.InteropServices;

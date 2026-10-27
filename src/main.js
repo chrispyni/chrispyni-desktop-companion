@@ -1,4 +1,4 @@
-// Project Wives - Electron main process: windows, tray, hotkeys, awareness, updates, hot reload.
+// ChrispyNi Desktop Companion - Electron main process: windows, tray, hotkeys, awareness, updates, hot reload.
 'use strict';
 const { app, BrowserWindow, Tray, Menu, globalShortcut, ipcMain, screen, powerMonitor, shell, nativeImage, dialog } = require('electron');
 const fs = require('fs');
@@ -6,18 +6,20 @@ const os = require('os');
 const path = require('path');
 const { classifyApp } = require('./core/awareness');
 const { deepMerge } = require('./core/content');
+const { resolveEdition, editionDir } = require('./core/edition');
 
 // ---------- self-contained layout: EVERYTHING lives next to the exe (like a game) ----------
-//  ProjectWives/  Project Wives.exe  content/  mods/  templates/  data/  logs/  cache/
+//  ChrispyNi Desktop Companion/  ChrispyNi Desktop Companion.exe  content/  mods/  templates/  data/  logs/  cache/
 const DEV_ROOT = path.join(__dirname, '..');
 const APP_ROOT = process.env.PW_ROOT || (app.isPackaged ? path.dirname(process.execPath) : DEV_ROOT);
-const DATA_DIR = path.join(APP_ROOT, 'data');     // config.json, save.json
+const EDITION = resolveEdition(APP_ROOT);
+const DATA_DIR = path.join(APP_ROOT, EDITION.dataDir || 'data');     // config.json, save.json (per edition)
 const LOG_DIR = path.join(APP_ROOT, 'logs');
 const CACHE_DIR = path.join(APP_ROOT, 'cache');   // Chromium profile, GPU/code cache, temp
 const USER_DIR = DATA_DIR;
 const PKG = require('../package.json');
-app.setName('Project Wives');
-if (process.platform === 'win32') app.setAppUserModelId('com.chrispyni.projectwives');
+app.setName(EDITION.productName || 'ChrispyNi Desktop Companion');
+if (process.platform === 'win32') app.setAppUserModelId(EDITION.appId || 'com.chrispyni.desktopcompanion');
 
 function ensureWritable() {
   try {
@@ -41,7 +43,7 @@ if (writable === true) {
   process.env.TEMP = process.env.TMP = process.env.TMPDIR = TEMP;   // child processes (PowerShell watcher) use it too
 }
 
-const LOG = path.join(LOG_DIR, 'project-wives.log');
+const LOG = path.join(LOG_DIR, 'companion.log');
 function log(...a) { const s = `[${new Date().toISOString()}] ${a.join(' ')}`; console.log(s); if (writable === true) try { fs.appendFileSync(LOG, s + '\n'); } catch {} }
 
 // ---------- config ----------
@@ -57,6 +59,9 @@ function loadConfig() {
     try { fs.writeFileSync(p, JSON.stringify(user, null, 2)); } catch {}
   }
   cfg = deepMerge(def, user);
+  cfg.edition = EDITION.id;
+  if (!cfg.characters || !cfg.characters.length) cfg.characters = EDITION.characters.slice();
+  if (!cfg.guests || !cfg.guests.length) cfg.guests = (EDITION.guests || []).slice();
   return cfg;
 }
 function saveConfig() {
@@ -70,6 +75,8 @@ try { loadConfig(); } catch (e) { cfg = JSON.parse(fs.readFileSync(path.join(APP
 function contentDirs() {
   return {
     base: path.join(APP_ROOT, 'content'),
+    edition: editionDir(APP_ROOT, EDITION) || editionDir(DEV_ROOT, EDITION),
+    editionId: EDITION.id,
     mods: [path.join(APP_ROOT, 'mods')],
     plugins: [],   // JS plugins are disabled: mods are data-only
     user: USER_DIR, appRoot: APP_ROOT,
@@ -171,7 +178,7 @@ ipcMain.on('sleeping', (_e, on) => {
 ipcMain.on('set-sleep', (_e, on) => { sleepManual = on; buildTray(); });
 ipcMain.on('log', (_e, m) => log('[renderer]', m));
 ipcMain.handle('init', () => ({
-  cfg, dirs: contentDirs(), version: PKG.version, platform: process.platform,
+  cfg, dirs: contentDirs(), version: PKG.version, platform: process.platform, edition: EDITION.id, editionLabel: EDITION.label,
   // PC/account names never leave the main process; the renderer only learns yes/no
   adminByIdentity: require('./core/admin').isAdminByIdentity(cfg.admin, { username: os.userInfo().username, hostname: os.hostname() }),
   workArea: screen.getPrimaryDisplay().workArea, bounds: screen.getPrimaryDisplay().bounds, scaleFactor: screen.getPrimaryDisplay().scaleFactor,
@@ -216,7 +223,7 @@ function buildTray() {
     { type: 'separator' },
     { label: 'Quit', click: () => app.quit() },
   ]);
-  tray.setContextMenu(menu); tray.setToolTip('Project Wives - Nixie & Noct');
+  tray.setContextMenu(menu); tray.setToolTip(EDITION.label || 'ChrispyNi Desktop Companion');
 }
 
 let debugMode = false, aboutWin = null;
@@ -224,7 +231,7 @@ ipcMain.on('debug-mode', (_e, on) => { debugMode = !!on; buildTray(); });
 function openAbout() {
   if (aboutWin && !aboutWin.isDestroyed()) { aboutWin.focus(); return; }
   const icon = path.join(__dirname, 'renderer', 'icon.png');
-  aboutWin = new BrowserWindow({ width: 340, height: 330, resizable: false, minimizable: false, maximizable: false, title: 'About Project Wives', autoHideMenuBar: true, backgroundColor: '#1b1230',
+  aboutWin = new BrowserWindow({ width: 340, height: 330, resizable: false, minimizable: false, maximizable: false, title: 'About ' + (EDITION.label || 'ChrispyNi Desktop Companion'), autoHideMenuBar: true, backgroundColor: '#1b1230',
     icon: fs.existsSync(icon) ? icon : undefined, webPreferences: { nodeIntegration: true, contextIsolation: false } });
   aboutWin.setMenu(null);
   aboutWin.loadFile(path.join(__dirname, 'renderer', 'about.html'), { query: { v: PKG.version, icon: fs.existsSync(icon) ? 'file:///' + icon.replace(/\\/g, '/') : '' } });
@@ -293,20 +300,41 @@ async function pollAwareness() {
 
 // ---------- updates (everything stays in the app folder) ----------
 const UPD = require('./core/updater');
+UPD.setExeName((EDITION.productName || 'ChrispyNi Desktop Companion') + '.exe');
 let updateInfo = null, updateBusy = false, updateAnnounced = false;
 const updateDismissed = new Set();          // Cancel = not again for this version during this session
-const GH_API = 'https://api.github.com/repos/chrispyni/project-wives/releases/latest';
-async function getJSON(u) {
-  if (!/^https?:/.test(u)) return JSON.parse(fs.readFileSync(u, 'utf8'));
-  const r = await fetch(u, { headers: { 'User-Agent': 'ProjectWives-Updater', Accept: 'application/vnd.github+json' } });
-  if (!r.ok) throw new Error('HTTP ' + r.status); return r.json();
-}
+const GH_API = EDITION.updateRepoApi || 'https://api.github.com/repos/chrispyni/chrispyni-desktop-companion/releases/latest';
 async function findUpdate() {
   const api = process.env.PW_UPDATE_API || (cfg.update && cfg.update.githubApi) || GH_API;
-  try { const info = UPD.pickRelease(await getJSON(api), PKG.version); if (info) return info; return null; }
-  catch (e) {
-    log('github update check failed: ' + e.message); throw e;   // GitHub Releases is the only update source
+  const token = (cfg.update && cfg.update.githubToken) || process.env.PW_UPDATE_TOKEN || '';
+  const headers = { 'User-Agent': 'ChrispyNi-DesktopCompanion-Updater', Accept: 'application/vnd.github+json' };
+  if (token) headers.Authorization = 'Bearer ' + token;
+  try {
+    // Wives (private) edition: version number follows the public latest; zip comes from the private repo.
+    let list;
+    if (EDITION.versionFromPublicApi) {
+      if (!token) { log('private edition update needs update.githubToken in data/config.json'); return null; }
+      const pub = await getJSON(EDITION.versionFromPublicApi, headers);
+      const want = String(pub.tag_name || '').replace(/^v/, '');
+      if (!(UPD.cmpVer(want, PKG.version) > 0)) return null;
+      list = await getJSON(api, headers);   // private releases list
+      const info = UPD.pickRelease(list, PKG.version, { assetRe: EDITION.assetRe, prefer: EDITION.assetPrefer });
+      if (info && UPD.cmpVer(info.version, want) === 0) return info;
+      // allow matching tag even if cmp equals want from public
+      const tagged = (Array.isArray(list) ? list : [list]).find((r) => r && !r.draft && String(r.tag_name || '').replace(/^v/, '') === want);
+      if (tagged) return UPD.pickRelease([tagged], '0', { assetRe: EDITION.assetRe }) || null;
+      return null;
+    }
+    list = await getJSON(api, headers);
+    return UPD.pickRelease(list, PKG.version, { assetRe: EDITION.assetRe, prefer: EDITION.assetPrefer });
+  } catch (e) {
+    log('github update check failed: ' + e.message); throw e;
   }
+}
+async function getJSON(u, headers) {
+  const r = await fetch(u, { headers: headers || { 'User-Agent': 'ChrispyNi-DesktopCompanion-Updater', Accept: 'application/vnd.github+json' } });
+  if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + u);
+  return r.json();
 }
 async function checkUpdate(manual) {
   try {
@@ -336,11 +364,11 @@ function acceptUpdate() {
 ipcMain.on('update-accept', acceptUpdate);
 ipcMain.on('update-later', () => { if (pendingUpdate) updateDismissed.add(pendingUpdate.version); });
 async function doUpdate(info) {
-  if (!info.asset || !info.asset.url) { shell.openExternal(/^https:\/\/github\.com\/chrispyni\/project-wives\//.test(info.page || '') ? info.page : 'https://github.com/chrispyni/project-wives/releases'); return; }
+  if (!info.asset || !info.asset.url) { shell.openExternal(/^https:\/\/github\.com\/chrispyni\//.test(info.page || '') ? info.page : ('https://github.com/' + (EDITION.updateRepo || 'chrispyni/chrispyni-desktop-companion') + '/releases')); return; }
   updateBusy = true; send('update-progress', `Downloading v${info.version}…`);
   const dir = path.join(CACHE_DIR, 'update'); fs.mkdirSync(dir, { recursive: true });
   let buf;
-  if (/^https?:/.test(info.asset.url)) { const r = await fetch(info.asset.url, { headers: { 'User-Agent': 'ProjectWives-Updater' } }); if (!r.ok) throw new Error('download HTTP ' + r.status); buf = Buffer.from(await r.arrayBuffer()); }
+  if (/^https?:/.test(info.asset.url)) { const r = await fetch(info.asset.url, { headers: { 'User-Agent': 'ChrispyNiDesktopCompanion-Updater' } }); if (!r.ok) throw new Error('download HTTP ' + r.status); buf = Buffer.from(await r.arrayBuffer()); }
   else buf = fs.readFileSync(info.asset.url);
   fs.writeFileSync(path.join(dir, info.asset.name), buf);
   const entries = UPD.verify(buf, info);
@@ -377,8 +405,8 @@ function watchContent() {
 if (!app.requestSingleInstanceLock() && !process.env.PW_SCREENSHOT) app.quit();
 app.whenReady().then(() => {
   if (writable !== true) {
-    require('electron').dialog.showErrorBox('Project Wives - folder is read-only',
-      `Project Wives keeps everything (saves, config, mods, logs) inside its own folder:\n${APP_ROOT}\n\nWindows does not allow writing there (${writable.code || writable.message}).\nPlease move or install the Project Wives folder somewhere you can write, e.g. D:\\Games\\ProjectWives or your Desktop/Documents - not C:\\Program Files.`);
+    require('electron').dialog.showErrorBox((EDITION.label || 'ChrispyNi Desktop Companion') + ' - folder is read-only',
+      `${EDITION.label || 'ChrispyNi Desktop Companion'} keeps everything (saves, config, mods, logs) inside its own folder:\n${APP_ROOT}\n\nWindows does not allow writing there (${writable.code || writable.message}).\nPlease move the folder somewhere you can write, e.g. D:\\Games\\ChrispyNi or your Desktop/Documents - not C:\\Program Files.`);
     app.quit(); return;
   }
   createOverlay();

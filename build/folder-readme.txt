@@ -1,12 +1,15 @@
-PROJECT WIVES - everything lives in THIS folder (like a game)
+ChrispyNi Desktop Companion
+===========================
 
-  Project Wives.exe   start here
-  content\            built-in characters, props, effects, rooms, lines (editable)
-  mods\               your mods (each mod = a subfolder, see README.md)
-  templates\          sprite templates + SPRITES.md
-  data\               config.json + save.json (created on first start)
-  logs\               project-wives.log
-  cache\              Chromium cache/temp (safe to delete while the app is closed)
+1. Run "ChrispyNi Desktop Companion.exe"
+2. Right-click the tray icon for Talk / About / Quit
+3. Everything (saves, config, mods, logs) stays inside this folder.
 
-Nothing is written to AppData. To move or back up the app, copy the whole folder.
-Put the folder somewhere writable (e.g. D:\Games\ProjectWives) - NOT C:\Program Files.
+content\             sprites, lines, chat library
+mods\                your data-only mods
+data\                config.json + save.json
+logs\                log files
+cache\               Chromium cache (safe to delete)
+editions\            built-in edition overlays
+
+SmartScreen: More info → Run anyway (unsigned build).

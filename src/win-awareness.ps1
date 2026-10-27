@@ -1,4 +1,4 @@
-# Project Wives - Windows active-window watcher (read-only). Prints one JSON line when something changes.
+# ChrispyNi Desktop Companion - Windows active-window watcher (read-only). Prints one JSON line when something changes.
 # No keystrokes, no screenshots: only the foreground window title/process, whether it is fullscreen,
 # and (when Windows exposes it) whether any media session is playing.
 param([int]$Seconds = 3)

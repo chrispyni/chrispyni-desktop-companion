@@ -15,12 +15,15 @@ function cmpVer(a, b) {
 const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
 
 /** GitHub /releases JSON (array) -> newest release with a -win.zip asset, newer than `current`, else null. */
-function pickRelease(list, current) {
+function pickRelease(list, current, opts = {}) {
   // only full releases: pre-releases and drafts are NEVER offered by the updater
+  // opts.assetRe: RegExp for the edition's zip; opts.prefer(name): optional tie-break
+  const assetRe = opts.assetRe || /-win\.zip$/i;
   const rels = (Array.isArray(list) ? list : [list]).filter((r) => r && !r.draft && !r.prerelease && r.tag_name);
   let best = null;
   for (const r of rels) {
-    const asset = (r.assets || []).find((a) => /-win\.zip$/i.test(a.name));
+    const assets = (r.assets || []).filter((a) => assetRe.test(a.name));
+    const asset = opts.prefer ? (assets.find((a) => opts.prefer(a.name)) || assets[0]) : assets[0];
     if (!asset) continue;
     const v = r.tag_name.replace(/^v/, '');
     if (cmpVer(v, current) > 0 && (!best || cmpVer(v, best.version) > 0)) {
@@ -52,13 +55,14 @@ function unzip(buf) {
     if (data.length !== usize) throw new Error('size mismatch in ' + name);
     out.push({ name, data });
   }
-  // strip a single shared top folder (e.g. "ProjectWives/...")
+  // strip a single shared top folder (e.g. "ChrispyNiDesktopCompanion/...")
   const tops = new Set(out.map((e) => e.name.split('/')[0]));
   if (tops.size === 1 && out.every((e) => e.name.includes('/'))) { const t = [...tops][0] + '/'; for (const e of out) e.name = e.name.slice(t.length); }
   return out;
 }
 
-const EXE = 'Project Wives.exe';
+let EXE = 'ChrispyNi Desktop Companion.exe';
+function setExeName(name) { if (name) EXE = name; }
 /** Checks the download: size, sha256 digest (when GitHub gives one), zip integrity, expected files and version. */
 function verify(buf, info) {
   if (info.asset.size && buf.length !== info.asset.size) throw new Error(`download size ${buf.length} != ${info.asset.size}`);
@@ -133,4 +137,4 @@ function swapScript(staging, appRoot, pid, oldVersion = '', backup = '') {
     'Start-Process -FilePath $exe -ArgumentList $arg -WorkingDirectory $dst',
   ].join('\r\n');
 }
-module.exports = { cmpVer, pickRelease, unzip, verify, planUpdate, stage, applyStaged, swapScript, sha256, EXE };
+module.exports = { cmpVer, pickRelease, unzip, verify, planUpdate, stage, applyStaged, swapScript, sha256, getEXE: () => EXE, setExeName };

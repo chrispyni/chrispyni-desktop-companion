@@ -1,8 +1,8 @@
 {
-  "name": "project-wives",
-  "productName": "Project Wives",
-  "version": "0.1.5-alpha",
-  "description": "Desktop companions: Nixie & Noct, elf queens of ChrispyNi",
+  "name": "chrispyni-desktop-companion",
+  "productName": "ChrispyNi Desktop Companion",
+  "version": "0.1.6-alpha",
+  "description": "Desktop companion: ChrispyNi, with Nixie & Noct as guests \u00b7 Made with Grok AI",
   "main": "src/main.js",
   "author": "ChrispyNi",
   "license": "SEE LICENSE IN LICENSE",
@@ -11,9 +11,10 @@
     "test": "node --test tests/",
     "sprites": "python3 tools/gen_sprites.py",
     "set-passphrase": "node tools/set-passphrase.js",
-    "dist:win": "node tools/make-manifest.js && electron-builder --win 7z zip --x64",
+    "dist:win": "node tools/make-manifest.js && node tools/dist-edition.js chrispyni",
     "dist:win-installer": "electron-builder --win nsis --x64",
-    "predist:win": "node tools/make-manifest.js"
+    "predist:win": "node tools/make-manifest.js",
+    "dist:wives": "node tools/make-manifest.js && node tools/dist-edition.js wives"
   },
   "devDependencies": {
     "electron": "^31.7.7",
@@ -22,11 +23,12 @@
     "resedit": "^2.0.3"
   },
   "build": {
-    "appId": "com.chrispyni.projectwives",
-    "productName": "Project Wives",
+    "appId": "com.chrispyni.desktopcompanion",
+    "productName": "ChrispyNi Desktop Companion",
     "files": [
       "src/**",
-      "package.json"
+      "package.json",
+      "editions/**"
     ],
     "win": {
       "target": [
@@ -87,17 +89,25 @@
       {
         "from": "content-manifest.json",
         "to": "content-manifest.json"
+      },
+      {
+        "from": "edition.json",
+        "to": "edition.json"
+      },
+      {
+        "from": "editions",
+        "to": "editions"
       }
     ],
-    "artifactName": "ProjectWives-${version}-win.${ext}",
+    "artifactName": "ChrispyNi-Desktop-Companion-${version}-win.${ext}",
     "nsis": {
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "allowElevation": false,
       "deleteAppDataOnUninstall": false,
-      "artifactName": "ProjectWives-${version}-setup.${ext}",
-      "shortcutName": "Project Wives",
+      "artifactName": "ChrispyNi-Desktop-Companion-${version}-setup.${ext}",
+      "shortcutName": "ChrispyNi Desktop Companion",
       "createDesktopShortcut": true,
       "include": "build/installer.nsh"
     },

@@ -124,6 +124,8 @@ function loadContent(baseDir, modDirs = [], opts = {}) {
     result.errors.push(...(part._errors || []));
   };
   apply(loadRoot(baseDir, 'base'));
+  // Edition overlay (editions/<id>/) deep-merges after base, before user mods.
+  if (opts.editionDir) apply(loadRoot(opts.editionDir, 'edition:' + (opts.editionId || 'edition')));
   for (const m of listMods(modDirs)) {
     const on = m.enabled !== false && !disabled.has(m.id);
     result.mods.push({ id: m.id, name: m.name, version: m.version, enabled: on, dir: m.dir, description: m.description });

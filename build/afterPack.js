@@ -1,4 +1,4 @@
-// Sets the Windows exe's version info + icon with resedit (pure JS, no wine), so Task Manager shows "Project Wives".
+// Sets the Windows exe's version info + icon with resedit (pure JS, no wine), so Task Manager shows "ChrispyNi Desktop Companion".
 'use strict';
 const fs = require('fs'); const path = require('path');
 module.exports = async function afterPack(ctx) {
@@ -18,8 +18,8 @@ module.exports = async function afterPack(ctx) {
   vi.setFileVersion(ma, mi, pa, 0, 1033); vi.setProductVersion(ma, mi, pa, 0, 1033);
   const lang = vi.getAllLanguagesForStringValues()[0] || { lang: 1033, codepage: 1200 };
   vi.setStringValues(lang, {
-    FileDescription: 'Project Wives', ProductName: 'Project Wives', CompanyName: 'ChrispyNi',
-    InternalName: 'Project Wives', OriginalFilename: 'Project Wives.exe', LegalCopyright: '© ChrispyNi. All rights reserved.',
+    FileDescription: 'ChrispyNi Desktop Companion', ProductName: 'ChrispyNi Desktop Companion', CompanyName: 'ChrispyNi',
+    InternalName: 'ChrispyNi Desktop Companion', OriginalFilename: 'ChrispyNi Desktop Companion.exe', LegalCopyright: '© ChrispyNi. All rights reserved.',
     FileVersion: pkg.version, ProductVersion: pkg.version,
   });
   vi.outputToResourceEntries(res.entries);

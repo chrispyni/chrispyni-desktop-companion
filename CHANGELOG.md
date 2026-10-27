@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.6-alpha
+* **Renamed** to **ChrispyNi Desktop Companion**. ChrispyNi is the main companion; Nixie and Noct visit as guests (both can be on screen).
+* Guest wives can summon, sit, meditate and use props like she can.
+* Pat / Feed: alone, Nixie & Noct hands come from void portals; if one or both wives are visiting they walk over and do it together.
+* Mana rest: she goes to our room where they wait (fade to black).
+* New offline chat voice for ChrispyNi (warm, teasing, mature) plus guest lines aimed at her. Library is moddable.
+* Archives: `ChrispyNi-Desktop-Companion-<ver>-win.zip` / `.7z` with a single top-level `ChrispyNi Desktop Companion` folder.
+* Updates still only see full GitHub Releases (this public repo).
+
+
 ## 0.1.5-alpha
 * Feeding: spam Feed and the cookies pop out right away; she eats them one after another. Up to 4-5 in a row, then she's full for 15-20 minutes and no more appear. Each cookie still gives +1 mana.
 * Pats give 1-10 mana, once every 5 minutes per wife (before that she just enjoys it, no mana).

@@ -1,14 +1,14 @@
 {
   "_v": 2,
   "_info": "Copied to data/config.json (inside the app folder) on first start. Edit that copy (tray > Settings > Open config). Restart or tray > Reload after editing.",
-  "user": "ChrispyNi",
-  "edition": "wives",
+  "user": "you",
+  "edition": "chrispyni",
   "characters": [
-    "nixie",
-    "noct"
+    "chrispyni"
   ],
   "guests": [
-    "chrispyni"
+    "nixie",
+    "noct"
   ],
   "guestVisitMinutes": 3,
   "scale": 2,
@@ -56,7 +56,7 @@
   },
   "update": {
     "checkOnStart": true,
-    "_help": "Checks GitHub Releases for new full releases on launch"
+    "_help": "Checks GitHub Releases for new full releases on launch. Private wives builds may set githubToken (a classic PAT with contents:read on the private repo) \u2014 never commit a real token."
   },
   "adminGateEnabled": false,
   "admin": {

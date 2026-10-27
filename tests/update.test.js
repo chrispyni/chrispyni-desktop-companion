@@ -10,9 +10,9 @@ function makeZip(file, files) {   // python's zipfile (deflate) to build a reali
 }
 test('pickRelease: newest FULL release with a -win.zip asset; pre-releases and drafts never offered', () => {
   const list = [
-    { tag_name: 'v0.1.1-alpha', assets: [{ name: 'ProjectWives-0.1.1-alpha-win.zip', browser_download_url: 'u1', size: 1 }] },
-    { tag_name: 'v0.1.3-alpha', assets: [{ name: 'ProjectWives-0.1.3-alpha-win.zip', browser_download_url: 'u3', size: 3, digest: 'sha256:ab' }] },
-    { tag_name: 'v0.1.5-alpha', prerelease: true, assets: [{ name: 'ProjectWives-0.1.5-alpha-win.zip', browser_download_url: 'u5' }] },
+    { tag_name: 'v0.1.1-alpha', assets: [{ name: 'ChrispyNi-Desktop-Companion-0.1.1-alpha-win.zip', browser_download_url: 'u1', size: 1 }] },
+    { tag_name: 'v0.1.3-alpha', assets: [{ name: 'ChrispyNi-Desktop-Companion-0.1.3-alpha-win.zip', browser_download_url: 'u3', size: 3, digest: 'sha256:ab' }] },
+    { tag_name: 'v0.1.5-alpha', prerelease: true, assets: [{ name: 'ChrispyNi-Desktop-Companion-0.1.5-alpha-win.zip', browser_download_url: 'u5' }] },
     { tag_name: 'v0.2.0', draft: true, assets: [{ name: 'x-win.zip' }] },
     { tag_name: 'v0.1.4-alpha', assets: [{ name: 'notes.txt' }] },
   ];
@@ -24,10 +24,10 @@ test('pickRelease: newest FULL release with a -win.zip asset; pre-releases and d
 test('verify + plan + stage + apply keeps data, mods and your edited content; backs up', () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'pwupd-')); const app = path.join(tmp, 'app');
   const put = (p, v) => { fs.mkdirSync(path.dirname(path.join(app, p)), { recursive: true }); fs.writeFileSync(path.join(app, p), v); };
-  put('Project Wives.exe', 'old exe'); put('resources/app.asar', 'old asar'); put('version.json', '{"version":"0.1.2-alpha"}');
+  put('ChrispyNi Desktop Companion.exe', 'old exe'); put('resources/app.asar', 'old asar'); put('version.json', '{"version":"0.1.2-alpha"}');
   put('content/lines/nixie.json', 'shipped nixie'); put('content/lines/noct.json', 'my edited noct'); put('data/save.json', 'MY SAVE'); put('mods/m/mod.json', 'my mod');
   const manifest = { 'content/lines/nixie.json': U.sha256(Buffer.from('shipped nixie')), 'content/lines/noct.json': U.sha256(Buffer.from('shipped noct')) };
-  const zip = makeZip(path.join(tmp, 'r.zip'), { 'Project Wives.exe': 'new exe', 'resources/app.asar': 'new asar', 'version.json': '{"version":"0.1.3-alpha"}',
+  const zip = makeZip(path.join(tmp, 'r.zip'), { 'ChrispyNi Desktop Companion.exe': 'new exe', 'resources/app.asar': 'new asar', 'version.json': '{"version":"0.1.3-alpha"}',
     'content/lines/nixie.json': 'new nixie', 'content/lines/noct.json': 'new noct', 'content/new.json': 'brand new', 'data/save.json': 'EVIL', 'mods/m/mod.json': 'example' });
   const info = { version: '0.1.3-alpha', asset: { size: zip.length, digest: 'sha256:' + U.sha256(zip) } };
   assert.throws(() => U.verify(zip, { ...info, asset: { ...info.asset, digest: 'sha256:00' } }), /sha256/);
@@ -37,10 +37,10 @@ test('verify + plan + stage + apply keeps data, mods and your edited content; ba
   const plan = U.planUpdate(app, entries, manifest);
   assert.deepStrictEqual(plan.kept.sort(), ['content/lines/noct.json', 'mods/m/mod.json']);
   const { backup, staging } = U.stage(app, plan, '0.1.2-alpha');
-  assert.strictEqual(fs.readFileSync(path.join(backup, 'Project Wives.exe'), 'utf8'), 'old exe');
+  assert.strictEqual(fs.readFileSync(path.join(backup, 'ChrispyNi Desktop Companion.exe'), 'utf8'), 'old exe');
   U.applyStaged(staging, app);
   const rd = (p) => fs.readFileSync(path.join(app, p), 'utf8');
-  assert.strictEqual(rd('Project Wives.exe'), 'new exe'); assert.strictEqual(rd('content/lines/nixie.json'), 'new nixie');
+  assert.strictEqual(rd('ChrispyNi Desktop Companion.exe'), 'new exe'); assert.strictEqual(rd('content/lines/nixie.json'), 'new nixie');
   assert.strictEqual(rd('content/lines/noct.json'), 'my edited noct'); assert.strictEqual(rd('content/new.json'), 'brand new');
   assert.strictEqual(rd('data/save.json'), 'MY SAVE'); assert.strictEqual(rd('mods/m/mod.json'), 'my mod');
   assert.ok(!fs.existsSync(staging));
@@ -50,4 +50,15 @@ test('unzip rejects path traversal', () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'pwz-'));
   const z = makeZip(path.join(tmp, 'b.zip'), { '../evil.txt': 'x' });
   assert.throws(() => U.unzip(z), /unsafe/);
+});
+
+test('pickRelease: edition asset filter picks the matching zip only', () => {
+  const list = [{ tag_name: 'v0.1.6-alpha', assets: [
+    { name: 'ChrispyNi-Desktop-Companion-0.1.6-alpha-win.zip', browser_download_url: 'pub', size: 1 },
+    { name: 'ChrispyNi-Desktop-Companion-Wives-0.1.6-alpha-win.zip', browser_download_url: 'priv', size: 2 },
+  ] }];
+  const pub = U.pickRelease(list, '0.1.5-alpha', { assetRe: /^ChrispyNi-Desktop-Companion-(?!Wives).*?-win\.zip$/i });
+  assert.strictEqual(pub.asset.url, 'pub');
+  const w = U.pickRelease(list, '0.1.5-alpha', { assetRe: /^ChrispyNi-Desktop-Companion-Wives-.*-win\.zip$/i });
+  assert.strictEqual(w.asset.url, 'priv');
 });
