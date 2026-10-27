@@ -1,6 +1,6 @@
 {
   "version": "0.1.7-alpha",
   "date": "2026-10-27",
-  "notes": "Invisible avatar fix; standing spacing; guest greet/goodbye replies; Hug/Kiss on guest menus; character categories (Main/Wife/Friends).",
+  "notes": "Invisible avatar fix; spacing; guest replies; categories; no endless cast/sparkle loop; behavior variety caps.",
   "download": "https://github.com/chrispyni/chrispyni-desktop-companion/releases"
 }

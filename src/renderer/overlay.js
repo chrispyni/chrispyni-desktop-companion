@@ -18,6 +18,7 @@ const { Affection } = require('../core/affection');
 const { landingFor, PHYS_DEFAULTS, releaseVelocity, stepProjectile, pickThrow, nextThrowAt } = require('../core/physics');
 const { MIN_GAP, freeSpot, separationDelta, companionSlot } = require('../core/spacing');
 const { categoryOf, labeledName, groupByCategory } = require('../core/categories');
+const { noteBehavior, isBehaviorBlocked, pickUnblocked } = require('../core/behavior');
 const { inRect, spriteRect, wantsCapture, chatShouldClose } = require('../core/hit');
 const { sleepPlan } = require('../core/sleepplan');
 const { classifyChat, repliers } = require('../core/chatfilter');
@@ -519,7 +520,9 @@ function useProp(ch, a) {
   ch.facing = p.x >= ch.x ? 1 : -1;
   const [lo, hi] = (rules().props || {}).useSec || [6, 14];
   const anim = { sip: 'happy', read: 'talk', light: 'cast', play: 'happy' }[use] || 'idle';
-  ch.play(anim, rnd(lo, hi), true); ch.waitUntil = performance.now() + rnd(lo, hi) * 1000;
+  const sec = rnd(lo, hi);
+  ch.loopAnim = null; // never lock think behind a looping cast/sparkle pose
+  ch.play(anim, sec, false); ch.waitUntil = performance.now() + sec * 1000;
   if (use === 'light') spawnFx('sparkle', p.x, p.y - 20);
   if (Math.random() < 0.1) speak(ch, 'prop_use', { ambient: true }); else if (Math.random() < 0.3) ch.dots(2);
   return true;
@@ -559,51 +562,91 @@ function think(ch, now) {
   const other = wives().find((c) => c !== ch && !c.hidden);
   const M = medCfg();
   const canAct = ch.role !== 'guest' || ch.def.guestCanAct;
+  // User-driven states may continue: watching, sleeping, held/dragged, menus open.
+  const exempt = !!(watching || sleepMode || drag || ch.dragging || (typeof menusOpen === 'function' && menusOpen()) || ch.state === 'watch' || ch.state === 'sleep' || ch.state === 'meditate');
+  if (!ch.behavior) ch.behavior = { last: null, streak: 0, since: now };
+  const blocked = (kind) => isBehaviorBlocked(ch.behavior, kind, now, { exempt });
+  const commit = (kind) => { ch.behavior = noteBehavior(ch.behavior, kind, now); };
+
   if (canAct && !sleepMode && !trip && ch.aff) {      // angry tantrum: rarely throws a prop or the other wife / a guest
     const th = pickThrow({ level: ch.aff.level, now: Date.now(), nextAt: ch.nextThrowAt || 0,
       props: props.map((p) => ({ uid: p.uid, pinned: p.pinned, door: p.def.door, sleepBed: p.sleepBed, occupied: countOn(p) > 0 || !!p.portal })),
       others: Object.values(chars).filter((c) => c !== ch && !c.hidden && !c.leaving).map((c) => ({ id: c.id, busy: c.dragging || !!c.fly || !!c.seat || c.inDoor })) });
-    if (th) {
+    if (th && !blocked('throw')) {
       ch.nextThrowAt = nextThrowAt(Date.now());
       const tx = th.kind === 'prop' ? (props.find((p) => p.uid === th.uid) || {}).x : (chars[th.id] || {}).x;
-      if (tx != null) { ch.enqueue([{ type: 'walk_to', target: tx + (ch.x < tx ? -24 : 24) }, { type: 'throw_it', ...th }]); ch.nextThink = now + 8000; return; }
+      if (tx != null) { commit('throw'); ch.enqueue([{ type: 'walk_to', target: tx + (ch.x < tx ? -24 : 24) }, { type: 'throw_it', ...th }]); ch.nextThink = now + 8000; return; }
     }
   }
   const guest = (!isChrispyEdition() && ch.role !== 'guest' && visitingChrispy()) || (isChrispyEdition() && ch.role === 'guest' && chars.chrispyni && !chars.chrispyni.hidden && chars.chrispyni);
   if (guest && !trip && ch.state !== 'watch') {      // ChrispyNi is here: stay close, face her, fuss over her
     const d = Math.abs(ch.x - guest.x);
-    if (d > 170) ch.enqueue([{ type: 'walk_to', target: nearChrispySpot(ch, guest) }]);
-    else if (r < 0.22) ch.enqueue([{ type: 'interact', kind: pick(['hug', 'hug', 'kiss', 'wave']), with: guest.id, ambient: true }]);
-    else if (r < 0.42 && Date.now() - (ch.lastGuestTalk || 0) > 25000) { ch.lastGuestTalk = Date.now(); ch.facing = guest.x > ch.x ? 1 : -1; speak(ch, 'to_chrispy') || ch.say(pick(TO_CHRISPY[ch.id] || TO_CHRISPY.nixie)); }
-    else if (r < 0.62) ch.enqueue([{ type: 'walk_to', target: nearChrispySpot(ch, guest) }]);
+    const nearChoices = [];
+    if (d > 170) nearChoices.push('guest_approach');
+    nearChoices.push('guest_interact', 'guest_talk', 'guest_near', 'guest_emote');
+    // Prefer by original probabilities, but skip blocked kinds.
+    let pickKind;
+    if (d > 170 && !blocked('guest_approach')) pickKind = 'guest_approach';
+    else if (r < 0.22 && !blocked('guest_interact')) pickKind = 'guest_interact';
+    else if (r < 0.42 && Date.now() - (ch.lastGuestTalk || 0) > 25000 && !blocked('guest_talk')) pickKind = 'guest_talk';
+    else if (r < 0.62 && !blocked('guest_near')) pickKind = 'guest_near';
+    else pickKind = pickUnblocked(ch.behavior, ['guest_emote', 'guest_near', 'guest_interact', 'guest_talk'], 'guest_emote', now, { exempt });
+    commit(pickKind);
+    if (pickKind === 'guest_approach' || pickKind === 'guest_near') ch.enqueue([{ type: 'walk_to', target: nearChrispySpot(ch, guest) }]);
+    else if (pickKind === 'guest_interact') ch.enqueue([{ type: 'interact', kind: pick(['hug', 'hug', 'kiss', 'wave']), with: guest.id, ambient: true }]);
+    else if (pickKind === 'guest_talk') { ch.lastGuestTalk = Date.now(); ch.facing = guest.x > ch.x ? 1 : -1; speak(ch, 'to_chrispy') || ch.say(pick(TO_CHRISPY[ch.id] || TO_CHRISPY.nixie)); }
     else { ch.facing = guest.x > ch.x ? 1 : -1; ch.play(animForMood(m, ch.def.moodAnims) === 'sleep' ? 'idle' : 'happy', rnd(1.5, 3)); }
     ch.nextThink = now + rnd(4000, 9000) / speed; return;
   }
-  if (canAct && !isChrispyEdition() && !chars.chrispyni && Date.now() - lastUserAt > M.afterMin * 60000 && ch.mana.ratio < M.capRatio && Date.now() - (ch.lastMeditate || 0) > M.cooldownMin * 60000) {
-    ch.enqueue([{ type: 'meditate' }]);                 // Chrispy's been away a long while: meditate a little mana back (max 50%)
-  }
-  else if (canAct && other && ignored && Date.now() - lastChatter > (T.idleChatterEveryMin ?? 4) * 60000 * rnd(0.7, 1.3) && r < 0.5 * tk + 0.2) {
-    lastChatter = Date.now(); chatter(ch, other);          // ignored? they chat with EACH OTHER ('...' bubbles only)
-  }
-  else if (canAct && ch.mana && r < 0.05 && ch.mana.ratio > 0.5 && Date.now() - (ch.lastMagic || 0) > ((rules().mana || {}).ambientMagicCooldownMin || 40) * 60000) {
+
+  // Build weighted candidate list (same odds as before), then drop blocked ones.
+  const candidates = [];
+  if (canAct && !isChrispyEdition() && !chars.chrispyni && Date.now() - lastUserAt > M.afterMin * 60000 && ch.mana.ratio < M.capRatio && Date.now() - (ch.lastMeditate || 0) > M.cooldownMin * 60000)
+    candidates.push('meditate');
+  if (canAct && other && ignored && Date.now() - lastChatter > (T.idleChatterEveryMin ?? 4) * 60000 * rnd(0.7, 1.3) && r < 0.5 * tk + 0.2)
+    candidates.push('chatter');
+  if (canAct && ch.mana && r < 0.05 && ch.mana.ratio > 0.5 && Date.now() - (ch.lastMagic || 0) > ((rules().mana || {}).ambientMagicCooldownMin || 40) * 60000)
+    candidates.push('magic');
+  let ambSum = null;
+  if (canAct && ch.mana && !watching && ch.state !== 'watch' && (ambSum = pickAmbientSummon({ lastSummonAt: Math.max(ch.lastSummon || 0, lastAnySummon), manaValue: ch.mana.value, manaRatio: ch.mana.ratio, onScreen: props.map((p) => p.id), props: content.props, opts: (rules().props || {}).ambientSummon })))
+    candidates.push('summon');
+  if (canAct && r < 0.12 + ((rules().props || {}).useChance ?? 0.12) && usablePropFor(ch))
+    candidates.push('use_prop');
+  if (r < 0.5) candidates.push('wander');
+  if (r < 0.62 && nearestProp(ch.x, 'sittable', ch)) candidates.push('sit');
+  if (r < 0.68 && Object.values(chars).find((c) => c !== ch && !c.hidden)) candidates.push('interact');
+  candidates.push('mood');
+
+  const kind = pickUnblocked(ch.behavior, candidates, 'wander', now, { exempt });
+  commit(kind);
+
+  if (kind === 'meditate') {
+    ch.enqueue([{ type: 'meditate' }]);
+  } else if (kind === 'chatter') {
+    lastChatter = Date.now(); chatter(ch, other);
+  } else if (kind === 'magic') {
     const g = chars.chrispyni; const kinds = g ? ['lovely_gift', 'lovely_twirl'] : ['levitate', 'craft_together'];
-    const kind = pick(kinds), with_ = g ? g.id : other && other.id;
-    if (with_) ch.enqueue([{ type: 'interact', kind, with: with_, ambient: true }]);
-  }
-  else if (canAct && ch.mana && !watching && ch.state !== 'watch' && (ambSum = pickAmbientSummon({ lastSummonAt: Math.max(ch.lastSummon || 0, lastAnySummon), manaValue: ch.mana.value, manaRatio: ch.mana.ratio, onScreen: props.map((p) => p.id), props: content.props, opts: (rules().props || {}).ambientSummon }))) {
-    ch.lastSummon = lastAnySummon = Date.now();                // conjures something to use now and then (costs her mana)
+    const mk = pick(kinds), with_ = g ? g.id : other && other.id;
+    if (with_) ch.enqueue([{ type: 'interact', kind: mk, with: with_, ambient: true }]);
+  } else if (kind === 'summon') {
+    ch.lastSummon = lastAnySummon = Date.now();
     ch.enqueue([{ type: 'summon', item: ambSum }]);
     setTimeout(() => { const p = props.filter((q) => q.id === ambSum).pop(); if (p && !ch.hidden) ch.enqueue([{ type: 'use_prop', uid: p.uid }]); }, 1200);
+  } else if (kind === 'use_prop') {
+    const p = usablePropFor(ch); if (p) ch.enqueue([{ type: 'use_prop', uid: p.uid }]);
+  } else if (kind === 'wander') {
+    ch.enqueue([{ type: ch.mana && ch.mana.ratio > 0.6 && Math.random() < 0.15 ? 'run_to' : 'walk_to', target: wanderTarget(ch) }]);
+  } else if (kind === 'sit') {
+    ch.enqueue([{ type: 'sit' }]);
+  } else if (kind === 'interact') {
+    const o = Object.values(chars).find((c) => c !== ch && !c.hidden);
+    if (o) ch.enqueue([{ type: 'interact', kind: o.id === 'chrispyni' ? pick(['hug', 'kiss', 'wave']) : 'wave', with: o.id, ambient: true }]);
+  } else {
+    const an = animForMood(m, ch.def.moodAnims); ch.play(an, rnd(2, 5));
   }
-  else if (canAct && r < 0.12 + ((rules().props || {}).useChance ?? 0.12) && usablePropFor(ch)) {
-    const p = usablePropFor(ch); ch.enqueue([{ type: 'use_prop', uid: p.uid }]);   // use what's lying around
-  }
-  else if (r < 0.5) { ch.enqueue([{ type: ch.mana && ch.mana.ratio > 0.6 && Math.random() < 0.15 ? 'run_to' : 'walk_to', target: wanderTarget(ch) }]); }
-  else if (r < 0.62 && nearestProp(ch.x, 'sittable', ch)) { ch.enqueue([{ type: 'sit' }]); }
-  else if (r < 0.68) { const o = Object.values(chars).find((c) => c !== ch && !c.hidden); if (o) ch.enqueue([{ type: 'interact', kind: o.id === 'chrispyni' ? pick(['hug', 'kiss', 'wave']) : 'wave', with: o.id, ambient: true }]); }
-  else { const an = animForMood(m, ch.def.moodAnims); ch.play(an, rnd(2, 5)); }
   ch.nextThink = now + rnd(5000, 14000) / speed;
 }
+
 
 // ---- ChrispyNi visiting: the wives keep close to her ----
 const TO_CHRISPY = {
@@ -735,6 +778,7 @@ function update(dt) {
     { const gv = ch.role !== 'guest' && !ch.seat && ch.target == null && visitingChrispy(); if (gv && Math.abs(gv.x - ch.x) > 6) ch.facing = gv.x > ch.x ? 1 : -1; }
     if ((ch.state === 'sit' || ch.state === 'lay' || ch.state === 'sleep') && now < ch.holdUntil) continue;
     if ((ch.state === 'sit' || ch.state === 'lay' || ch.state === 'sleep') && !sleepMode) standUp(ch);
+    if (ch.holdUntil && now > ch.holdUntil && ch.loopAnim && ch.state === 'idle' && !ch.seat) { ch.loopAnim = null; ch.play('idle'); }
     if (now > ch.holdUntil && ch.anim !== 'idle' && !ch.loopAnim && ch.state === 'idle') ch.play(animForMood(ch.mood.current, ch.def.moodAnims) === 'sleep' ? 'idle' : 'idle');
     if (ch.loopAnim && ch.state === 'idle' && !ch.seat) ch.play(ch.loopAnim);
     if (now > ch.nextThink && !ch.loopAnim) { think(ch, now); if (!ch.nextThink || ch.nextThink < now) ch.nextThink = now + rnd(5000, 12000); }
