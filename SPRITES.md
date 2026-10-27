@@ -96,7 +96,7 @@ Plays once at the spot (set `"loop": true` for looping). `manaCost` is charged w
    For a character: `mods/my-stuff/characters/<id>/character.json` + `sheet.png`.
    To **replace** Nixie's look only: `mods/my-stuff/characters/nixie/character.json` with `{"sheet":"sheet.png"}` + your sheet.
 3. The app hot-reloads (or tray → Settings → Reload). Check it in the debug menu (`/debug`).
-4. Want it in the official version? Drop it in Drive → `GrokBot/Project Wives/Suggestions`.
+4. Want it in the official version? Open an issue on the GitHub page and attach it.
 
 ### Palette tips
 * 1 px dark outline (`#120a16`) around the silhouette reads well on any wallpaper.

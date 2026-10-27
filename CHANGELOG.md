@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.5-alpha
+* Feeding: spam Feed and the cookies pop out right away; she eats them one after another. Up to 4-5 in a row, then she's full for 15-20 minutes and no more appear. Each cookie still gives +1 mana.
+* Pats give 1-10 mana, once every 5 minutes per wife (before that she just enjoys it, no mana).
+* Critical pats! A rare pat gives 20-50 mana with extra sparkles. The chance grows a little with every normal pat and resets after a crit.
+* Right-click menus and info popups close when you click anywhere else (even another app or the desktop) or press Esc.
+* When ChrispyNi visits, Nixie and Noct stay close to her, face her, chat with her and hug her instead of wandering off.
+* While ChrispyNi visits, right-click Nixie or Noct for **Hug** and **Kiss**: ChrispyNi walks over and gives her one (a little mana and a happy wife).
+* Nixie and Noct summon props on their own again now and then (a teacup, cushion, books…) and use them.
+* Chat is now fully offline: a moddable reply library (`content/chat/library.json`, mods can add their own) with replies that fit each wife and moods that react to what you say. Nothing you type leaves your PC.
+* The online relay chat was removed. The only network access left is the update check on GitHub.
+* Mods are data-only now (JSON + images); JS plugins are no longer loaded.
+* Security hardening: the app windows can't navigate anywhere or open popups and never get camera/mic permissions.
+* Sleep: they walk to the nearest side of the screen, a bed appears, and they lie down with little `z` bubbles (no more peeking at the cursor). Any mouse movement, click or key press wakes them, like a monitor waking up; they yawn and stretch and the bed disappears.
+* Waking from sleep now always wakes both wives, and dropping a sleeping wife wakes them too. A cursor resting still near them no longer keeps them awake or makes them stare at it.
+* Falls play the falling animation once, then they land (no more replaying it after landing).
+* Throwing! Drag a wife or a prop and let go while moving: it flies, bounces once off the edge of the screen and the floor, then settles. Props can now be picked up and moved.
+* When Nixie or Noct is really angry, once in a while she grabs a prop or the other one and throws it (never ChrispyNi).
+* The app icon is back to the original Project Wives icon.
+
 ## 0.1.4-alpha
 * Updates: Nixie or Noct tells you when a new version is out, right in her speech bubble, with **Update** and **Later** buttons. No Windows popups; the app updates itself, restarts, and tells you it worked (or that it didn't, and keeps running).
 * Your saves, mods and edited content are kept during updates; replaced files are backed up in `backup\`.

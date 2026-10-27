@@ -1,7 +1,7 @@
 {
   "name": "project-wives",
   "productName": "Project Wives",
-  "version": "0.1.4-alpha",
+  "version": "0.1.5-alpha",
   "description": "Desktop companions: Nixie & Noct, elf queens of ChrispyNi",
   "main": "src/main.js",
   "author": "ChrispyNi",
@@ -40,7 +40,8 @@
       "output": "dist"
     },
     "asarUnpack": [
-      "src/win-awareness.ps1"
+      "src/win-awareness.ps1",
+      "src/win-clicks.ps1"
     ],
     "extraFiles": [
       {
@@ -50,10 +51,6 @@
       {
         "from": "mods",
         "to": "mods"
-      },
-      {
-        "from": "plugins",
-        "to": "plugins"
       },
       {
         "from": "templates",

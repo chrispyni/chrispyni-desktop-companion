@@ -10,18 +10,19 @@ const { OfflineBrain } = require('../core/brain');
 const { parseReply, parseText, buildIndex } = require('../core/actions');
 const { parseCheat, COMMANDS, WORD_CODES, toggleCheat } = require('../core/cheats');
 const { checkPassphrase, isAdminByIdentity } = require('../core/admin');
-const { buildMessage } = require('../core/relay');
+const chatlib = require('../core/chatlib');
 const { timeOfDay, isSleepHour } = require('../core/awareness');
 const { EventSystem } = require('../core/events');
 const { Hooks, loadPlugins } = require('../core/plugins');
 const { Affection } = require('../core/affection');
-const { landingFor, PHYS_DEFAULTS } = require('../core/physics');
+const { landingFor, PHYS_DEFAULTS, releaseVelocity, stepProjectile, pickThrow, nextThrowAt } = require('../core/physics');
 const { inRect, spriteRect, wantsCapture, chatShouldClose } = require('../core/hit');
 const { sleepPlan } = require('../core/sleepplan');
 const { classifyChat, repliers } = require('../core/chatfilter');
 const { tryEat } = require('../core/food');
+const { tryPat } = require('../core/pat');
 const { Pity } = require('../core/pity');
-const { useOf, idleExpired } = require('../core/propuse');
+const { useOf, idleExpired, pickAmbientSummon } = require('../core/propuse');
 const { isNear } = require('../core/hit');
 const { isWatching } = require('../core/awareness');
 
@@ -42,7 +43,7 @@ const chars = {};          // id -> Char
 const props = [];          // {uid,id,def,x,y,t}
 const fx = [];             // {id,def,x,y,t}
 let uidSeq = 1, sleepMode = false, sleepManual = false, roomOpen = false, adminSession = false;
-let relayStatus = { enabled: false }, pendingChat = null, lastEventSent = 0;
+let chatLib = { rules: [], fallback: {}, reactions: [] }, chatRules = [];
 const aw = { app: null, category: null, idleSec: 0, idleLongFired: false, tod: null, lastReact: {}, stream: false };
 let SAVE_PATH = '';
 
@@ -59,6 +60,7 @@ function loadAll() {
   for (const k of Object.keys(images)) delete images[k];
   for (const k of Object.keys(obCache)) delete obCache[k];
   content = loadContent(INIT.dirs.base, INIT.dirs.mods, { disabledMods: cfg.disabledMods });
+  loadChatLibrary();
   content._index = buildIndex(content);
   { const old = pity; pity = new Pity(rules().guests || {}); if (old) pity.load(old.toJSON()); }
   if (content.errors.length) toast('Content errors: ' + content.errors.slice(0, 2).join(' | '));
@@ -72,9 +74,8 @@ function loadAll() {
   for (const p of props) p.def = content.props[p.id] || p.def;
   // plugins
   hooks.clear();
-  const files = [...content.plugins];
-  for (const d of INIT.dirs.plugins) if (fs.existsSync(d)) files.push(...fs.readdirSync(d).filter((f) => f.endsWith('.js')).map((f) => path.join(d, f)));
-  const loaded = loadPlugins(files, pluginApi(), (m) => ipcRenderer.send('log', m));
+  // JS plugins are disabled (mods are data-only: JSON + images); nothing from mods/ is ever executed.
+  const loaded = [];
   hooks.emit('content_loaded', { content });
   if (debugOpen) buildDebug();
   return loaded;
@@ -118,7 +119,7 @@ class Char {
   get fw() { return this.def.frame.w; } get fh() { return this.def.frame.h; }
   /** The exact rect of what is drawn this frame (same numbers render() uses). */
   bbox() {
-    const a = this.def.animations[this.anim] || this.def.animations.idle; const f = frameOf(a, this.t);
+    const a = this.def.animations[this.anim] || this.def.animations.idle; const f = frameOf(oneShot(this.anim, a), this.t);
     const ob = opaqueBounds(img(this.def.sheet), f * this.fw, a.row * this.fh, this.fw, this.fh);
     return spriteRect({ x: this.drawX(), y: this.y, scale: this.scale, anchor: this.def.anchor, frame: this.def.frame, ob, facing: this.facing, lift: this.lift });
   }
@@ -246,7 +247,7 @@ function startAction(ch, a) {
       ch.holdUntil = now + (a.sec || rnd(8, 20)) * 1000; return true;
     }
     case 'sleep': ch.state = 'sleep'; ch.play(ch.seat && ch.seat.def.layable ? 'lay' : 'sleep', 0, true); ch.holdUntil = now + (a.sec || 30) * 1000; return true;
-    case 'wake': if (ch.seat) standUp(ch); ch.state = 'idle'; ch.loopAnim = null; ch.play('happy', 1.2); speak(ch, 'wake'); return true;
+    case 'wake': if (ch.seat) standUp(ch); ch.state = 'idle'; ch.loopAnim = null; ch.play('happy', 1.6); ch.waitUntil = now + 1600; if (!speak(ch, 'wake')) ch.bubble = { text: pick(['*yaaawn*~', '*stretches* Mmh…', 'Nnn… morning?']), until: now + 3000 }; return false;
     case 'emote': if (a.mood) ch.mood.set(a.mood, 60); ch.play(a.anim || 'happy', a.sec || 2); ch.waitUntil = now + (a.sec || 2) * 1000; return false;
     case 'jump': ch.vy = -260; ch.play('happy', 0.8); return true;
     case 'face': ch.facing = a.dir === 'left' ? -1 : 1; return true;
@@ -284,6 +285,16 @@ function startAction(ch, a) {
     case 'ask_mana': askMana(ch); return true;
     case 'wait': ch.waitUntil = now + (a.sec || 1) * 1000; return false;
     case 'interact': return startInteract(ch, a);
+    case 'throw_it': {
+      const obj = a.kind === 'prop' ? props.find((p) => p.uid === a.uid) : chars[a.id];
+      if (!obj || Math.abs(obj.x - ch.x) > 60 || (a.kind === 'char' && (obj.hidden || obj.dragging || obj.seat))) return true;
+      const dir = obj.x >= ch.x ? 1 : -1; ch.facing = dir; ch.play('cast', 0.6); ch.waitUntil = now + 600;
+      ch.bubble = { text: pick(['HMPH! Take THAT!', 'Out of my way!', 'Grrr…!', 'I SAID I\'M MAD!']), until: now + 3000 };
+      const v = { vx: dir * rnd(600, 1100), vy: -rnd(700, 1100) };
+      if (a.kind === 'prop') obj.fly = { x: obj.x, y: obj.y, ...v };
+      else { obj.queue = []; obj.target = null; obj.current = null; obj.levitate = null; obj.fly = { x: obj.x, y: obj.y, ...v, minY: obj.y, user: false }; obj.play('fall'); if (obj.aff) obj.aff.event('touch_while_angry'); setTimeout(() => speak(obj, 'dropped') || obj.say('Hey!!'), 700); }
+      hooks.emit('thrown', { by: ch.id, what: a.kind === 'prop' ? obj.id : obj.id }); return false;
+    }
     case 'visit': visit(a.guest || 'chrispyni'); return true;
     case 'leave': { const gch = chars[a.guest || ch.id]; if (gch) leave(gch); return true; }
     default: return true;
@@ -436,7 +447,8 @@ function land(ch) {
   const f = ch.falling; ch.falling = null; if (!f) return;
   const kind = landingFor(ground - f.startY, wa.h, rules().physics || PHYS_DEFAULTS);
   hooks.emit('landed', { char: ch.id, kind });
-  if (kind === 'normal') { if (f.user) { ch.play('idle'); if (Math.random() < 0.3) speak(ch, 'dropped'); } return; }
+  if (sleepMode) setSleep(false);                       // being dropped wakes them
+  if (kind === 'normal') { ch.play('idle'); if (f.user && Math.random() < 0.3) speak(ch, 'dropped'); return; }
   ch.queue = []; ch.target = null;
   if (kind === 'superhero') {
     ch.play('superhero_land', 1.1); ch.waitUntil = performance.now() + 1100;
@@ -492,16 +504,37 @@ function guestCheck() {
   if (pp.roll()) { if (pp !== pity) pity.reset(); visit(gid); }
   saveSoon();
 }
+let lastAnySummon = 0, ambSum = null;
 function think(ch, now) {
   // autonomous behavior when queue is empty
   const m = ch.mood.current;
   if (ch.role === 'guest' && ch.leaveAt && now > ch.leaveAt && !ch.leaving) { leave(ch); return; }
-  if (sleepMode) { if (ch.state !== 'sleep' && ch.state !== 'lay') ch.enqueue([nearestProp(ch.x, 'layable', ch) ? { type: 'lay' } : { type: 'sleep', sec: 600 }]); return; }
+  if (sleepMode) { if (ch.state !== 'sleep' && ch.state !== 'lay' && ch.role !== 'guest') goToBed(ch); return; }
   const tk = (ch.def.personality.talkativeness || 0.5) * (cfg.talkativeness ?? 1);
   const r = Math.random(), T = cfg.talk || {};
   const ignored = Date.now() - lastUserAt > (T.userIgnoredMin ?? 3) * 60000;
   const other = wives().find((c) => c !== ch && !c.hidden);
   const M = medCfg();
+  if (ch.role !== 'guest' && !sleepMode && !trip) {      // angry tantrum: rarely throws a prop or the other wife / a guest
+    const th = pickThrow({ level: ch.aff.level, now: Date.now(), nextAt: ch.nextThrowAt || 0,
+      props: props.map((p) => ({ uid: p.uid, pinned: p.pinned, door: p.def.door, sleepBed: p.sleepBed, occupied: countOn(p) > 0 || !!p.portal })),
+      others: Object.values(chars).filter((c) => c !== ch && !c.hidden && !c.leaving).map((c) => ({ id: c.id, busy: c.dragging || !!c.fly || !!c.seat || c.inDoor })) });
+    if (th) {
+      ch.nextThrowAt = nextThrowAt(Date.now());
+      const tx = th.kind === 'prop' ? (props.find((p) => p.uid === th.uid) || {}).x : (chars[th.id] || {}).x;
+      if (tx != null) { ch.enqueue([{ type: 'walk_to', target: tx + (ch.x < tx ? -24 : 24) }, { type: 'throw_it', ...th }]); ch.nextThink = now + 8000; return; }
+    }
+  }
+  const guest = ch.role !== 'guest' && visitingChrispy();
+  if (guest && !trip && ch.state !== 'watch') {      // ChrispyNi is here: stay close, face her, fuss over her
+    const d = Math.abs(ch.x - guest.x);
+    if (d > 170) ch.enqueue([{ type: 'walk_to', target: nearChrispySpot(ch, guest) }]);
+    else if (r < 0.22) ch.enqueue([{ type: 'interact', kind: pick(['hug', 'hug', 'kiss', 'wave']), with: guest.id, ambient: true }]);
+    else if (r < 0.42 && Date.now() - (ch.lastGuestTalk || 0) > 25000) { ch.lastGuestTalk = Date.now(); ch.facing = guest.x > ch.x ? 1 : -1; speak(ch, 'to_chrispy') || ch.say(pick(TO_CHRISPY[ch.id] || TO_CHRISPY.nixie)); }
+    else if (r < 0.62) ch.enqueue([{ type: 'walk_to', target: nearChrispySpot(ch, guest) }]);
+    else { ch.facing = guest.x > ch.x ? 1 : -1; ch.play(animForMood(m, ch.def.moodAnims) === 'sleep' ? 'idle' : 'happy', rnd(1.5, 3)); }
+    ch.nextThink = now + rnd(4000, 9000) / speed; return;
+  }
   if (ch.role !== 'guest' && !chars.chrispyni && Date.now() - lastUserAt > M.afterMin * 60000 && ch.mana.ratio < M.capRatio && Date.now() - (ch.lastMeditate || 0) > M.cooldownMin * 60000) {
     ch.enqueue([{ type: 'meditate' }]);                 // Chrispy's been away a long while: meditate a little mana back (max 50%)
   }
@@ -513,6 +546,11 @@ function think(ch, now) {
     const kind = pick(kinds), with_ = g ? g.id : other && other.id;
     if (with_) ch.enqueue([{ type: 'interact', kind, with: with_, ambient: true }]);
   }
+  else if (ch.role !== 'guest' && !watching && ch.state !== 'watch' && (ambSum = pickAmbientSummon({ lastSummonAt: Math.max(ch.lastSummon || 0, lastAnySummon), manaValue: ch.mana.value, manaRatio: ch.mana.ratio, onScreen: props.map((p) => p.id), props: content.props, opts: (rules().props || {}).ambientSummon }))) {
+    ch.lastSummon = lastAnySummon = Date.now();                // conjures something to use now and then (costs her mana)
+    ch.enqueue([{ type: 'summon', item: ambSum }]);
+    setTimeout(() => { const p = props.filter((q) => q.id === ambSum).pop(); if (p && !ch.hidden) ch.enqueue([{ type: 'use_prop', uid: p.uid }]); }, 1200);
+  }
   else if (ch.role !== 'guest' && r < 0.12 + ((rules().props || {}).useChance ?? 0.12) && usablePropFor(ch)) {
     const p = usablePropFor(ch); ch.enqueue([{ type: 'use_prop', uid: p.uid }]);   // use what's lying around
   }
@@ -523,8 +561,19 @@ function think(ch, now) {
   ch.nextThink = now + rnd(5000, 14000) / speed;
 }
 
+// ---- ChrispyNi visiting: the wives keep close to her ----
+const TO_CHRISPY = {
+  nixie: ['My queen~ you came!', 'Stay a little longer, okay?', 'Look look, I was good today!', 'Ehehe~ I missed you.'],
+  noct: ['...You\'re here. Good.', 'Don\'t leave too soon, love.', 'Mm. I saved you a spot.', 'Took you long enough~'],
+};
+function visitingChrispy() { const g = chars.chrispyni; return g && !g.hidden && !g.leaving && !g.fadeOut ? g : null; }
+function nearChrispySpot(ch, g) {   // each wife keeps to her own side of ChrispyNi, within a short radius
+  const others = wives().filter((w) => !w.hidden); const side = others.indexOf(ch) % 2 === 0 ? -1 : 1;
+  return clampX(g.x + side * rnd(35, 110), ch);
+}
 /** Random spot across the whole work area; near an edge she heads back toward the middle (edge repulsion). */
 function wanderTarget(ch) {
+  const gv = ch.role !== 'guest' && visitingChrispy(); if (gv) return nearChrispySpot(ch, gv);
   const rel = (ch.x - wa.x) / Math.max(1, wa.w);
   if (rel < 0.15) return clampX(wa.x + wa.w * rnd(0.3, 0.85), ch);
   if (rel > 0.85) return clampX(wa.x + wa.w * rnd(0.15, 0.7), ch);
@@ -545,7 +594,9 @@ function chatter(a, b) {
 
 /** Cursor within ~10 px and staying: she stops and looks at it (a couple of times at most while it stays). */
 function curiosity(ch, now) {
-  if (ch.role === 'guest' || drag || ch.state === 'watch' || ch.state === 'meditate' || ch.levitate || ch.falling || ch.inDoor) { ch.nearSince = 0; return; }
+  // a cursor that hasn't moved (e.g. resting while AFK) never makes her curious; asleep she ignores it entirely
+  if (Date.now() - lastMove.at > 8000) { ch.nearSince = 0; if (ch.looking) ch.looking = 0; return; }
+  if (sleepMode || ch.role === 'guest' || drag || ch.state === 'watch' || ch.state === 'meditate' || ch.levitate || ch.falling || ch.inDoor) { ch.nearSince = 0; return; }
   const near = isNear(ch.hit, lastMouse.x, lastMouse.y, (rules().cursor || {}).nearPx ?? 10);
   if (!near) { ch.nearSince = 0; if (!isNear(ch.hit, lastMouse.x, lastMouse.y, 120)) { ch.lookCount = 0; ch.nextLook = 0; } if (ch.looking && now > ch.looking) ch.looking = 0; return; }
   if (!ch.nearSince) ch.nearSince = now;
@@ -581,6 +632,14 @@ function update(dt) {
     // gravity / falls
     const baseY = ch.seat ? ch.y : ground;
     const G = (rules().physics || PHYS_DEFAULTS).gravity || 2600;
+    if (ch.fly) {                                        // thrown: projectile with one damped bounce
+      const hw = ch.halfW || 16, F = ch.fly;
+      const flying = stepProjectile(F, dt * speed, { left: wa.x + hw, right: wa.x + wa.w - hw, top: wa.y + ch.fh * ch.scale, floor: ground }, G);
+      ch.x = F.x; ch.y = F.y; F.minY = Math.min(F.minY, F.y); if (F.vx) ch.facing = F.vx > 0 ? 1 : -1;
+      if (ch.anim !== 'fall') ch.play('fall');
+      if (!flying) { ch.fly = null; ch.vy = 0; ch.falling = { startY: F.minY, user: F.user }; land(ch); }
+      continue;
+    }
     if (ch.y < baseY || ch.vy) {
       ch.vy += G * dt; ch.y += ch.vy * dt;
       if (ch.falling && ch.anim !== 'fall' && ground - ch.y > 20) ch.play('fall');
@@ -612,14 +671,21 @@ function update(dt) {
       if (Date.now() - lastWatchTalk > rnd(3, 6) * 60000) { lastWatchTalk = Date.now(); Math.random() < 0.15 ? speak(ch, 'watch_comment') : ch.dots(2.5); }
       continue;
     }
+    if (sleepMode && (ch.state === 'lay' || ch.state === 'sleep') && !ch.bubble) ch.bubble = { text: pick(['z', 'z Z', 'z z Z']), z: true, until: now + 2200 };
     if (ch.looking && now < ch.looking) continue;
+    { const gv = ch.role !== 'guest' && !ch.seat && ch.target == null && visitingChrispy(); if (gv && Math.abs(gv.x - ch.x) > 6) ch.facing = gv.x > ch.x ? 1 : -1; }
     if ((ch.state === 'sit' || ch.state === 'lay' || ch.state === 'sleep') && now < ch.holdUntil) continue;
     if ((ch.state === 'sit' || ch.state === 'lay' || ch.state === 'sleep') && !sleepMode) standUp(ch);
     if (now > ch.holdUntil && ch.anim !== 'idle' && !ch.loopAnim && ch.state === 'idle') ch.play(animForMood(ch.mood.current, ch.def.moodAnims) === 'sleep' ? 'idle' : 'idle');
     if (ch.loopAnim && ch.state === 'idle' && !ch.seat) ch.play(ch.loopAnim);
     if (now > ch.nextThink && !ch.loopAnim) { think(ch, now); if (!ch.nextThink || ch.nextThink < now) ch.nextThink = now + rnd(5000, 12000); }
   }
-  for (const p of props) p.t += dt;
+  for (const p of props) {
+    p.t += dt;
+    if (p.fly) { const fl = (p.def.float || 0) * 2; const hw = (p.def.frame.w || 32) * (cfg.scale || 2) / 2;
+      if (!stepProjectile(p.fly, dt * speed, { left: wa.x + hw, right: wa.x + wa.w - hw, top: wa.y + 20, floor: ground - fl }, (rules().physics || PHYS_DEFAULTS).gravity || 2600)) { p.y = ground - fl; p.x = p.fly.x; p.fly = null; spawnFx('spawn_sparkle', p.x, p.y - 6); }
+      else { p.x = p.fly.x; p.y = p.fly.y; } }
+  }
   for (let i = fx.length - 1; i >= 0; i--) { const e = fx[i]; e.t += dt; if (!e.def.loop && e.t * e.def.fps >= e.def.frames) fx.splice(i, 1); }
   // props expire
   for (let i = props.length - 1; i >= 0; i--) { const p = props[i]; if (p.def.lifetimeSec && Date.now() - p.born > p.def.lifetimeSec * 1000 && !countOn(p) && !p.pinned) props.splice(i, 1); }
@@ -652,7 +718,9 @@ function drawSprite(im, sx, sy, sw, sh, dx, dy, scale, flip) {
   // mirrored around the anchor: with scale(-1,1) the image spans [dx - w, dx] — same rect the hitbox uses (old code drew it one width too far right)
   g.drawImage(im, sx, sy, sw, sh, 0, 0, sw * scale, sh * scale); g.restore();
 }
-function frameOf(anim, t) { return Math.floor(t * (anim.fps || 6) * speed) % Math.max(1, anim.frames); }
+const ONE_SHOT = new Set(['fall', 'superhero_land', 'faceplant', 'getup']);   // play once, hold the last frame
+function oneShot(name, a) { return ONE_SHOT.has(name) && a.once === undefined ? { ...a, once: true } : a; }
+function frameOf(anim, t) { const n = Math.floor(t * (anim.fps || 6) * speed), m = Math.max(1, anim.frames); return anim.once ? Math.min(n, m - 1) : n % m; }
 
 function bubbleBox(ch, bw, bh) {
   const r0 = ch.hit || ch.bbox(); const r = ch.hoverRect ? { ...r0, y: Math.min(r0.y, ch.hoverRect.y - 4) } : r0;   // always above the mana bar
@@ -745,7 +813,7 @@ function render() {
   const list = Object.values(chars).sort((a, b) => a.y - b.y);
   for (const ch of list) {
     if (ch.hidden) { ch.hit = null; continue; }
-    const a = ch.def.animations[ch.anim] || ch.def.animations.idle; const f = frameOf(a, ch.t); const s = ch.scale;
+    const a = ch.def.animations[ch.anim] || ch.def.animations.idle; const f = frameOf(oneShot(ch.anim, a), ch.t); const s = ch.scale;
     g.save(); g.globalAlpha = clamp(ch.alpha, 0, 1);
     if (!ch.seat) { const k = clamp(1 - (ground - ch.y + ch.lift) / 400, 0.3, 1); g.fillStyle = `rgba(0,0,0,${0.25 * k})`; g.beginPath(); g.ellipse(ch.x, ground - 1, 12 * s * k, 3 * s * k, 0, 0, 7); g.fill(); }
     const X = ch.drawX();
@@ -802,9 +870,14 @@ function evalCapture() {
 }
 function onPointer(x, y) {
   lastMouse.x = x; lastMouse.y = y;
-  if (drag) {
+  if (drag && drag.prop) {
+    const p = drag.prop; p.x = clampX(x - drag.ox); p.y = clamp(y - drag.oy, wa.y + 20, ground - (p.def.float || 0) * 2);
+    if (Math.abs(x - drag.sx) > 4 || Math.abs(y - drag.sy) > 4) drag.moved = true;
+    drag.samples.push({ x: p.x, y: p.y, t: performance.now() }); if (drag.samples.length > 12) drag.samples.shift();
+  } else if (drag) {
     const ch = drag.ch, r = ch.hit || ch.bbox(), topOff = ch.y - r.y;
     ch.x = clampX(x - drag.ox, ch); ch.y = clamp(y - drag.oy, wa.y + topOff, ground);
+    drag.samples.push({ x: ch.x, y: ch.y, t: performance.now() }); if (drag.samples.length > 12) drag.samples.shift();
     if (Math.abs(x - drag.sx) > 4 || Math.abs(y - drag.sy) > 4) drag.moved = true;
   }
   evalCapture();
@@ -814,13 +887,20 @@ ipcRenderer.on('cursor', (_e, p) => { if (!drag && !process.env.PW_SCREENSHOT) o
 setInterval(evalCapture, 250);
 function touchedBy(ch) { lastUserAt = Date.now(); for (const w of wives()) w.aff.markActive(); }
 window.addEventListener('mousedown', (e) => {
+  if (sleepMode) wakeUp('click');
   if (chatShouldClose(chatIsOpen(), chatRect(), e.clientX, e.clientY)) closeChat();
   for (const id of ['ctx', 'info']) { const el = $(id); if (!el.classList.contains('hidden')) { const r = el.getBoundingClientRect(); if (!inRect({ x: r.left, y: r.top, w: r.width, h: r.height }, e.clientX, e.clientY)) el.classList.add('hidden'); } }
   if (e.button === 2) return;
   const btn = hitBubbleBtn(e.clientX, e.clientY); if (btn) { btn.fn(); return; }
   const bar = Object.values(chars).find((c) => c.hoverRect && inRect(c.hoverRect, e.clientX, e.clientY));
   if (bar && e.button === 0) { touchedBy(bar); confirmReplenish(bar); return; }
-  const ch = hitChar(e.clientX, e.clientY); if (!ch || e.button !== 0) return;
+  const ch = hitChar(e.clientX, e.clientY);
+  if (!ch && e.button === 0) {                     // pick up a prop (not doors/portals/beds they're sleeping in)
+    const p = hitProp(e.clientX, e.clientY);
+    if (p && !p.def.door && !p.sleepBed && !countOn(p)) { p.fly = null; drag = { prop: p, ox: e.clientX - p.x, oy: e.clientY - p.y, sx: e.clientX, sy: e.clientY, moved: false, samples: [] }; touchedBy(null); }
+    return;
+  }
+  if (!ch || e.button !== 0) return;
   touchedBy(ch);
   // angry (<= -2): she won't be picked up — wriggles out with an angry bubble
   if (ch.role !== 'guest' && ch.aff.level <= (moodRules().refusePickupAtOrBelow ?? -2)) {
@@ -829,14 +909,22 @@ window.addEventListener('mousedown', (e) => {
     return;
   }
   const nearChrispy = chars.chrispyni && ch !== chars.chrispyni ? Math.abs(ch.x - chars.chrispyni.x) : null;
-  drag = { ch, ox: e.clientX - ch.x, oy: e.clientY - ch.y, sx: e.clientX, sy: e.clientY, moved: false, nearChrispy, startX: ch.x };
-  ch.dragging = true; if (ch.seat) standUp(ch); ch.target = null; ch.levitate = null; ch.lift = 0; ch.falling = null; ch.vy = 0;
+  drag = { ch, ox: e.clientX - ch.x, oy: e.clientY - ch.y, sx: e.clientX, sy: e.clientY, moved: false, nearChrispy, startX: ch.x, samples: [] };
+  if (sleepMode) setSleep(false);
+  ch.fly = null; ch.dragging = true; if (ch.seat) standUp(ch); ch.target = null; ch.levitate = null; ch.lift = 0; ch.falling = null; ch.vy = 0;
 });
 window.addEventListener('mouseup', () => {
+  if (drag && drag.prop) {                          // released prop: thrown or dropped
+    const p = drag.prop, v = releaseVelocity(drag.samples, performance.now());
+    if (drag.moved) { p.fly = { x: p.x, y: p.y, vx: v.vx, vy: v.vy }; p.lastUsed = Date.now(); saveSoon(); }
+    drag = null; evalCapture(); return;
+  }
   if (!drag) return; const ch = drag.ch; ch.dragging = false; ch.vy = 0;
   if (drag.moved) {
     ch.queue = []; ch.current = null;
-    if (ch.y < ground - 2) { ch.falling = { startY: ch.y, user: true }; ch.play('fall'); }
+    const v = releaseVelocity(drag.samples, performance.now());
+    if (Math.hypot(v.vx, v.vy) > 300) { ch.fly = { x: ch.x, y: ch.y, vx: v.vx, vy: v.vy, minY: ch.y, user: true }; ch.play('fall'); }
+    else if (ch.y < ground - 2) { ch.falling = { startY: ch.y, user: true }; ch.play('fall'); }
     // pulled away from Chrispy when she wanted / needed to be with her
     const g2 = chars.chrispyni;
     if (g2 && drag.nearChrispy != null && (ch.mana && ch.mana.low || ch.seeking) && drag.nearChrispy < 120 && Math.abs(ch.x - g2.x) > 220) { ch.aff.event('dragged_from_chrispy'); ch.mood.react('ignored'); }
@@ -858,7 +946,21 @@ const foods = []; const pats = [];       // food lying around / being eaten; voi
 function propRect(p) { const d = p.def, s = 2 * (cfg.scale / 2 || 1); return { x: p.x - d.anchor.x * s, y: p.y - d.anchor.y * s, w: d.frame.w * s, h: d.frame.h * s }; }
 function hitProp(x, y) { for (let i = props.length - 1; i >= 0; i--) if (!props[i].portal && inRect(propRect(props[i]), x, y)) return props[i]; return null; }
 function moodLabel(ch) { const L = moodRules().labels || {}; return L[String(ch.aff.level)] || ['Angry', 'Annoyed', 'Grumpy', 'Neutral', 'Content', 'Happy', 'Very Happy'][ch.aff.level + 3]; }
-function closeMenus() { $('ctx').classList.add('hidden'); $('info').classList.add('hidden'); evalCapture(); }
+function closeMenus() { $('ctx').classList.add('hidden'); $('info').classList.add('hidden'); menusChanged(); evalCapture(); }
+// Menus/popups close on a click ANYWHERE else (other apps, desktop) or Esc, reported by main's global watcher,
+// since the overlay never takes focus (so it never gets a blur).
+let menusWatched = false, menuOpenedAt = 0;
+function menusOpen() { return ['ctx', 'info'].some((id) => !$(id).classList.contains('hidden')); }
+function menusChanged() { const on = menusOpen(); if (on && !menusWatched) menuOpenedAt = performance.now(); if (on !== menusWatched) { menusWatched = on; ipcRenderer.send('menus-open', on); } }
+ipcRenderer.on('global-input', (_e, ev) => {
+  if (!menusOpen()) return;
+  if (ev.key === 'esc') { closeMenus(); return; }
+  if (performance.now() - menuOpenedAt < 300) return;            // the click that opened it
+  if (capturing) return;                                          // over our own sprites/UI: the overlay's mousedown handles it
+  const inside = ['ctx', 'info'].some((id) => { const el = $(id); if (el.classList.contains('hidden')) return false; const r = el.getBoundingClientRect(); return inRect({ x: r.left, y: r.top, w: r.width, h: r.height }, ev.x, ev.y); });
+  if (!inside) closeMenus();
+});
+setInterval(() => { if (menusWatched !== menusOpen()) menusChanged(); }, 250);
 function openMenu(x, y, items) {
   const m = $('ctx'); m.innerHTML = '';
   for (const it of items) {
@@ -870,7 +972,7 @@ function openMenu(x, y, items) {
   m.classList.remove('hidden');
   const r = m.getBoundingClientRect();
   m.style.left = clamp(x, wa.x + 2, wa.x + wa.w - r.width - 2) + 'px'; m.style.top = clamp(y, wa.y + 2, wa.y + wa.h - r.height - 2) + 'px';
-  evalCapture();
+  menusChanged(); evalCapture();
 }
 function showInfo(ch) {   // name + mood label only (never numbers or hidden values)
   const el = $('info'); el.innerHTML = '';
@@ -882,10 +984,30 @@ function showInfo(ch) {   // name + mood label only (never numbers or hidden val
   el.style.left = clamp(ch.x - er.width / 2, wa.x + 2, wa.x + wa.w - er.width - 2) + 'px'; el.style.top = clamp(r.y - er.height - 30, wa.y + 2, ground - er.height) + 'px';
   evalCapture();
 }
+// Menu Hug / Kiss while ChrispyNi visits: she walks over and does it (mana via the interaction's manaGift).
+const HAPPY_AFTER = { hug: ['Mmm~ warm…', 'Again later, okay? ♥'], kiss: ['♥ …ehehe~', '*blushes* My queen…'] };
+function chrispyAffection(ch, kind) {
+  const g = visitingChrispy(); if (!g || !ch || ch.hidden || !content.interactions[kind]) return;
+  if (g.affBusyUntil && Date.now() < g.affBusyUntil) return;          // one at a time
+  const def = content.interactions[kind]; g.affBusyUntil = Date.now() + 8000;
+  lastUserAt = Date.now(); ch.aff.markActive();
+  if (ch.seat) standUp(ch); ch.queue = []; ch.target = null; ch.nextThink = performance.now() + 7000;   // she waits for her
+  g.queue = []; g.target = null; g.enqueue([{ type: 'interact', kind, with: ch.id }]);
+  const t0 = Date.now();
+  const after = () => {
+    if (!chars.chrispyni || Date.now() - t0 > 15000) return;
+    if (g.current && g.current.kind === kind && !g.queue.length && g.target == null) {
+      ch.aff.event('with_chrispy'); ch.mood.react('back');
+      setTimeout(() => { if (!ch.hidden) ch.say(pick(HAPPY_AFTER[kind]), 4); g.affBusyUntil = 0; }, (def.durationSec || 2) * 1000 + 200);
+    } else setTimeout(after, 200);
+  };
+  setTimeout(after, 300);
+}
 function charMenu(ch, x, y) {
   const items = [{ label: 'Info / Stats', fn: () => showInfo(ch) }];
   if (ch.role !== 'guest') {
     items.push('-', { label: 'Pat', fn: () => pat(ch) });
+    if (visitingChrispy()) items.push({ label: 'Hug (ChrispyNi)', fn: () => chrispyAffection(ch, 'hug') }, { label: 'Kiss (ChrispyNi)', fn: () => chrispyAffection(ch, 'kiss') });
     for (const f of Object.values(content.food || {})) items.push({ label: `Feed: ${f.name || f.id}`, fn: () => feed(ch, f.id) });
   }
   openMenu(x, y, items);
@@ -904,52 +1026,85 @@ function deleteProp(p) {
   hooks.emit('prop_deleted', { prop: p.id, owner: p.owner, refund }); saveSoon();
 }
 function careOk(ch, key, cd) { ch.care = ch.care || {}; const t = ch.care[key] || 0; return Date.now() - t > cd * 1000 ? (ch.care[key] = Date.now(), true) : false; }
-function patDone(ch) {
+function patDone(ch, res) {
   ch.play('happy', 1.4); spawnFx('hearts', ch.x, (ch.hit || ch.bbox()).y);
   ch.aff.event('pat'); ch.mood.react('poked');
-  if (careOk(ch, 'patline', 8)) speak(ch, 'patted');
+  if (ch.mana && res && res.mana) ch.mana.add(res.mana);
+  if (res && res.crit) {          // critical pat: big sparkles + a special line
+    const r = ch.hit || ch.bbox(); spawnFx('spawn_sparkle', ch.x - 14, r.y + 6); spawnFx('spawn_sparkle', ch.x + 14, r.y + 10); spawnFx('hearts', ch.x, r.y - 10, 3);
+    speak(ch, 'pat_crit') || ch.say(`✨ CRITICAL PAT! ✨ +${res.mana} mana!`, 5);
+    if (ch.bubble) ch.bubble.text = `✨ CRITICAL PAT! ✨ (+${res.mana} mana) ` + (ch.bubble.text.includes('CRITICAL') ? '' : ch.bubble.text);
+  } else if (careOk(ch, 'patline', 8)) speak(ch, 'patted');
+  saveSoon();
 }
+const PAT_CD_LINES = ['Mm~ I just got pats. Save some for later~', 'Hehe, greedy~ Pats again in a bit!', '*leans in anyway* ...soon, okay?', 'My head is still warm from the last one~'];
 function pat(ch) {
-  if (!ch || ch.hidden) return; lastUserAt = Date.now(); ch.aff.markActive(); if (pity) pity.act('pat');
+  if (!ch || ch.hidden) return; lastUserAt = Date.now(); ch.aff.markActive();
+  ch.patState = ch.patState || {};
+  const res = tryPat(ch.patState);
+  if (!res.ok) {                 // 5 min cooldown per wife: cute response, no mana
+    ch.play('happy', 0.8); if (careOk(ch, 'patcd', 3)) speak(ch, 'pat_cooldown') || ch.say(pick(PAT_CD_LINES)); return;
+  }
+  if (pity) pity.act('pat');
   const g = chars.chrispyni;
   if (g && !g.hidden) {    // Chrispy walks over and pats her head
     g.queue = []; g.enqueue([{ type: 'walk_to', target: ch.x + (g.x > ch.x ? 26 : -26) }, { type: 'play', anim: 'hug', sec: 1.2 }]);
-    const wait = () => { if (g.target == null && !g.queue.length || !chars.chrispyni) { g.facing = ch.x > g.x ? 1 : -1; patDone(ch); } else setTimeout(wait, 200); };
+    const wait = () => { if (g.target == null && !g.queue.length || !chars.chrispyni) { g.facing = ch.x > g.x ? 1 : -1; patDone(ch, res); } else setTimeout(wait, 200); };
     ch.queue = []; ch.target = null; setTimeout(wait, 300);
   } else {                 // a tiny void portal opens above her head and Chrispy's hand pats her
     ch.queue = []; ch.target = null; ch.waitUntil = performance.now() + 1600;
     const r = ch.hit || ch.bbox(); const e = spawnFx('chrispy_hand', ch.x, r.y - 26); if (e) { e.follow = ch; e.dy = r.y - 26 - ch.y; }
-    setTimeout(() => patDone(ch), 700);
+    setTimeout(() => patDone(ch, res), 700);
   }
 }
+// Feeding: every click that's within her limit spawns food right away; she eats the queue one after another.
 function feed(ch, foodId = 'cookie') {
   const f = (content.food || {})[foodId]; if (!f || !ch || ch.hidden) return; lastUserAt = Date.now(); ch.aff.markActive();
   ch.foodState = ch.foodState || {};
   const res = tryEat(ch.foodState, f);
   if (!res.ok) { ch.play('pout', 1.2); speak(ch, 'food_full') || ch.say("I'm full!"); saveSoon(); return; }   // 4-5 in a row, then a 15-20 min break
   if (pity) pity.act('feed');
-  const eat = () => {
-    ch.queue = []; ch.target = null; ch.play('happy', f.eatSec || 2); ch.waitUntil = performance.now() + (f.eatSec || 2) * 1000;
-    const item = { def: f, x: ch.x + ch.facing * 10, y: (ch.hit || ch.bbox()).y + ch.fh * ch.scale * 0.45, held: ch, until: performance.now() + (f.eatSec || 2) * 1000 };
-    foods.push(item);
-    ch.aff.o.events['food:' + f.id] = { delta: f.mood || 0, cooldownSec: f.cooldownSec || 0 };
-    ch.aff.event('food:' + f.id);
-    if (ch.mana && f.mana) ch.mana.add(f.mana);
-    setTimeout(() => speak(ch, 'fed'), 600); hooks.emit('fed', { char: ch.id, food: f.id });
-  };
+  ch.feedQueue = ch.feedQueue || [];
+  const g = chars.chrispyni, entry = { f, item: null };
+  if (!(g && !g.hidden)) {     // it appears next to her on the ground, waiting its turn
+    const fx0 = clampX(ch.x + (Math.random() < 0.5 ? -1 : 1) * rnd(40, 70) + ch.feedQueue.length * 14 * (Math.random() < 0.5 ? -1 : 1));
+    entry.item = { def: f, x: fx0, y: ground, ground: true, queued: true }; foods.push(entry.item); spawnFx('spawn_sparkle', fx0, ground - 12);
+  }
+  ch.feedQueue.push(entry); saveSoon();
+  if (!ch.feeding) nextFood(ch);
+}
+function eatNow(ch, f) {
+  ch.queue = []; ch.target = null; ch.play('happy', f.eatSec || 2); ch.waitUntil = performance.now() + (f.eatSec || 2) * 1000;
+  foods.push({ def: f, x: ch.x + ch.facing * 10, y: (ch.hit || ch.bbox()).y + ch.fh * ch.scale * 0.45, held: ch, until: performance.now() + (f.eatSec || 2) * 1000 });
+  ch.aff.o.events['food:' + f.id] = { delta: f.mood || 0, cooldownSec: f.cooldownSec || 0 };
+  ch.aff.event('food:' + f.id);
+  if (ch.mana && f.mana) ch.mana.add(f.mana);
+  if (!ch.feedQueue.length) setTimeout(() => speak(ch, 'fed'), 600);
+  hooks.emit('fed', { char: ch.id, food: f.id });
+}
+function nextFood(ch) {
+  const q = ch.feedQueue || []; const e = q.shift();
+  if (!e) { ch.feeding = false; return; }
+  ch.feeding = true;
+  const done = () => { eatNow(ch, e.f); setTimeout(() => nextFood(ch), ((e.f.eatSec || 2) + 0.4) * 1000); };
+  const t0 = Date.now();
+  if (ch.hidden) { if (e.item) { const i = foods.indexOf(e.item); if (i >= 0) foods.splice(i, 1); } q.length = 0; ch.feeding = false; return; }
   const g = chars.chrispyni;
-  if (g && !g.hidden) {    // Chrispy walks over and hands it to her
+  if (!e.item && g && !g.hidden) {    // Chrispy walks over and hands it to her
     g.queue = []; g.enqueue([{ type: 'walk_to', target: ch.x + (g.x > ch.x ? 30 : -30) }, { type: 'play', anim: 'hug', sec: 0.8 }]);
     ch.queue = []; ch.target = null;
-    const wait = () => { if ((g.target == null && !g.queue.length) || !chars.chrispyni) { g.facing = ch.x > g.x ? 1 : -1; eat(); } else setTimeout(wait, 200); };
-    setTimeout(wait, 300);
-  } else {                 // it appears next to her; she picks it up and eats it
-    const fx0 = clampX(ch.x + (Math.random() < 0.5 ? -1 : 1) * rnd(40, 70));
-    const item = { def: f, x: fx0, y: ground, ground: true }; foods.push(item); spawnFx('spawn_sparkle', fx0, ground - 12);
-    ch.queue = [{ type: 'walk_to', target: fx0 }]; ch.target = null;
-    const wait = () => { if (ch.target == null && !ch.queue.length) { foods.splice(foods.indexOf(item), 1); eat(); } else setTimeout(wait, 150); };
-    setTimeout(wait, 500);
+    const wait = () => { if ((g.target == null && !g.queue.length) || !chars.chrispyni || Date.now() - t0 > 12000) { g.facing = ch.x > g.x ? 1 : -1; done(); } else setTimeout(wait, 200); };
+    setTimeout(wait, 300); return;
   }
+  if (!e.item) { done(); return; }
+  ch.queue = [{ type: 'walk_to', target: e.item.x }]; ch.target = null;
+  const wait = () => {
+    if ((ch.target == null && !ch.queue.length && !ch.dragging) || Date.now() - t0 > 15000) {
+      if (Math.abs(ch.x - e.item.x) > 30 && Date.now() - t0 < 15000) { ch.queue = [{ type: 'walk_to', target: e.item.x }]; setTimeout(wait, 300); return; }   // dragged away: walk back to it
+      const i = foods.indexOf(e.item); if (i >= 0) foods.splice(i, 1); done();
+    } else setTimeout(wait, 150);
+  };
+  setTimeout(wait, 400);
 }
 function drawFoods(now) {
   for (let i = foods.length - 1; i >= 0; i--) {
@@ -990,7 +1145,7 @@ $('chatForm').addEventListener('submit', (e) => {
   e.preventDefault(); const t = $('chatInput').value.trim(); $('chatInput').value = ''; if (!t) return;
   handleChat(t);
 });
-function isAdmin() { return !cfg.adminGateEnabled || adminSession || isAdminByIdentity(cfg.admin, INIT.identity); }
+function isAdmin() { return !cfg.adminGateEnabled || adminSession || !!INIT.adminByIdentity; }
 function questionBubbles() { for (const w of wives()) if (!w.hidden) w.question(); }
 function handleChat(t) {
   const cheat = parseCheat(t);
@@ -1001,7 +1156,7 @@ function handleChat(t) {
   }
   lastUserAt = Date.now(); for (const w of wives()) w.aff.markActive();
   const kind = classifyChat(t);
-  if (kind === 'tiny') { questionBubbles(); return; }           // 1-2 chars: just a '?' (not logged, not relayed)
+  if (kind === 'tiny') { questionBubbles(); return; }           // 1-2 chars: just a '?' (not logged)
   if (kind === 'gibberish') {
     if (Math.random() < 0.9) { questionBubbles(); return; }
     const w = pick(wives().filter((c) => !c.hidden)); if (w) { chatLog('you', t); speak(w, 'chat_confused') || w.say('...Are you alright?'); }
@@ -1010,58 +1165,31 @@ function handleChat(t) {
   chatLog('you', t);
   for (const w of wives()) { w.mood.react('chat'); w.aff.event('chat'); }
   hooks.emit('chat', { text: t });
-  const ws = wives().filter((c) => !c.hidden);
-  if (relayStatus.enabled && cfg.relay.enabled) {
-    ipcRenderer.send('relay-send', buildMessage('chat', { text: t, user: cfg.user }, stateSnapshot()));
-    for (const w of ws) w.dots(4);
-    clearTimeout(pendingChat && pendingChat.timer);
-    pendingChat = { text: t, timer: setTimeout(() => offlineChat(t, true), (cfg.relay.timeoutSec || 25) * 1000) };
-  } else offlineChat(t, false);
+  offlineChat(t);
 }
-function offlineChat(t, timedOut) {
-  pendingChat = null;
+function loadChatLibrary() {   // content/chat/library.json + any mods/*/chat/library.json (offline, moddable)
+  const d = INIT.dirs, libs = [];
+  const tryRead = (f) => { try { if (fs.existsSync(f)) libs.push(JSON.parse(fs.readFileSync(f, 'utf8').replace(/^\uFEFF/, ''))); } catch (e) { ipcRenderer.send('log', 'chat library ' + f + ': ' + e.message); } };
+  tryRead(path.join(d.base, 'chat', 'library.json'));
+  for (const m of d.mods) { try { for (const x of fs.readdirSync(m)) tryRead(path.join(m, x, 'chat', 'library.json')); } catch {} }
+  chatLib = chatlib.mergeLibs(libs); chatRules = chatlib.compile(chatLib);
+}
+function offlineChat(t) {
   let ws = wives().filter((c) => !c.hidden); if (!ws.length) return;
   // usually one of them answers, sometimes both
   ws = ws.sort(() => Math.random() - 0.5);
   const named = ws.find((c) => new RegExp('\\b' + charName(c.id) + '\\b', 'i').test(t)); if (named) ws = [named, ...ws.filter((c) => c !== named)];
   const n = repliers(ws.length);
   ws.slice(0, n).forEach((w, i) => setTimeout(() => {
-    const r = brain.replyToChat(w.def.personality.lines || w.id, t, w.mood.current, vars(w), w.aff.level);
-    if (r) { const p = parseText(r, content); w.enqueue([{ type: 'say', text: p.text }, ...p.actions]); }
+    const r = chatlib.reply(chatLib, chatRules, w.id, t);
+    if (r.mood) try { w.mood.react('chat:' + r.mood) || w.mood.react(r.mood); } catch {}
+    if (r.affection) { w.aff.o.events['chat_rule'] = { delta: r.affection, cooldownSec: 60 }; w.aff.event('chat_rule'); }
+    let text = r.text;
+    if (!text) text = brain.replyToChat(w.def.personality.lines || w.id, t, w.mood.current, vars(w), w.aff.level);
+    if (text) { const p = parseText(text, content); w.enqueue([{ type: 'say', text: p.text }, ...p.actions]); }
   }, i * 1500));
-  if (timedOut) $('chatStatus').textContent = 'relay: no answer yet - offline brain replied (the real ones may still answer)';
 }
-
-// ---------------- relay replies ----------------
-function applyReplies(payloads) {
-  for (const p of payloads) {
-    const list = parseReply(p, content, 'nixie');
-    if (list.length && pendingChat) { clearTimeout(pendingChat.timer); pendingChat = null; }
-    list.forEach((r, i) => {
-      let ch = chars[r.speaker];
-      if (!ch && content.characters[r.speaker] && r.speaker === 'chrispyni') { visit('chrispyni'); ch = chars[r.speaker]; }
-      if (!ch) return;
-      if (ch.bubble && ch.bubble.text === '…') ch.bubble = null;
-      if (r.mood) ch.mood.set(r.mood, 180);
-      setTimeout(() => ch.enqueue([r.text ? { type: 'say', text: r.text } : null, ...r.actions]), i * 1200);
-    });
-    hooks.emit('relay_reply', { payload: p, parsed: list });
-  }
-  for (const w of wives()) if (w.bubble && w.bubble.text === '…') w.bubble = null;
-}
-function stateSnapshot() {
-  return { sleep: sleepMode, room: roomOpen, timeOfDay: aw.tod || timeOfDay(),
-    app: aw.app ? { title: aw.app.title, owner: aw.app.owner, category: aw.category, media: aw.app.media } : null, idleSec: aw.idleSec,
-    characters: Object.fromEntries(Object.values(chars).map((c) => [c.id, { mood: c.mood.current, moodLevel: c.aff.level, mana: c.mana ? Math.round(c.mana.value) : null, manaMax: c.mana ? c.mana.max : null, state: c.state, x: Math.round(c.x / W * 100) }])),
-    props: props.map((p) => p.id), version: INIT.version };
-}
-function sendEvent(kind, data = {}) {
-  hooks.emit('event', { kind, ...data });
-  if (!cfg.relay.enabled || !cfg.relay.sendEvents) return;
-  if (Date.now() - lastEventSent < (cfg.relay.eventMinIntervalSec || 60) * 1000 && kind !== 'room' && kind !== 'sleep') return;
-  lastEventSent = Date.now();
-  ipcRenderer.send('relay-send', buildMessage('event', { event: { kind, ...data } }, stateSnapshot()));
-}
+function sendEvent(kind, data = {}) { hooks.emit('event', { kind, ...data }); }   // plugins only; nothing leaves this PC
 
 // ---------------- awareness ----------------
 function trigger(on, extra = {}) {
@@ -1120,10 +1248,31 @@ function onAwareness(a) {
   if (a.kind === 'lock' || a.kind === 'suspend') { if (!sleepMode) setSleep(true); }
   if (a.kind === 'unlock' || a.kind === 'resume') { if (sleepMode && !sleepManual) setSleep(false); }
 }
+// Sleep: each wife walks to the nearest screen side, a free bed appears there (gone on wake), she lies down; z bubbles.
+function sleepBedFor(ch) {
+  const left = ch.x < wa.x + wa.w / 2, bx = clampX(left ? wa.x + 70 : wa.x + wa.w - 70, ch);
+  let bed = props.find((p) => p.sleepBed && p.side === (left ? 'L' : 'R'));
+  if (!bed && content.props.bed) { bed = summon(null, content.props.bed ? 'bed' : 'cushion', bx, true); if (bed) { bed.sleepBed = true; bed.side = left ? 'L' : 'R'; bed.pinned = true; } }
+  return bed;
+}
+function goToBed(ch) {
+  if (ch.seat) standUp(ch); ch.queue = []; ch.target = null; ch.looking = 0;
+  const bed = sleepBedFor(ch);
+  ch.enqueue(bed ? [{ type: 'walk_to', target: bed.x }, { type: 'lay' }] : [{ type: 'sleep', sec: 600 }]);
+}
+let sleepSince = 0;
+function wakeUp(reason) { if (sleepMode && performance.now() - sleepSince > 4000) setSleep(false); }
 function setSleep(on, manual = false) {
   if (on === sleepMode) return; sleepMode = on; if (manual) sleepManual = on;
+  if (on) { sleepSince = performance.now(); for (const c of wives()) { c.looking = 0; c.nearSince = 0; } }
+  ipcRenderer.send('sleeping', on);
   if (on) { trigger('sleep'); for (const c of wives()) { c.queue = []; c.target = null; c.nextThink = 0; } speak(chars.noct || wives()[0], 'sleep', { ambient: true }); sendEvent('sleep'); }
-  else { for (const c of Object.values(chars)) if (c.state === 'sleep' || c.state === 'lay') c.enqueue([{ type: 'wake' }]); }
+  else {
+    sleepManual = false;
+    for (const c of Object.values(chars)) { c.queue = []; c.target = null; c.holdUntil = 0; c.waitUntil = 0; c.current = null;
+      if (c.state === 'sleep' || c.state === 'lay' || c.seat || c.loopAnim || c.anim === 'sleep' || c.anim === 'lay') { if (c.seat) standUp(c); c.loopAnim = null; c.state = 'idle'; c.enqueue([{ type: 'wake' }]); } if (c.bubble && c.bubble.z) c.bubble = null; }
+    setTimeout(() => { for (let i = props.length - 1; i >= 0; i--) if (props[i].sleepBed) { spawnFx('void_burst', props[i].x, props[i].y - props[i].def.frame.h); props.splice(i, 1); } }, 1500);
+  }
   hooks.emit('sleep', { on });
 }
 setInterval(() => {   // time of day + tick events
@@ -1179,7 +1328,6 @@ function runCheat(c) {
     case 'play': if (ch0) { ch0.queue = []; ch0.play(a1, 3); } break;
     case 'reload': loadAll(); ok('content reloaded'); break;
     case 'resetsave': try { fs.unlinkSync(SAVE_PATH); } catch {} wives().forEach((w) => w.mana.fill()); props.length = 0; for (const ch of Object.values(chars)) { ch.mood = new MoodState(ch.def.personality); ch.aff = new Affection(moodRules()); } ok('save reset'); break;
-    case 'relay': try { applyReplies([JSON.parse(c.args[0])]); } catch { applyReplies([c.args[0]]); } break;
     case 'event': { const ev = events.get(a0); if (ev) runEvent(ev); else onAwareness({ kind: 'app', category: a0, title: 'test', owner: 'test' }); break; }
     case 'visit': visit(a0 || 'chrispyni'); break;
     default: hooks.emit('cheat:' + c.cmd, { args: c.args, chars, api: pluginApi() }); break;
@@ -1295,9 +1443,9 @@ function saveSoon() { clearTimeout(saveT); saveT = setTimeout(save, 2000); }
 function save() {
   try {
     fs.writeFileSync(SAVE_PATH, JSON.stringify({ v: 2,
-      chars: Object.fromEntries(Object.values(chars).filter((c) => c.role !== 'guest').map((c) => [c.id, { mana: c.mana.toJSON(), mood: c.mood.toJSON(), aff: c.aff.toJSON(), lastMeditate: c.lastMeditate || 0, food: c.foodState || {} }])),
+      chars: Object.fromEntries(Object.values(chars).filter((c) => c.role !== 'guest').map((c) => [c.id, { mana: c.mana.toJSON(), mood: c.mood.toJSON(), aff: c.aff.toJSON(), lastMeditate: c.lastMeditate || 0, food: c.foodState || {}, pat: c.patState || {} }])),
       pity: pity ? pity.toJSON() : null,
-      props: props.map((p) => ({ id: p.id, x: (p.x - wa.x) / wa.w, born: p.born })), lastUserAt, savedAt: Date.now() }, null, 1));
+      props: props.filter((p) => !p.sleepBed).map((p) => ({ id: p.id, x: (p.x - wa.x) / wa.w, born: p.born })), lastUserAt, savedAt: Date.now() }, null, 1));
   } catch (e) { console.error('save failed ' + e.message); }
 }
 function loadSave() {
@@ -1306,7 +1454,7 @@ function loadSave() {
     const away = s.savedAt ? Math.min(8 * 3600, (Date.now() - s.savedAt) / 1000) : 0;
     for (const w of wives()) {
       const c = (s.chars || {})[w.id];
-      if (c) { w.mana.value = clamp(c.mana.value, 0, w.mana.max); w.mood.load(c.mood); w.aff.load(c.aff); w.lastMeditate = c.lastMeditate || 0; w.foodState = c.food || {}; }
+      if (c) { w.mana.value = clamp(c.mana.value, 0, w.mana.max); w.mood.load(c.mood); w.aff.load(c.aff); w.lastMeditate = c.lastMeditate || 0; w.foodState = c.food || {}; w.patState = c.pat || {}; }
       else if (s.mana) { w.mana.value = clamp(s.mana.value, 0, w.mana.max); if (s.moods && s.moods[w.id]) w.mood.load(s.moods[w.id]); }   // v1 save
       w.mana.tick(away, 'awake');
     }
@@ -1343,6 +1491,7 @@ ipcRenderer.on('cmd', (_e, c) => {
   if (c.cmd === 'reset-pity' && pity) pity.reset();
 });
 ipcRenderer.on('awareness', (_e, a) => onAwareness(a));
+ipcRenderer.on('user-active', () => wakeUp('input'));   // mouse/keyboard anywhere (system idle time reset)
 // Update flow: one wife announces it in her bubble with Update / Later buttons (no native dialogs).
 let updWife = null;
 ipcRenderer.on('update-available', (_e, u) => {
@@ -1355,8 +1504,6 @@ ipcRenderer.on('update-progress', (_e, m) => { const w = (updWife && !updWife.hi
 ipcRenderer.on('update-failed', (_e, m) => { const w = pick(wives().filter((c) => !c.hidden)); if (w) w.say(`The update failed… ${m} We're still here though!`, 12); });
 ipcRenderer.on('update-done', (_e, u) => { setTimeout(() => { const w = pick(wives().filter((c) => !c.hidden)); if (w) w.say(`Updated to v${u.version}! ✨`, 10); }, 2500); });
 ipcRenderer.on('update-cancelled', () => { const w = wives().find((c) => c.bubble && !c.bubble.dots); if (w) w.bubble = null; });
-ipcRenderer.on('relay-replies', (_e, r) => applyReplies(r));
-ipcRenderer.on('relay-status', (_e, s) => { relayStatus = s; $('chatStatus').textContent = s.enabled ? (s.lastError ? `relay error: ${s.lastError}` : 'relay: connected to the real Nixie & Noct (replies can take a while)') : 'offline brain (relay off - tray > Relay)'; });
 ipcRenderer.on('content-changed', () => { loadAll(); toast('Content reloaded'); });
 ipcRenderer.on('config', (_e, c) => { cfg = c; });
 ipcRenderer.on('toast', (_e, m) => toast(m));

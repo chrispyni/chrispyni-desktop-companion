@@ -1,15 +1,14 @@
-// Project Wives - Electron main process: windows, tray, hotkeys, awareness, relay, updates, hot reload.
+// Project Wives - Electron main process: windows, tray, hotkeys, awareness, updates, hot reload.
 'use strict';
 const { app, BrowserWindow, Tray, Menu, globalShortcut, ipcMain, screen, powerMonitor, shell, nativeImage, dialog } = require('electron');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { NtfyRelay } = require('./core/relay');
 const { classifyApp } = require('./core/awareness');
 const { deepMerge } = require('./core/content');
 
 // ---------- self-contained layout: EVERYTHING lives next to the exe (like a game) ----------
-//  ProjectWives/  Project Wives.exe  content/  mods/  plugins/  templates/  data/  logs/  cache/
+//  ProjectWives/  Project Wives.exe  content/  mods/  templates/  data/  logs/  cache/
 const DEV_ROOT = path.join(__dirname, '..');
 const APP_ROOT = process.env.PW_ROOT || (app.isPackaged ? path.dirname(process.execPath) : DEV_ROOT);
 const DATA_DIR = path.join(APP_ROOT, 'data');     // config.json, save.json
@@ -63,7 +62,7 @@ function loadConfig() {
 function saveConfig() {
   const p = path.join(USER_DIR, 'config.json');
   let user = {}; try { user = JSON.parse(fs.readFileSync(p, 'utf8')); } catch {}
-  user.awareness = cfg.awareness; user.relay = cfg.relay; user.debug = cfg.debug;
+  user.awareness = cfg.awareness; delete user.relay; user.debug = cfg.debug;
   fs.writeFileSync(p, JSON.stringify(user, null, 2));
 }
 try { loadConfig(); } catch (e) { cfg = JSON.parse(fs.readFileSync(path.join(APP_ROOT, "config.example.json"), "utf8")); }
@@ -72,12 +71,23 @@ function contentDirs() {
   return {
     base: path.join(APP_ROOT, 'content'),
     mods: [path.join(APP_ROOT, 'mods')],
-    plugins: [path.join(APP_ROOT, 'plugins')],
+    plugins: [],   // JS plugins are disabled: mods are data-only
     user: USER_DIR, appRoot: APP_ROOT,
   };
 }
 
 // ---------- windows ----------
+// Hardening: only our local files are ever loaded; no navigation, no popups, no permissions (camera, mic, etc).
+function harden(win) {
+  const wc = win.webContents;
+  wc.on('will-navigate', (e) => e.preventDefault());
+  wc.on('will-redirect', (e) => e.preventDefault());
+  wc.setWindowOpenHandler(() => ({ action: 'deny' }));
+  wc.on('will-attach-webview', (e) => e.preventDefault());
+  wc.session.setPermissionRequestHandler((_wc, _perm, cb) => cb(false));
+  wc.session.setPermissionCheckHandler(() => false);
+}
+const fromOurWindow = (e) => { const u = e.senderFrame && e.senderFrame.url; return !!u && u.startsWith('file:'); };
 let overlay, roomWin, tray;
 const send = (ch, data) => { if (overlay && !overlay.isDestroyed()) overlay.webContents.send(ch, data); };
 
@@ -90,7 +100,7 @@ function createOverlay() {
     show: false, backgroundColor: '#00000000',
     webPreferences: { nodeIntegration: true, contextIsolation: false, backgroundThrottling: false },
   });
-  overlay.setAlwaysOnTop(true, 'screen-saver');
+  overlay.setAlwaysOnTop(true, 'screen-saver'); harden(overlay);
   overlay.setIgnoreMouseEvents(true, { forward: true });
   overlay.loadFile(path.join(__dirname, 'renderer', 'overlay.html'));
   overlay.once('ready-to-show', () => overlay.showInactive());
@@ -112,7 +122,7 @@ function openRoom(roomId = 'our_room', who = ['nixie', 'noct']) {
   roomWin = new BrowserWindow({ width: w, height: h, x: d.x + Math.round((d.width - w) / 2), y: d.y + Math.round((d.height - h) / 2),
     frame: false, resizable: true, alwaysOnTop: true, backgroundColor: '#000000', title: 'Our Room',
     webPreferences: { nodeIntegration: true, contextIsolation: false, backgroundThrottling: false } });
-  roomWin.setAlwaysOnTop(true, 'screen-saver', 1);
+  roomWin.setAlwaysOnTop(true, 'screen-saver', 1); harden(roomWin);
   roomWin.once('ready-to-show', () => { roomWin.show(); roomWin.moveTop(); roomWin.focus(); });
   roomWin.loadFile(path.join(__dirname, 'renderer', 'room.html'), { query: { room: roomId, who: (who || []).join(',') } });
   roomWin.webContents.on('console-message', (_e, _l, m) => log('[room]', m));
@@ -131,16 +141,39 @@ ipcMain.on('set-capture', (_e, on) => {
 // bubble buttons never activate it, so a fullscreen video in another app keeps fullscreen + focus.
 ipcMain.on('focus-overlay', () => { if (!overlay) return; overlay.setFocusable(true); overlay.focus(); });
 ipcMain.on('blur-overlay', () => { if (!overlay) return; overlay.blur(); overlay.setFocusable(false); overlay.setAlwaysOnTop(true, 'screen-saver'); });
-ipcMain.on('open-room', (_e, id, who) => openRoom(id, who));
+// Global click / Esc watcher (Windows): lets menus close when you click another app or the desktop,
+// without the overlay ever taking focus. Runs only while a menu or popup is open.
+let clickWatcher = null;
+function startClickWatcher() {
+  if (clickWatcher || process.platform !== 'win32') return;
+  try {
+    const { spawn } = require('child_process');
+    const ps1 = path.join(__dirname, 'win-clicks.ps1').replace('app.asar', 'app.asar.unpacked');
+    clickWatcher = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', ps1], { windowsHide: true });
+    let buf = '';
+    clickWatcher.stdout.on('data', (d) => { buf += d; let i; while ((i = buf.indexOf('\n')) >= 0) { const l = buf.slice(0, i).trim(); buf = buf.slice(i + 1); if (!l || !overlay) continue;
+      const p = screen.getCursorScreenPoint(), wb = overlay.getBounds(); send('global-input', { key: l, x: p.x - wb.x, y: p.y - wb.y }); } });
+    clickWatcher.on('exit', () => { clickWatcher = null; });
+  } catch (e) { log('click watcher failed: ' + e.message); }
+}
+function stopClickWatcher() { if (clickWatcher) { try { clickWatcher.kill(); } catch {} clickWatcher = null; } }
+ipcMain.on('menus-open', (_e, on) => on ? startClickWatcher() : stopClickWatcher());
+ipcMain.on('open-room', (e, id, who) => { if (!fromOurWindow(e) || !/^[a-z0-9_-]{1,40}$/i.test(String(id))) return; openRoom(id, (Array.isArray(who) ? who : []).filter((w) => /^[a-z0-9_-]{1,40}$/i.test(String(w))).slice(0, 4)); });
 ipcMain.on('close-room', () => { if (roomWin) roomWin.close(); });
 ipcMain.on('mana', (_e, m) => { if (roomWin && !roomWin.isDestroyed()) roomWin.webContents.send('mana', m); });
-ipcMain.on('relay-send', (_e, msg) => relay.send(msg));
+// While they sleep, watch the system idle time (like a monitor's power saving): any mouse move, click or key
+// anywhere resets it, and they wake. No hooks, no focus, no key contents.
+let sleepWatch = null;
+ipcMain.on('sleeping', (_e, on) => {
+  clearInterval(sleepWatch); sleepWatch = null;
+  if (on) { const woke = require('./core/sleepplan').wakeDetector(3); sleepWatch = setInterval(() => { if (woke(powerMonitor.getSystemIdleTime())) send('user-active'); }, 1000); }
+});
 ipcMain.on('set-sleep', (_e, on) => { sleepManual = on; buildTray(); });
 ipcMain.on('log', (_e, m) => log('[renderer]', m));
-ipcMain.on('open-path', (_e, p) => shell.openPath(p));
 ipcMain.handle('init', () => ({
   cfg, dirs: contentDirs(), version: PKG.version, platform: process.platform,
-  identity: { username: os.userInfo().username, hostname: os.hostname() },
+  // PC/account names never leave the main process; the renderer only learns yes/no
+  adminByIdentity: require('./core/admin').isAdminByIdentity(cfg.admin, { username: os.userInfo().username, hostname: os.hostname() }),
   workArea: screen.getPrimaryDisplay().workArea, bounds: screen.getPrimaryDisplay().bounds, scaleFactor: screen.getPrimaryDisplay().scaleFactor,
   screenshot: process.env.PW_SCREENSHOT || '', demo: !!process.env.PW_DEMO,
 }));
@@ -168,13 +201,12 @@ function buildTray() {
       { label: 'Screen capture (stub, off)', type: 'checkbox', checked: a.screenCapture, click: () => toggle('screenCapture') },
       { label: 'Microphone (stub, off)', type: 'checkbox', checked: a.microphone, click: () => toggle('microphone') },
     ] },
-    { label: 'Relay to the real Nixie & Noct', type: 'checkbox', checked: !!cfg.relay.enabled, click: () => { cfg.relay.enabled = !cfg.relay.enabled; saveConfig(); relay.cfg = cfg.relay; send('config', cfg); buildTray(); } },
     { label: 'Open config.json', click: () => shell.openPath(path.join(USER_DIR, 'config.json')) },
     { label: 'Open app folder', click: () => shell.openPath(APP_ROOT) },
     { label: 'Open mods folder', click: () => shell.openPath(path.join(APP_ROOT, 'mods')) },
     { label: 'Open content folder', click: () => shell.openPath(path.join(APP_ROOT, 'content')) },
     { label: 'Open log', click: () => shell.openPath(LOG) },
-    { label: 'Reload config + content', click: () => { loadConfig(); relay.cfg = cfg.relay; send('config', cfg); send('content-changed'); buildTray(); } },
+    { label: 'Reload config + content', click: () => { loadConfig(); send('config', cfg); send('content-changed'); buildTray(); } },
   ];
   const menu = Menu.buildFromTemplate([
     { label: 'Talk', accelerator: cfg.hotkeys.chat, click: () => send('cmd', { cmd: 'chat' }) },
@@ -258,14 +290,6 @@ async function pollAwareness() {
   } catch (e) { log('awareness error: ' + e.message); }
 }
 
-// ---------- relay ----------
-const relay = new NtfyRelay(cfg.relay, globalThis.fetch, log);
-let relayTimer;
-async function pollRelay() {
-  if (relay.enabled) { const r = await relay.poll(); if (r.length) send('relay-replies', r); }
-  send('relay-status', { enabled: relay.enabled, lastOk: relay.lastOk, lastError: relay.lastError });
-  relayTimer = setTimeout(pollRelay, Math.max(2, cfg.relay.pollSeconds || 5) * 1000);
-}
 
 // ---------- updates (everything stays in the app folder) ----------
 const UPD = require('./core/updater');
@@ -312,7 +336,7 @@ function acceptUpdate() {
 ipcMain.on('update-accept', acceptUpdate);
 ipcMain.on('update-later', () => { if (pendingUpdate) updateDismissed.add(pendingUpdate.version); });
 async function doUpdate(info) {
-  if (!info.asset || !info.asset.url) { shell.openExternal(info.page || 'https://github.com/chrispyni/project-wives/releases'); return; }
+  if (!info.asset || !info.asset.url) { shell.openExternal(/^https:\/\/github\.com\/chrispyni\/project-wives\//.test(info.page || '') ? info.page : 'https://github.com/chrispyni/project-wives/releases'); return; }
   updateBusy = true; send('update-progress', `Downloading v${info.version}…`);
   const dir = path.join(CACHE_DIR, 'update'); fs.mkdirSync(dir, { recursive: true });
   let buf;
@@ -372,7 +396,6 @@ app.whenReady().then(() => {
   powerMonitor.on('suspend', () => send('awareness', { kind: 'suspend' }));
   powerMonitor.on('resume', () => send('awareness', { kind: 'resume' }));
   awTimer = setInterval(pollAwareness, Math.max(2, cfg.awareness.pollSeconds || 5) * 1000);
-  setTimeout(pollRelay, 3000);
   watchContent();
   const upArg = process.argv.find((a) => a.startsWith('--updated-from='));
   const failArg = process.argv.find((a) => a.startsWith('--update-failed='));
@@ -382,6 +405,6 @@ app.whenReady().then(() => {
   screen.on('display-metrics-changed', () => { const d = screen.getPrimaryDisplay(); if (overlay) overlay.setBounds(d.bounds); send('workarea', { workArea: d.workArea, bounds: d.bounds, scale: d.scaleFactor }); });
   log(`started ${PKG.version} root=${APP_ROOT} data=${DATA_DIR} userData=${app.getPath('userData')}`);
 });
-app.on('will-quit', () => { globalShortcut.unregisterAll(); if (winWatcher) winWatcher.kill(); });
+app.on('will-quit', () => { globalShortcut.unregisterAll(); if (winWatcher) winWatcher.kill(); stopClickWatcher(); });
 app.on('window-all-closed', () => app.quit());
 module.exports = { openRoom };

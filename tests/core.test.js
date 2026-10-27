@@ -10,7 +10,6 @@ const { OfflineBrain } = require('../src/core/brain');
 const { parseReply, parseText, buildIndex } = require('../src/core/actions');
 const { parseCheat } = require('../src/core/cheats');
 const { hashPassphrase, checkPassphrase, isAdminByIdentity } = require('../src/core/admin');
-const { parseNtfyStream, buildMessage, NtfyRelay } = require('../src/core/relay');
 const { EventSystem } = require('../src/core/events');
 const { classifyApp } = require('../src/core/awareness');
 
@@ -106,21 +105,6 @@ test('admin gate: identity + passphrase hash', () => {
   assert.ok(checkPassphrase('void queen', rec)); assert.ok(!checkPassphrase('nope', rec));
   assert.ok(isAdminByIdentity({ usernames: ['Chrispy'] }, { username: 'chrispy' }));
   assert.ok(!isAdminByIdentity({ usernames: ['your-windows-username'] }, { username: 'your-windows-username' }));
-});
-
-test('relay: ntfy stream parsing and send/poll with fake fetch', async () => {
-  const st = { seen: new Set(), since: '0' };
-  const raw = [JSON.stringify({ id: 'a1', event: 'open' }), JSON.stringify({ id: 'a2', event: 'message', message: '{"speaker":"nixie","text":"hi"}' }), JSON.stringify({ id: 'a3', event: 'message', message: 'plain' }), ''].join('\n');
-  const out = parseNtfyStream(raw, st);
-  assert.strictEqual(out.length, 2); assert.strictEqual(st.since, 'a3');
-  assert.strictEqual(parseNtfyStream(raw, st).length, 0);
-  const calls = [];
-  const fakeFetch = async (url, opt = {}) => { calls.push([url, opt.method || 'GET']); return { ok: true, status: 200, text: async () => raw }; };
-  const r = new NtfyRelay({ enabled: true, outboxTopic: 'o', inboxTopic: 'i' }, fakeFetch);
-  assert.ok(await r.send(buildMessage('chat', { text: 'hey' }, { mana: 5 })));
-  assert.strictEqual((await r.poll()).length, 2);
-  assert.match(calls[0][0], /ntfy\.sh\/o$/); assert.match(calls[1][0], /\/i\/json\?poll=1/);
-  const m = buildMessage('event', { event: { kind: 'afk' } }, {}); assert.strictEqual(m.v, 1); assert.strictEqual(m.type, 'event');
 });
 
 test('events: chance, weight, cooldown, conditions', () => {

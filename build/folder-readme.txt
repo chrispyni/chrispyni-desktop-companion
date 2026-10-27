@@ -3,7 +3,6 @@ PROJECT WIVES - everything lives in THIS folder (like a game)
   Project Wives.exe   start here
   content\            built-in characters, props, effects, rooms, lines (editable)
   mods\               your mods (each mod = a subfolder, see README.md)
-  plugins\            JS plugins
   templates\          sprite templates + SPRITES.md
   data\               config.json + save.json (created on first start)
   logs\               project-wives.log

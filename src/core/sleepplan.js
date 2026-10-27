@@ -8,4 +8,7 @@ function sleepPlan(wives, busy = []) {
   if (low.length === wives.length) return wives.map((w) => w.id);
   return [low.sort((a, b) => a.ratio - b.ratio)[0].id];
 }
-module.exports = { sleepPlan };
+/** Wake detector from the system idle time (seconds since the last mouse/keyboard input anywhere).
+ *  Arms once the user has been idle >= armSec, then fires on the first fresh input. */
+function wakeDetector(armSec = 3) { let armed = false; return (idleSec) => { if (idleSec >= armSec) { armed = true; return false; } return armed; }; }
+module.exports = { sleepPlan, wakeDetector };

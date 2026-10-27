@@ -3,15 +3,45 @@
   "_info": "Copied to data/config.json (inside the app folder) on first start. Edit that copy (tray > Settings > Open config). Restart or tray > Reload after editing.",
   "user": "ChrispyNi",
   "edition": "wives",
-  "characters": ["nixie", "noct"],
-  "guests": ["chrispyni"],
+  "characters": [
+    "nixie",
+    "noct"
+  ],
+  "guests": [
+    "chrispyni"
+  ],
   "guestVisitMinutes": 3,
   "scale": 2,
   "groundOffset": 0,
-  "hotkeys": { "chat": "CommandOrControl+Alt+W", "debug": "CommandOrControl+Alt+D", "sleep": "CommandOrControl+Alt+S" },
-  "mana": { "max": 100, "regenPerMin": 0.05, "sleepRegenPerMin": 12, "roomRegenPerSec": 4, "lowThreshold": 0.2, "askEveryMin": 20, "autoRestAfterMin": 10 },
-  "talk": { "idleChatterEveryMin": 4, "ambientTextChance": 0, "reactCooldownMin": 20, "userIgnoredMin": 3 },
-  "sleep": { "autoAtNight": true, "hours": [1, 8], "idleMinutes": 30, "nightIdleMinutes": 10 },
+  "hotkeys": {
+    "chat": "CommandOrControl+Alt+W",
+    "debug": "CommandOrControl+Alt+D",
+    "sleep": "CommandOrControl+Alt+S"
+  },
+  "mana": {
+    "max": 100,
+    "regenPerMin": 0.05,
+    "sleepRegenPerMin": 12,
+    "roomRegenPerSec": 4,
+    "lowThreshold": 0.2,
+    "askEveryMin": 20,
+    "autoRestAfterMin": 10
+  },
+  "talk": {
+    "idleChatterEveryMin": 4,
+    "ambientTextChance": 0,
+    "reactCooldownMin": 20,
+    "userIgnoredMin": 3
+  },
+  "sleep": {
+    "autoAtNight": true,
+    "hours": [
+      1,
+      8
+    ],
+    "idleMinutes": 30,
+    "nightIdleMinutes": 10
+  },
   "awareness": {
     "activeWindow": true,
     "idle": true,
@@ -24,20 +54,20 @@
     "idleLongMinutes": 5,
     "categories": {}
   },
-  "relay": {
-    "enabled": false,
-    "server": "https://ntfy.sh",
-    "outboxTopic": "pw-CHANGE-ME-long-random-out",
-    "inboxTopic": "pw-CHANGE-ME-long-random-in",
-    "pollSeconds": 5,
-    "timeoutSec": 25,
-    "sendEvents": true,
-    "eventMinIntervalSec": 60,
-    "token": ""
+  "update": {
+    "checkOnStart": true,
+    "_help": "Checks GitHub Releases for new full releases on launch"
   },
-  "update": { "checkOnStart": true, "_help": "Checks GitHub Releases for new full releases on launch" },
   "adminGateEnabled": false,
-  "admin": { "usernames": ["your-windows-username"], "hostnames": ["your-pc-name"], "passphrase": null },
+  "admin": {
+    "usernames": [
+      "your-windows-username"
+    ],
+    "hostnames": [
+      "your-pc-name"
+    ],
+    "passphrase": null
+  },
   "disabledMods": [],
   "talkativeness": 1.0,
   "debug": false

@@ -320,5 +320,13 @@
   "play": [
    "*bats the light orb* Hehe!"
   ]
- }
+ },
+ "pat_cooldown": [
+  "Mm~ I just got pats. Save some for later~",
+  "Hehe, greedy~ More pats in a bit!"
+ ],
+ "pat_crit": [
+  "Kyaa~! That one went straight to my heart!",
+  "Waaah, best pat EVER!"
+ ]
 }

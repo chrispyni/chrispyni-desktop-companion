@@ -314,5 +314,13 @@
   "play": [
    "*spins the orb idly*"
   ]
- }
+ },
+ "pat_cooldown": [
+  "...I just had one. Patience, darling.",
+  "*leans in anyway* ...soon."
+ ],
+ "pat_crit": [
+  "...! That one... hit different.",
+  "Hn. Do that again. Later. Definitely later."
+ ]
 }

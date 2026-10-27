@@ -13,7 +13,7 @@ const COMMANDS = {
   mood: '/mood <char> <mood>', say: '/say <char> <text>', act: '/act <char> <json action or *tag*>',
   spawnall: 'Summon every prop', room: 'Go to our room now', sleep: 'Toggle sleep mode', speed: '/speed <x> game speed',
   debug: 'Open/close the DEBUG MENU', hitboxes: 'Toggle debug overlay (hitboxes, states)', visit: '/visit <char> guest visit', leave: '/leave <char> guest leaves', interact: '/interact <char> <wave|hug|kiss> [partner]', play: '/play <char> <anim> play an animation', reload: 'Reload content + mods', resetsave: 'Reset save (mana, moods, props)',
-  relay: '/relay <json> inject a fake bot reply', event: '/event <kind> fire an awareness event', devpanel: 'Toggle dev panel',
+  event: '/event <kind> fire an awareness event', devpanel: 'Toggle dev panel',
   admin: '/admin <passphrase> unlock admin for this session', help: 'List cheats',
 };
 
@@ -30,7 +30,7 @@ function parseCheat(text) {
   if (!COMMANDS[cmd]) return null;
   const rest = m[2].trim();
   const args = cmd === 'say' || cmd === 'act' ? (() => { const i = rest.indexOf(' '); return i < 0 ? [rest] : [rest.slice(0, i), rest.slice(i + 1)]; })()
-    : cmd === 'relay' ? [rest] : rest ? rest.split(/\s+/) : [];
+    : rest ? rest.split(/\s+/) : [];
   return { cmd, args, raw: t };
 }
 // Cheats that are switches: entering the same code again turns it off.

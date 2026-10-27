@@ -1,4 +1,4 @@
-// OFFLINE local brain: personality-driven line banks so the wives are alive without the relay.
+// OFFLINE local brain: personality-driven line banks (no network).
 'use strict';
 
 function fill(t, vars) { return String(t).replace(/\{(\w+)\}/g, (_, k) => (vars[k] != null ? vars[k] : '')); }
