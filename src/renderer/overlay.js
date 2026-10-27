@@ -19,6 +19,7 @@ const { Affection } = require('../core/affection');
 const { landingFor, PHYS_DEFAULTS, releaseVelocity, stepProjectile, pickThrow, nextThrowAt } = require('../core/physics');
 const { MIN_GAP, freeSpot, separationDelta, companionSlot } = require('../core/spacing');
 const { categoryOf, labeledName, groupByCategory } = require('../core/categories');
+const { buildDebugMenuModel, presentDebugTargets } = require('../core/debugmenu');
 const { noteBehavior, isBehaviorBlocked, pickUnblocked } = require('../core/behavior');
 const { inRect, spriteRect, wantsCapture, chatShouldClose } = require('../core/hit');
 const { sleepPlan } = require('../core/sleepplan');
@@ -1567,17 +1568,71 @@ function refreshDebugMeters() {
   }
 }
 setInterval(() => { if (debugOpen) refreshDebugMeters(); }, 1000);
+function submenu(parent, title, open = false) {
+  const d = document.createElement('details'); d.className = 'dbg-sub'; if (open) d.open = true;
+  const s = document.createElement('summary'); s.textContent = title; d.append(s);
+  const body = document.createElement('div'); body.className = 'dbg-body'; d.append(body);
+  parent.append(d); return body;
+}
+/** Full per-character debug panel (wives and guests alike). */
+function fillCharDebug(d, ch) {
+  const h = (txt) => { const e = document.createElement('h4'); e.textContent = txt; d.append(e); };
+  const meter = document.createElement('div'); meter.dataset.meter = ch.id; meter.style.color = '#ffe08a'; d.append(meter);
+  h('Hidden mood level (-3 angry … +3 happy)');
+  for (let n = -3; n <= 3; n++) d.append(btn((n > 0 ? '+' : '') + n, () => { ch.aff.set(n); saveSoon(); }, ch.aff.level === n ? 'on' : ''));
+  d.append(btn('decay +1 day', () => { ch.aff.lastTs -= 86400000; ch.aff.lastActive = 0; ch.aff.decay(Date.now()); }));
+  if (ch.mana) {
+    h('Mana (her own pool)');
+    d.append(btn('Fill', () => ch.mana.fill()), btn('+10', () => ch.mana.add(10)), btn('-10', () => ch.mana.add(-10)), btn('Low (15)', () => { ch.mana.value = 15; }), btn('Empty', () => { ch.mana.value = 0; }),
+      btn('Ask for mana', () => askMana(ch, currentPlan())), btn('Rest alone (door)', () => goToRoom('our_room', [ch.id], { source: 'user' })), btn('Summons door herself', () => runCheat({ cmd: 'door', args: [ch.id] })), btn('Click mana bar', () => confirmReplenish(ch)),
+      btn('Meditate', () => runCheat({ cmd: 'meditate', args: [ch.id] })), btn('Meditate (floor, 50%)', () => { ch.queue = []; standUp(ch); ch.enqueue([{ type: 'meditate', summoned: true }]); }));
+    h('Care (right-click menu)');
+    d.append(btn('Info', () => showInfo(ch)), btn('Pat', () => pat(ch)));
+    for (const f of Object.values(content.food || {})) d.append(btn(`Feed ${f.name || f.id}`, () => feed(ch, f.id)));
+  }
+  h('Falls (drop from % of screen)');
+  for (const f of [0.2, 0.42, 0.9]) d.append(btn(`drop ${Math.round(f * 100)}%`, () => dropFrom(ch, f)));
+  h('Animations (click = play, ⟳ = loop)');
+  for (const an of Object.keys(ch.def.animations || {})) {
+    d.append(btn(an, () => { ch.queue = []; ch.target = null; ch.loopAnim = null; ch.play(an, 3); }), btn('⟳', () => { ch.queue = []; ch.target = null; ch.loopAnim = ch.loopAnim === an ? null : an; ch.play(an); }));
+  }
+  h('Moods');
+  const sel = document.createElement('select');
+  for (const m of ch.mood.moods) { const o = document.createElement('option'); o.value = o.textContent = m; if (m === ch.mood.current) o.selected = true; sel.append(o); }
+  sel.onchange = () => ch.mood.set(sel.value, 300); d.append(sel);
+  h('Interactions & magic');
+  for (const it of Object.values(content.interactions)) {
+    for (const o of Object.values(chars)) if (o !== ch && interactionAllowed(it, ch.id, o.id)) d.append(btn(`${it.name || it.id} → ${charName(o.id)}${it.manaCost ? ` (${it.manaCost})` : ''}`, () => ch.enqueue([{ type: 'interact', kind: it.id, with: o.id }])));
+    if (!it.magic && it.requires && !chars[it.requires] && ch.id !== it.requires) d.append(btn(`${it.name || it.id} → you (screen)`, () => ch.enqueue([{ type: 'interact', kind: it.id, with: it.requires }])));
+  }
+  h('Furniture');
+  for (const p of Object.values(content.props)) {
+    if (!usableBy({ def: p, owner: null }, ch)) continue;
+    if (p.sittable) d.append(btn(`sit on ${p.id}`, () => { ch.queue = []; ch.enqueue([{ type: 'sit', on: p.id, summon: true }]); }));
+    if (p.layable) d.append(btn(`lay on ${p.id}`, () => { ch.queue = []; ch.enqueue([{ type: 'lay', on: p.id, summon: true }]); }));
+  }
+  d.append(btn('sit on floor', () => ch.enqueue([{ type: 'sit', on: 'floor' }])), btn('lay on floor', () => ch.enqueue([{ type: 'lay', on: 'floor' }])), btn('stand up', () => standUp(ch)));
+  h('Cast effect');
+  for (const e of Object.values(content.effects)) d.append(btn(e.id, () => ch.enqueue([{ type: 'cast', effect: e.id }])));
+  h('Move / talk');
+  d.append(btn('walk left', () => ch.enqueue([{ type: 'walk_to', target: 'left' }])), btn('run right', () => ch.enqueue([{ type: 'run_to', target: 'right' }])),
+    btn('jump', () => ch.enqueue([{ type: 'jump' }])), btn('idle line', () => speak(ch, 'idle')), btn('… bubble', () => ch.dots(3)), btn('? bubble', () => ch.question()));
+  if (ch.role === 'guest') d.append(btn(`${charName(ch.id)} leaves`, () => leave(ch)));
+}
 function buildDebug() {
   const root = $('debug'); root.innerHTML = '';
   root.append(btn('✕ close', toggleDebug, 'close'));
   const t = document.createElement('b'); t.textContent = `DEBUG MENU · v${INIT.version} · mods: ${content.mods.map((m) => m.id + (m.enabled ? '' : '(off)')).join(', ') || 'none'}`; root.append(t);
-  let s = section(root, 'Mana (all wives)');
+
+  // ---- Global (non-character) tools ----
+  const global = submenu(root, 'Global', true);
+  let s = section(global, 'Mana (all)');
   s.append(btn('Fill all', () => wives().forEach((w) => w.mana.fill())), btn('Empty all', () => wives().forEach((w) => { w.mana.value = 0; })),
     btn('∞ toggle', (b) => { runCheat({ cmd: 'infmana', args: [] }); b.classList.toggle('on', infinite); }, infinite ? 'on' : ''),
     btn('Always show bars', (b) => { showAllMana = !showAllMana; b.classList.toggle('on', showAllMana); }, showAllMana ? 'on' : ''),
     btn('Rest now (plan)', () => runCheat({ cmd: 'rest', args: [] })), btn('Rest both (door)', () => goToRoom('our_room', wives().map((w) => w.id), { source: 'user' })),
     btn('Chrispy takes wives', () => chrispyTakes()));
-  s = section(root, 'World');
+  s = section(global, 'World');
   s.append(btn('Hitbox view', (b) => { debugDraw = !debugDraw; b.classList.toggle('on', debugDraw); }, debugDraw ? 'on' : ''),
     btn('Sleep mode', () => setSleep(!sleepMode, true)), btn('Speed x1', () => { speed = 1; }), btn('x3', () => { speed = 3; }), btn('x0.3', () => { speed = 0.3; }),
     btn('Wives chatter (…)', () => runCheat({ cmd: 'chatter', args: [] })),
@@ -1585,77 +1640,44 @@ function buildDebug() {
     btn('Dismiss all props', () => dismiss('all')), btn('Spawn all props', () => runCheat({ cmd: 'spawnall', args: [] })));
   for (const id of Object.keys(content.characters)) if (!chars[id]) s.append(btn(`Invite ${charName(id)}`, () => visit(id)));
   for (const c of Object.values(chars)) if (c.role === 'guest') s.append(btn(`${charName(c.id)} leaves`, () => leave(c)));
-  s = section(root, 'Rooms');
+  s = section(global, 'Rooms');
   for (const r of Object.values(content.rooms)) s.append(btn(`Go to ${r.name || r.id} (door)`, () => goToRoom(r.id, undefined, { source: 'user' })));
-  s = section(root, 'Events (forced, ignores chance & cooldown)');
+  s = section(global, 'Events');
   for (const ev of Object.values(content.events)) if (ev && ev.steps) s.append(btn(`${ev.name || ev.id} [${ev.on || 'tick'} ${Math.round((ev.chance ?? 1) * 100)}%]`, () => runEvent(ev)));
   for (const cat of ['game', 'video', 'art', 'stream', 'chat', 'code']) s.append(btn(`aware: ${cat}`, () => { aw.lastReact = {}; onAwareness({ kind: 'app', category: cat, title: `test ${cat}`, owner: cat }); }));
   s.append(btn('aware: AFK', () => onAwareness({ kind: 'idle', seconds: 9999 })), btn('aware: back', () => { aw.idleLongFired = true; onAwareness({ kind: 'idle', seconds: 1 }); }));
-  s = section(root, 'Guest visits (soft pity)');
+  s = section(global, 'Guest visits');
   { const m = document.createElement('div'); m.dataset.meter = '_pity'; m.style.color = '#ffe08a'; s.append(m); }
   s.append(btn('roll now', () => { lastGuestCheck = 0; guestCheck(); refreshDebugMeters(); }), btn('reset pity', () => { pity.reset(); refreshDebugMeters(); }));
   s.append(btn('watch: start', () => setWatching(true)), btn('watch: stop', () => setWatching(false)));
-  s = section(root, 'Summon prop (debug = free)');
+  s = section(global, 'Summon prop');
   for (const p of Object.values(content.props)) s.append(btn(`${p.name || p.id} (${p.manaCost || 0})${p.usableBy && p.usableBy !== 'all' ? ' [' + [].concat(p.usableBy).join(',') + ']' : ''}${p.owner ? ' ♛' + p.owner : ''}`, () => summon(null, p.id)));
-  s = section(root, 'Props on screen (owner · usable by)');
+  s = section(global, 'Props on screen');
   for (const p of props) { if (p.portal) continue; const e = document.createElement('div'); e.textContent = `${p.id} #${p.uid} · owner ${p.owner || '-'} · usable by ${[].concat(p.def.usableBy || 'all').join(', ')} `; e.append(btn('delete', () => { deleteProp(p); buildDebug(); })); s.append(e); }
-  // Characters grouped by category (Main / Wife / Friends / mod customs). Only Wife gets a "(wife)" tag.
-  for (const group of groupByCategory(content.characters, { includeEmpty: true })) {
-    section(root, group.category);
-    if (!group.items.length) {
-      const empty = document.createElement('div'); empty.style.opacity = '0.6'; empty.textContent = '(none yet)'; root.append(empty);
+
+  // ---- Nested: Category → Avatar → actions (present characters get full panels; guests included) ----
+  const present = presentDebugTargets(chars);
+  const model = buildDebugMenuModel(content.characters, present);
+  for (const group of model.categories) {
+    const catBody = submenu(root, group.category, group.avatars.some((a) => a.present));
+    if (!group.avatars.length) {
+      const empty = document.createElement('div'); empty.style.opacity = '0.6'; empty.textContent = '(none yet)'; catBody.append(empty);
       continue;
     }
-    for (const def of group.items) {
-    const ch = chars[def.id]; if (!ch) continue;
-    const d = section(root, labeledName(ch.def, charName(ch.id)));
-    const h = (txt) => { const e = document.createElement('h4'); e.textContent = txt; d.append(e); };
-    const meter = document.createElement('div'); meter.dataset.meter = ch.id; meter.style.color = '#ffe08a'; d.append(meter);
-    h('Hidden mood level (-3 angry … +3 happy)');
-    for (let n = -3; n <= 3; n++) d.append(btn((n > 0 ? '+' : '') + n, () => { ch.aff.set(n); saveSoon(); }, ch.aff.level === n ? 'on' : ''));
-    d.append(btn('decay +1 day', () => { ch.aff.lastTs -= 86400000; ch.aff.lastActive = 0; ch.aff.decay(Date.now()); }));
-    if (ch.mana) {
-      h('Mana (her own pool)');
-      d.append(btn('Fill', () => ch.mana.fill()), btn('+10', () => ch.mana.add(10)), btn('-10', () => ch.mana.add(-10)), btn('Low (15)', () => { ch.mana.value = 15; }), btn('Empty', () => { ch.mana.value = 0; }),
-        btn('Ask for mana', () => askMana(ch, currentPlan())), btn('Rest alone (door)', () => goToRoom('our_room', [ch.id], { source: 'user' })), btn('Summons door herself', () => runCheat({ cmd: 'door', args: [ch.id] })), btn('Click mana bar', () => confirmReplenish(ch)),
-        btn('Meditate', () => runCheat({ cmd: 'meditate', args: [ch.id] })), btn('Meditate (floor, 50%)', () => { ch.queue = []; standUp(ch); ch.enqueue([{ type: 'meditate', summoned: true }]); }));
-    }
-    if (ch.mana) {
-      h('Care (right-click menu)');
-      d.append(btn('Info', () => showInfo(ch)), btn('Pat', () => pat(ch)));
-      for (const f of Object.values(content.food || {})) d.append(btn(`Feed ${f.name || f.id}`, () => feed(ch, f.id)));
-    }
-    h('Falls (drop from % of screen)');
-    for (const f of [0.2, 0.42, 0.9]) d.append(btn(`drop ${Math.round(f * 100)}%`, () => dropFrom(ch, f)));
-    h('Animations (click = play, ⟳ = loop)');
-    for (const an of Object.keys(ch.def.animations)) {
-      d.append(btn(an, () => { ch.queue = []; ch.target = null; ch.loopAnim = null; ch.play(an, 3); }), btn('⟳', () => { ch.queue = []; ch.target = null; ch.loopAnim = ch.loopAnim === an ? null : an; ch.play(an); }));
-    }
-    h('Moods');
-    const sel = document.createElement('select');
-    for (const m of ch.mood.moods) { const o = document.createElement('option'); o.value = o.textContent = m; if (m === ch.mood.current) o.selected = true; sel.append(o); }
-    sel.onchange = () => ch.mood.set(sel.value, 300); d.append(sel);
-    h('Interactions & magic');
-    for (const it of Object.values(content.interactions)) {
-      for (const o of Object.values(chars)) if (o !== ch && interactionAllowed(it, ch.id, o.id)) d.append(btn(`${it.name || it.id} → ${charName(o.id)}${it.manaCost ? ` (${it.manaCost})` : ''}`, () => ch.enqueue([{ type: 'interact', kind: it.id, with: o.id }])));
-      if (!it.magic && it.requires && !chars[it.requires] && ch.id !== it.requires) d.append(btn(`${it.name || it.id} → you (screen)`, () => ch.enqueue([{ type: 'interact', kind: it.id, with: it.requires }])));
-    }
-    h('Furniture');
-    for (const p of Object.values(content.props)) {
-      if (!usableBy({ def: p, owner: null }, ch)) continue;
-      if (p.sittable) d.append(btn(`sit on ${p.id}`, () => { ch.queue = []; ch.enqueue([{ type: 'sit', on: p.id, summon: true }]); }));
-      if (p.layable) d.append(btn(`lay on ${p.id}`, () => { ch.queue = []; ch.enqueue([{ type: 'lay', on: p.id, summon: true }]); }));
-    }
-    d.append(btn('sit on floor', () => ch.enqueue([{ type: 'sit', on: 'floor' }])), btn('lay on floor', () => ch.enqueue([{ type: 'lay', on: 'floor' }])), btn('stand up', () => standUp(ch)));
-    h('Cast effect');
-    for (const e of Object.values(content.effects)) d.append(btn(e.id, () => ch.enqueue([{ type: 'cast', effect: e.id }])));
-    h('Move / talk');
-    d.append(btn('walk left', () => ch.enqueue([{ type: 'walk_to', target: 'left' }])), btn('run right', () => ch.enqueue([{ type: 'run_to', target: 'right' }])),
-      btn('jump', () => ch.enqueue([{ type: 'jump' }])), btn('idle line', () => speak(ch, 'idle')), btn('… bubble', () => ch.dots(3)), btn('? bubble', () => ch.question()));
+    for (const av of group.avatars) {
+      const ch = chars[av.id];
+      if (ch && !ch.hidden && !ch.fadeOut) {
+        const body = submenu(catBody, labeledName(ch.def, charName(ch.id)), true);
+        fillCharDebug(body, ch);
+      } else {
+        const body = submenu(catBody, `${av.name} (off-screen)`);
+        body.append(btn(`Invite ${av.name}`, () => visit(av.id)));
+      }
     }
   }
   refreshDebugMeters();
 }
+
 
 // ---------------- toast / save ----------------
 let toastT;

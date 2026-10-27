@@ -20,3 +20,11 @@ canvas{position:fixed;left:0;top:0;image-rendering:pixelated}
 #ctx div{padding:4px 10px;cursor:pointer;white-space:nowrap}#ctx div:hover{background:#6a2fa8;color:#fff}#ctx div.off{color:#776;cursor:default;background:none}
 #ctx hr{border:0;border-top:2px dotted #6a2fa8;margin:2px 0}
 #info{padding:8px 12px;min-width:120px}#info b{display:block;font-size:14px;color:#fff;margin-bottom:4px}#info .x{position:absolute;right:4px;top:1px;cursor:pointer;color:#d4a537}
+
+#debug details.dbg-sub{margin:4px 0;border:1px solid #3a2a4a;border-radius:6px;background:#120c18}
+#debug details.dbg-sub>summary{cursor:pointer;color:#ffe08a;font-weight:600;padding:4px 8px;list-style:none}
+#debug details.dbg-sub>summary::-webkit-details-marker{display:none}
+#debug details.dbg-sub>summary::before{content:'▸ ';color:#d4a537}
+#debug details.dbg-sub[open]>summary::before{content:'▾ '}
+#debug details.dbg-sub>.dbg-body{padding:4px 8px 8px}
+#debug details.dbg-sub details.dbg-sub{margin-left:6px;background:#0a0710}

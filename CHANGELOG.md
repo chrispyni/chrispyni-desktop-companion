@@ -1,12 +1,13 @@
 # Changelog
 
 ## 0.1.7-alpha
+* Debug menu: category **Wife** renamed to **Wives** (Nixie & Noct tagged). Nested submenus Category → Avatar → actions (Main / Wives / Friends / mod customs). Every character on screen (guests included) gets the full per-character debug panel. Global tools live under their own submenu.
 * New prop: **Gaming PC Desk** (pixel art, dual monitors that flicker). Only ChrispyNi can use it — she sits/stands there to stream or play for a while (monitors glow; occasional nonchalant reaction line). Guests can't use it but may watch her. Follows autonomous anti-repeat caps. Both editions.
 * ChrispyNi dialogue rewritten (nonchalant / mature; no "~" except secret horny mood when talking to the wives).
 * Secret **horny** mood: unlocks after enough voluntary sleep-togethers (not AFK/auto sleep, not mana-room rest); 5–10% chance on wake; mana ceiling 200% of max while active; hidden from normal mood lists.
 * Max mana grows and persists: +1–5 per mana spend, +5–10 after voluntary sleep-together, +10–20 after 8+ hours since last app close (system clock; quick relaunch gives nothing).
 * Fix: ChrispyNi (and others) could get stuck in a looping cast/sparkle pose after using a light prop — `useProp` set `loopAnim` forever and blocked autonomous thinking. Prop uses no longer loop; hold expiry clears any leftover loop. General rule: autonomous behaviors cannot repeat endlessly (streak + duration caps; user-driven watch/sleep/drag/menu exempt).
-* Character categories: ChrispyNi is **Main** (no "(wife)" tag); Nixie & Noct are **Wife**; empty **Friends** for later. Mods may set a custom `category` in character.json. Debug menu is grouped by category.
+* Character categories: ChrispyNi is **Main** (no "(wife)" tag); Nixie & Noct are **Wives**; empty **Friends** for later. Mods may set a custom `category` in character.json. Debug menu is grouped by category.
 * Avatars keep ~one sprite width apart when standing (no overlapping). Walk targets pick the nearest free spot; overlapping after a drop/throw/spawn makes them gently step apart. Hug/Kiss may still bring them together briefly.
 * Guest arrive/leave: the host answers ~1–2s later from the offline chat library (ChrispyNi mommy voice in the public edition).
 * Public edition: Hug / Kiss are on each guest's right-click menu (Nixie / Noct) while they're present — removed from ChrispyNi's own menu. Wives edition unchanged (still on the wife while ChrispyNi visits).

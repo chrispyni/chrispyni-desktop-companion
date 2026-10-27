@@ -1,21 +1,25 @@
 // Character categories for debug UI / labels. Separate from gameplay role (wife/guest).
 'use strict';
 
-const BUILTIN = ['Main', 'Wife', 'Friends'];
+const BUILTIN = ['Main', 'Wives', 'Friends'];
 
 /** Category string for a character def (or {id, category, role}). Mods may set any custom string. */
 function categoryOf(def) {
   if (!def) return 'Friends';
-  if (typeof def.category === 'string' && def.category.trim()) return def.category.trim();
+  if (typeof def.category === 'string' && def.category.trim()) {
+    const c = def.category.trim();
+    // Accept legacy "Wife" spelling from older mods/saves
+    return c === 'Wife' ? 'Wives' : c;
+  }
   // Legacy fallbacks if category omitted
   if (def.id === 'chrispyni') return 'Main';
-  if (def.id === 'nixie' || def.id === 'noct') return 'Wife';
+  if (def.id === 'nixie' || def.id === 'noct') return 'Wives';
   return 'Friends';
 }
 
-/** Debug/UI label: only the Wife category gets a "(wife)" tag. */
+/** Debug/UI label: only the Wives category gets a "(wife)" tag (never ChrispyNi / Main). */
 function categoryTag(def) {
-  return categoryOf(def) === 'Wife' ? 'wife' : null;
+  return categoryOf(def) === 'Wives' ? 'wife' : null;
 }
 
 function labeledName(def, name) {
@@ -25,7 +29,7 @@ function labeledName(def, name) {
 }
 
 /**
- * Group character defs/ids by category. Built-ins Main → Wife → Friends first (even if empty),
+ * Group character defs/ids by category. Built-ins Main → Wives → Friends first (even if empty),
  * then other custom categories alphabetically. Within a group, stable by id.
  * characters: { id: def } map.
  * Returns [{ category, items: def[] }]
