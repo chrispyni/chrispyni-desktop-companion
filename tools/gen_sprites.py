@@ -559,44 +559,45 @@ def build_templates():
 
 # ---------------- previews ----------------
 def previews(sheets, room, ov):
+    """Public docs: ChrispyNi-only previews (no other characters, no room collage)."""
     D = C("docs"); os.makedirs(D, exist_ok=True)
+    sh = sheets.get("chrispyni")
+    if not sh: return
     S = 4
-    order = ["nixie", "chrispyni", "noct"]
-    # all-animation sheet preview
-    for cid, sh in sheets.items():
-        sh.resize((sh.width * 2, sh.height * 2), Image.NEAREST).save(os.path.join(D, f"sheet_{cid}_x2.png"))
-    # lineup PNG
-    bg = Image.new("RGBA", (FW * 3 * S + 40, FH * S + 20), (24, 16, 32, 255))
-    for i, cid in enumerate(order):
-        fr = sheets[cid].crop((0, 0, FW, FH)).resize((FW * S, FH * S), Image.NEAREST)
-        bg.alpha_composite(fr, (20 + i * FW * S, 10))
-    bg.save(os.path.join(D, "lineup.png"))
-    # animated GIF: every row cycles
-    frames = []
-    for ri, (name, n, fps) in enumerate(ROWS):
-        for k in range(8):
-            canvas = Image.new("RGBA", (FW * 3 * 3, FH * 3 + 16), (24, 16, 32, 255)); cd = ImageDraw.Draw(canvas)
-            cd.text((4, 2), name, fill=(255, 220, 120, 255), font=font(11))
-            for i, cid in enumerate(order):
-                f = k % n
-                fr = sheets[cid].crop((f * FW, ri * FH, f * FW + FW, ri * FH + FH)).resize((FW * 3, FH * 3), Image.NEAREST)
-                canvas.alpha_composite(fr, (i * FW * 3, 16))
-            frames.append(canvas.convert("RGB"))
-    frames[0].save(os.path.join(D, "preview.gif"), save_all=True, append_images=frames[1:], duration=160, loop=0)
-    rm = room.copy(); rm.alpha_composite(ov)
-    rm.resize((960, 540), Image.NEAREST).save(os.path.join(D, "room_preview.png"))
+    # idle strip
+    idle_n = ROWS[0][1]
+    strip = Image.new("RGBA", (FW * idle_n * S + 20, FH * S + 36), (12, 8, 22, 255))
+    sd = ImageDraw.Draw(strip); sd.text((8, 4), "ChrispyNi — idle", fill=(255, 220, 120, 255), font=font(12))
+    for i in range(idle_n):
+        fr = sh.crop((i * FW, 0, (i + 1) * FW, FH)).resize((FW * S, FH * S), Image.NEAREST)
+        strip.alpha_composite(fr, (10 + i * FW * S, 28))
+    strip.save(os.path.join(D, "chrispyni_idle.png"))
+    # large pose
+    pose = sh.crop((0, 0, FW, FH)).resize((FW * 8, FH * 8), Image.NEAREST)
+    stand = Image.new("RGBA", (pose.width + 40, pose.height + 50), (12, 8, 22, 255))
+    ImageDraw.Draw(stand).text((12, 8), "ChrispyNi", fill=(255, 220, 120, 255), font=font(14))
+    stand.alpha_composite(pose, (20, 36)); stand.save(os.path.join(D, "chrispyni_pose.png"))
+    # full sheet x2
+    full = sh.resize((sh.width * 2, sh.height * 2), Image.NEAREST)
+    bg = Image.new("RGBA", (full.width + 20, full.height + 36), (12, 8, 22, 255))
+    ImageDraw.Draw(bg).text((8, 4), "ChrispyNi sprite sheet ×2", fill=(255, 220, 120, 255), font=font(12))
+    bg.alpha_composite(full, (10, 28)); bg.save(os.path.join(D, "chrispyni_sheet.png"))
 
 def write_icon(sheets):
-    """App icon: Nixie & Noct heads side by side on a void circle (pixel art, crisp at every size)."""
+    """App icon: ChrispyNi head on a void circle (keeps the existing crown portrait if present)."""
     os.makedirs(C("build"), exist_ok=True)
-    base = Image.new("RGBA", (64, 64), (0, 0, 0, 0)); d = ImageDraw.Draw(base)
-    ell(d, 1, 1, 62, 62, hx("2a1240")); d.ellipse([1, 1, 62, 62], outline=hx("d4a537"))
-    for cid, ox in (("noct", 30), ("nixie", 2)):
-        P = CHARS[cid]; top = FEET[1] - P["height"]
-        head = sheets[cid].crop((4, max(0, top - 4), 44, top + 30))
-        base.alpha_composite(head, (ox - 4 + (0 if cid == "nixie" else -2), 64 - head.height - 4 + (0 if cid == "noct" else 4)))
-    ic = base.resize((256, 256), Image.NEAREST)
-    ic.save(C("build", "icon.png"))
+    # Prefer the hand-authored icon (crown portrait); only rebuild from sheet if missing.
+    ic_path = C("build", "icon.png")
+    if os.path.exists(ic_path):
+        ic = Image.open(ic_path).convert("RGBA").resize((256, 256), Image.NEAREST)
+    else:
+        base = Image.new("RGBA", (64, 64), (0, 0, 0, 0)); d = ImageDraw.Draw(base)
+        ell(d, 1, 1, 62, 62, hx("2a1240")); d.ellipse([1, 1, 62, 62], outline=hx("d4a537"))
+        P = CHARS["chrispyni"]; top = FEET[1] - P["height"]
+        head = sheets["chrispyni"].crop((4, max(0, top - 4), 44, top + 30))
+        base.alpha_composite(head, (12, 64 - head.height - 2))
+        ic = base.resize((256, 256), Image.NEAREST)
+        ic.save(ic_path)
     ic.save(C("build", "icon.ico"), sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
     base.resize((32, 32), Image.NEAREST).save(C("src", "renderer", "tray.png"))
 

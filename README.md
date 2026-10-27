@@ -6,7 +6,7 @@
 
 **ChrispyNi** on your Windows desktop.
 
-![Preview](docs/lineup.png)
+![Logo](docs/logo.png)
 
 </div>
 
@@ -23,7 +23,13 @@
 * Data-only mods (JSON + images).
 * Auto-update from GitHub Releases when you accept it in her bubble.
 
-![Preview gif](docs/preview.gif)
+<div align="center">
+
+![ChrispyNi](docs/chrispyni_pose.png)
+
+![Idle frames](docs/chrispyni_idle.png)
+
+</div>
 
 ## Download & run
 
