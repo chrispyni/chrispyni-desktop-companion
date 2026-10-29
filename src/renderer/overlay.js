@@ -303,7 +303,7 @@ function startAction(ch, a) {
       const p = a.on && a.on !== 'floor' ? (nearestProp(ch.x, a.on, ch) || (a.summon !== false && content.props[a.on] && summon(ch, a.on))) : nearestProp(ch.x, flag, ch);
       if (p && Math.abs(p.x - ch.x) > 8) { ch.queue.unshift(a); ch.target = p.x; ch.state = 'walk'; return false; }
       ch.seat = p || null; if (p) p.lastUsed = Date.now(); ch.state = a.type; ch.play(a.type, 0, true);
-      if (p) { ch.x = p.x + (countOn(p) - 1) * 20; ch.y = ground - (p.def.seatY ?? (a.type === 'lay' ? 12 : 8)) * (cfg.scale || 2); }
+      if (p) { ch.x = p.x + (countOn(p) - 1) * 20; ch.y = ground - ((p.def.seatY ?? (a.type === 'lay' ? 12 : 8)) - (ch.def.seatDrop || 0)) * (cfg.scale || 2); }
       ch.holdUntil = now + (a.sec || rnd(8, 20)) * 1000; return true;
     }
     case 'sleep': ch.state = 'sleep'; ch.play(ch.seat && ch.seat.def.layable ? 'lay' : 'sleep', 0, true); ch.holdUntil = now + (a.sec || 30) * 1000; return true;
@@ -332,7 +332,7 @@ function startAction(ch, a) {
       }
       if (p && Math.abs(p.x - ch.x) > 8) { ch.queue.unshift(a); ch.target = clampX(p.x, ch); ch.state = 'walk'; return false; }
       ch.seat = p || null; ch.state = 'meditate'; ch.play('sit', 0, true);
-      if (p) { ch.x = p.x; ch.y = ground - (p.def.seatY ?? 8) * (cfg.scale || 2); }
+      if (p) { ch.x = p.x; ch.y = ground - ((p.def.seatY ?? 8) - (ch.def.seatDrop || 0)) * (cfg.scale || 2); }
       ch.meditating = { rate: p ? 1 : medCfg().floorRate, start: Date.now() };
       ch.holdUntil = now + 6 * 3600 * 1000; spawnFx('levitate_aura', ch.x, ch.y - ch.fh * ch.scale * 0.5);
       hooks.emit('meditate', { char: ch.id, on: p ? p.id : 'floor' }); return true;
@@ -1248,7 +1248,7 @@ function feed(ch, foodId = 'cookie') {
   if (!ch.feeding) nextFood(ch);
 }
 function eatNow(ch, f) {
-  ch.queue = []; ch.target = null; ch.play('happy', f.eatSec || 2); ch.waitUntil = performance.now() + (f.eatSec || 2) * 1000;
+  ch.queue = []; ch.target = null; ch.play(ch.def.animations.eat ? 'eat' : 'happy', f.eatSec || 2); ch.waitUntil = performance.now() + (f.eatSec || 2) * 1000;
   foods.push({ def: f, x: ch.x + ch.facing * 10, y: (ch.hit || ch.bbox()).y + ch.fh * ch.scale * 0.45, held: ch, until: performance.now() + (f.eatSec || 2) * 1000 });
   ch.aff.o.events['food:' + f.id] = { delta: f.mood || 0, cooldownSec: f.cooldownSec || 0 };
   ch.aff.event('food:' + f.id);

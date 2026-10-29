@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.10-alpha
+* Fix: ChrispyNi no longer slides when walking; her legs step properly.
+* Fix: ChrispyNi sits on the sofa, chair and desk properly instead of hovering above the seat.
+* ChrispyNi has her own eating, happy, cast, hug, kiss, fall and float animations (no more waving while eating).
+
 ## 0.1.9-alpha
 * ChrispyNi sprites: same size and proportions in every animation.
 * Fix: walking no longer flips left/right every step.

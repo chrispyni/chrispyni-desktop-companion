@@ -52,9 +52,9 @@
    "fps": 2
   },
   "happy": {
-   "row": 6,
-   "frames": 4,
-   "fps": 8
+   "row": 9,
+   "frames": 2,
+   "fps": 4
   },
   "pout": {
    "row": 0,
@@ -62,7 +62,7 @@
    "fps": 4
   },
   "cast": {
-   "row": 6,
+   "row": 10,
    "frames": 4,
    "fps": 8
   },
@@ -72,24 +72,29 @@
    "fps": 6
   },
   "hug": {
-   "row": 0,
-   "frames": 4,
-   "fps": 4
+   "row": 11,
+   "frames": 2,
+   "fps": 3
   },
   "kiss": {
-   "row": 0,
-   "frames": 4,
-   "fps": 4
+   "row": 12,
+   "frames": 2,
+   "fps": 3
   },
   "fall": {
-   "row": 0,
-   "frames": 4,
+   "row": 13,
+   "frames": 1,
    "fps": 10
   },
   "float": {
-   "row": 0,
+   "row": 14,
+   "frames": 2,
+   "fps": 3
+  },
+  "eat": {
+   "row": 15,
    "frames": 4,
-   "fps": 4
+   "fps": 6
   },
   "superhero_land": {
    "row": 8,
@@ -206,5 +211,6 @@
    }
   }
  },
- "note": "Guest character (room scene / optional visit) and the companion in the 'viewer' edition preset."
+ "note": "Guest character (room scene / optional visit) and the companion in the 'viewer' edition preset.",
+ "seatDrop": 10
 }

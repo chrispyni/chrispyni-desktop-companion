@@ -1,6 +1,6 @@
 {
-  "version": "0.1.9-alpha",
+  "version": "0.1.10-alpha",
   "date": "2026-10-29",
-  "notes": "ChrispyNi sprites: consistent proportions and smoother walking.",
+  "notes": "ChrispyNi walk animation: legs now move.",
   "download": "https://github.com/chrispyni/chrispyni-desktop-companion/releases"
 }

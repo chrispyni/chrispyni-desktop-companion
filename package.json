@@ -1,7 +1,7 @@
 {
   "name": "chrispyni-desktop-companion",
   "productName": "ChrispyNi Desktop Companion",
-  "version": "0.1.9-alpha",
+  "version": "0.1.10-alpha",
   "description": "Desktop companion: ChrispyNi, with Nixie & Noct as guests · Made with Grok AI",
   "main": "src/main.js",
   "author": "ChrispyNi",
