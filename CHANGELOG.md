@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.9-alpha
+* ChrispyNi sprites: same size and proportions in every animation.
+* Fix: walking no longer flips left/right every step.
+
 ## 0.1.8-alpha
 * New ChrispyNi sprites.
 

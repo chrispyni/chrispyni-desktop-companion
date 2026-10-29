@@ -1,6 +1,6 @@
 {
-  "version": "0.1.8-alpha",
+  "version": "0.1.9-alpha",
   "date": "2026-10-29",
-  "notes": "New ChrispyNi sprites.",
+  "notes": "ChrispyNi sprites: consistent proportions and smoother walking.",
   "download": "https://github.com/chrispyni/chrispyni-desktop-companion/releases"
 }
