@@ -21,94 +21,124 @@
    "fps": 4
   },
   "walk": {
-   "row": 1,
-   "frames": 6,
+   "row": 2,
+   "frames": 4,
    "fps": 8
   },
   "run": {
    "row": 2,
-   "frames": 6,
+   "frames": 4,
    "fps": 12
   },
   "talk": {
-   "row": 3,
+   "row": 0,
    "frames": 4,
    "fps": 6
   },
   "sit": {
-   "row": 4,
-   "frames": 4,
+   "row": 7,
+   "frames": 2,
    "fps": 3
   },
   "lay": {
-   "row": 5,
-   "frames": 4,
+   "row": 7,
+   "frames": 2,
    "fps": 2
   },
   "sleep": {
-   "row": 6,
-   "frames": 4,
+   "row": 7,
+   "frames": 2,
    "fps": 2
   },
   "happy": {
-   "row": 7,
+   "row": 6,
    "frames": 4,
    "fps": 8
   },
   "pout": {
-   "row": 8,
+   "row": 0,
    "frames": 4,
    "fps": 4
   },
   "cast": {
-   "row": 9,
-   "frames": 6,
-   "fps": 10
+   "row": 6,
+   "frames": 4,
+   "fps": 8
   },
   "wave": {
-   "row": 10,
+   "row": 6,
    "frames": 4,
    "fps": 6
   },
   "hug": {
-   "row": 11,
+   "row": 0,
    "frames": 4,
    "fps": 4
   },
   "kiss": {
-   "row": 12,
+   "row": 0,
    "frames": 4,
    "fps": 4
   },
   "fall": {
-   "row": 13,
+   "row": 0,
    "frames": 4,
    "fps": 10
   },
   "float": {
-   "row": 14,
+   "row": 0,
    "frames": 4,
    "fps": 4
   },
   "superhero_land": {
-   "row": 15,
-   "frames": 4,
+   "row": 8,
+   "frames": 2,
    "fps": 6
   },
   "faceplant": {
-   "row": 16,
-   "frames": 4,
+   "row": 8,
+   "frames": 2,
    "fps": 4
   },
   "getup": {
-   "row": 17,
-   "frames": 4,
+   "row": 8,
+   "frames": 2,
    "fps": 5
   },
   "watch": {
-   "row": 18,
-   "frames": 4,
+   "row": 7,
+   "frames": 2,
    "fps": 2
+  },
+  "walk_left": {
+   "row": 1,
+   "frames": 4,
+   "fps": 8
+  },
+  "walk_right": {
+   "row": 2,
+   "frames": 4,
+   "fps": 8
+  },
+  "walk_down": {
+   "row": 3,
+   "frames": 4,
+   "fps": 8
+  },
+  "walk_up": {
+   "row": 4,
+   "frames": 4,
+   "fps": 8
+  },
+  "idle_back": {
+   "row": 5,
+   "frames": 2,
+   "fps": 3
+  },
+  "crouch": {
+   "row": 8,
+   "frames": 2,
+   "fps": 3
   }
  },
  "palette": {
@@ -176,18 +206,6 @@
   }
  },
  "note": "Main character of ChrispyNi Desktop Companion.",
- "eyes": {
-  "y": 26,
-  "x": [
-   19,
-   28
-  ],
-  "w": 2,
-  "h": 3,
-  "iris": "#8e5ad8",
-  "pupil": "#d0202a",
-  "white": "#ffffff"
- },
  "mana": {
   "max": 100
  }

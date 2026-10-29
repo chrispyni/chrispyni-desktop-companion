@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.8-alpha
+* New ChrispyNi sprites.
+
 ## 0.1.7-alpha
 * Debug menu: category **Wife** renamed to **Wives** (Nixie & Noct tagged). Nested submenus Category → Avatar → actions (Main / Wives / Friends / mod customs). Every character on screen (guests included) gets the full per-character debug panel. Global tools live under their own submenu.
 * New prop: **Gaming PC Desk** (pixel art, dual monitors that flicker). Only ChrispyNi can use it — she sits/stands there to stream or play for a while (monitors glow; occasional nonchalant reaction line). Guests can't use it but may watch her. Follows autonomous anti-repeat caps. Both editions.
